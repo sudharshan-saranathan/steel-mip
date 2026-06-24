@@ -7,8 +7,8 @@ old grid envelopes, solves the (now linear) model for each draw, and writes one
 CSV row per draw with the sampled inputs, key outputs, and feasibility status.
 
 Sampled inputs (uniform over [lo, hi]):
-    ng_cost      n5_cost_NG       $/MMBtu     [5,   20]
-    h2_end_cost  ng_cost_h2_end   $/ton       [1000,4000]
+    ng_cost      n5_cost_NG       $/MMBtu     [5,   25]
+    h2_end_cost  ng_cost_h2_end   $/ton       [1000,4500]
     ccs_end_cost n10_ccs_cost_end $/ton       [25,  125]
     scrap_rate   n8_scrap_rate    1/yr        [0.04,0.08]
 
@@ -22,13 +22,15 @@ import os, sys, csv, time
 import numpy as np
 from scipy.stats import qmc
 from amplpy import AMPL, add_to_path
+import ampl_module_base
 
-# Make the AMPL binary discoverable (override with AMPL_DIR if installed elsewhere).
-add_to_path(os.environ.get("AMPL_DIR", "/Applications/AMPL"))
+# Resolve AMPL binary from installed package; AMPL_DIR env var overrides if needed.
+_default_ampl_dir = os.path.join(os.path.dirname(ampl_module_base.__file__), "bin")
+add_to_path(os.environ.get("AMPL_DIR", _default_ampl_dir))
 
 # ----------------------------- configuration -----------------------------
 PROJECT      = os.path.dirname(os.path.abspath(__file__))
-N_SAMPLES    = int(os.environ.get("MC_N", "20000"))
+N_SAMPLES    = int(os.environ.get("MC_N", "100000"))
 SEED         = int(os.environ.get("MC_SEED", "20260624"))
 YEARS        = [2030, 2033, 2036, 2039, 2042, 2045]   # discrete H2-DRI start years (sampled)
 SCENARIO     = os.environ.get("MC_SCENARIO", "normal")     # normal|shock|optimistic
@@ -40,7 +42,7 @@ SCEN_FILE = {"normal":"scenarios/ng_avail_normal.mod",
 
 # uniform prior bounds: [ng_cost, h2_end_cost, ccs_end_cost, scrap_rate]
 LO = np.array([5.0,   1000.0, 25.0,  0.04])
-HI = np.array([20.0,  4000.0, 125.0, 0.08])
+HI = np.array([25.0,  4500.0, 125.0, 0.08])
 NAMES = ["ng_cost", "h2_end_cost", "ccs_end_cost", "scrap_rate"]
 
 # ----------------------- build per-draw model script ----------------------
@@ -52,7 +54,7 @@ TEMPLATE = "\n".join(l for l in TEMPLATE.splitlines()
 # faster, bounded solves for the sweep (linear MILP => sub-second; cap as safety)
 TEMPLATE = TEMPLATE.replace(
     "option gurobi_options 'Threads=5 TimeLimit=600 mipgap=0.002';",
-    "option gurobi_options 'Threads=4 TimeLimit=120 mipgap=0.002';")
+    "option gurobi_options 'Threads=10 TimeLimit=120 mipgap=0.002';")
 
 def model_for(ng, h2end, ccs, scrap, h2year):
     s = TEMPLATE
