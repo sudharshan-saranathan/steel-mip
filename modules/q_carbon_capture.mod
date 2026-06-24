@@ -23,8 +23,9 @@ param fc_max := 0.9;   # max physical capture rate per stream
 # --- physical capturable CO2 base per route (linear in flows) ---
 s.t. co2_capturable_bf_def{t in T}:
     co2_capturable_bf[t] =
-        coking_coal_in[t] * 0.1116 * 25 + bf_coalpci_in[t] * 0.113 * 26
+        coking_coal_in[t] * 0.1116 * 25 + bf_coalpci_in[t] * 0.106 * 26
       + (sinter_lime_in[t] + bf_lime_in[t] + bof_lime_in[t]) * 0.44;        # base for eq84
+      # H3 fix: PCI factor 0.106 matches Scope-1 (s_emissions.mod); was 0.113 (over-credited capture).
 
 s.t. co2_capturable_cdri_def{t in T}:
     co2_capturable_cdri[t] =
@@ -59,7 +60,7 @@ s.t. ccs_sector_ceiling{t in T}:
 # Valid big-M for the capture phase-in switches (t_additional_constraints.mod):
 # |ccs_X[t]-ccs_X[t-1]| <= max ccs_X = n10_ccs_eta*fc_max*cap_ub_X[t].
 param cap_ub_bf{t in T} :=
-    1.00*dem[t]*0.1116*25 + 0.25*dem[t]*0.113*26 + 3*(0.10*dem[t])*0.44;
+    1.00*dem[t]*0.1116*25 + 0.25*dem[t]*0.106*26 + 3*(0.10*dem[t])*0.44;   # H3/L2 fix: PCI 0.106 (was 0.113)
 param cap_ub_cdri{t in T} :=
     (1-n7_phi_eaf)*dem[t]*0.110*24
   + (n7_cs/(1-n7_phi_eaf))*((1-n7_phi_eaf)*dem[t])*0.110*24
