@@ -14,15 +14,19 @@ import os, sys, subprocess, csv, time, glob
 PROJECT    = os.path.dirname(os.path.abspath(__file__))
 N_H2       = int(os.environ.get("MC2D_NH2",   "100"))
 N_CCS      = int(os.environ.get("MC2D_NCCS",  "100"))
-N_PROCS    = int(os.environ.get("MC2D_PROCS", "6"))
-THREADS    = int(os.environ.get("MC2D_THREADS", "2"))
+N_PROCS    = int(os.environ.get("MC2D_PROCS", "12"))
+THREADS    = int(os.environ.get("MC2D_THREADS", "1"))
 SCENARIO   = os.environ.get("MC_SCENARIO", "normal")
 FINAL_CSV  = os.path.join(PROJECT, os.environ.get("MC_OUT", "mc_2d_results.csv"))
 SCRIPT     = os.path.join(PROJECT, "monte_carlo_2d.py")
 
-# split H2 indices into N_PROCS chunks
-indices = list(range(N_H2))
-chunks  = [indices[i::N_PROCS] for i in range(N_PROCS)]  # round-robin for even sizes
+# split H2 axis into CONTIGUOUS chunks (ceiling division).
+# Round-robin is wrong here: each subprocess receives a [h2_start, h2_end)
+# RANGE, so non-contiguous index lists would overlap and re-solve rows.
+chunk_size = (N_H2 + N_PROCS - 1) // N_PROCS
+chunks = [list(range(i * chunk_size, min((i + 1) * chunk_size, N_H2)))
+          for i in range(N_PROCS)]
+chunks = [c for c in chunks if c]  # drop empty chunks when N_PROCS > N_H2
 
 chunk_csvs = []
 procs      = []
@@ -82,6 +86,15 @@ with open(FINAL_CSV, "w", newline="") as fh:
     w.writeheader()
     w.writerows(rows)
 
-n_ok = sum(1 for r in rows if r["status"] == "solved")
+n_ok    = sum(1 for r in rows if r["status"] == "solved")
+n_draws = N_H2 * N_CCS
 print(f"Merged {len(rows)} rows  (ok={n_ok})  -> {FINAL_CSV}")
-print(f"Speed-up vs sequential: {N_H2*N_CCS*0.41/elapsed:.1f}×  (estimated)")
+
+# Wall-clock per draw, and speed-up vs the measured single-solve cost
+# (SEQ_PER_DRAW, default 1.1s with lock-in on; override via MC2D_SEQ_S).
+seq_per_draw = float(os.environ.get("MC2D_SEQ_S", "1.1"))
+speedup      = (n_draws * seq_per_draw) / elapsed if elapsed else 0.0
+eff          = speedup / N_PROCS * 100.0
+print(f"Avg {elapsed / n_draws:.2f}s/draw  |  "
+      f"Speed-up vs sequential: {speedup:.1f}×  "
+      f"(parallel efficiency: {eff:.0f}%)")
