@@ -1,0 +1,18 @@
+# ---- Generated solver outputs / parameter sweeps (regenerable) ----
+results/
+results_old_bilinear/
+mc_results.csv
+mc_smoke.csv
+
+# ---- Logs ----
+*.log
+log_NG_*.out
+
+# ---- AMPL per-run temp models & solver scratch ----
+temp_*.mod
+*.nl
+*.sol
+
+# ---- OS cruft ----
+.DS_Store
+**/.DS_Store
