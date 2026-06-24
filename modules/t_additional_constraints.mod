@@ -66,36 +66,9 @@ s.t. ngdri_prod_down {t in T: t != first(T)}:
 s.t. h2dri_prod_down{t in T: t > ng_h2_start_year}:
     h2dri_output[t] >= 0.8* h2dri_output[prev(t)];
 
-#Carbon capture ramp
-param ramp{t in T} :=
-    if t < 2035 then 0.03
-    else if t < 2045 then 0.05
-    else 0.07;
-
-# Linearization (capture ramp on captured AMOUNT, with a base-growth slack).
-# The original fraction ramp |fc[t]-fc[t-1]| <= ramp[t] permits, in amount terms,
-#   |ccs[t]-ccs[t-1]| <= ramp[t]*eta*capbase[t] + fc[t-1]*eta*(capbase[t]-capbase[t-1]).
-# The base-growth term has no exact linear form once fc is dropped (penetration
-# fc = ccs/(eta*capbase) is a ratio of variables). It is replaced by the valid linear
-# upper bound  ccs_growth_slack * ccs[t-1]: every route output is ramp-limited to
-# +/-20% (prod_up/down) so the capturable base grows by at most ~20%/yr; hence
-# ccs_growth_slack = 0.20 is a valid (slightly more permissive) linear surrogate.
-param ccs_growth_slack := 0.20;   # = production-ramp headroom (1.20 - 1)
-
-s.t. bf_ccs_ramp_up {t in T: ord(t) > 1}:
-    ccs_bf[t] - ccs_bf[prev(t)] <= ramp[t] * n10_ccs_eta * capbase_bf[t] + ccs_growth_slack * ccs_bf[prev(t)];
-s.t. bf_ccs_ramp_dn {t in T: ord(t) > 1}:
-    ccs_bf[prev(t)] - ccs_bf[t] <= ramp[t] * n10_ccs_eta * capbase_bf[t] + ccs_growth_slack * ccs_bf[prev(t)];
-
-s.t. cdri_ccs_ramp_up {t in T: ord(t) > 1}:
-    ccs_cdri[t] - ccs_cdri[prev(t)] <= ramp[t] * n10_ccs_eta * capbase_cdri[t] + ccs_growth_slack * ccs_cdri[prev(t)];
-s.t. cdri_ccs_ramp_dn {t in T: ord(t) > 1}:
-    ccs_cdri[prev(t)] - ccs_cdri[t] <= ramp[t] * n10_ccs_eta * capbase_cdri[t] + ccs_growth_slack * ccs_cdri[prev(t)];
-
-s.t. ngdri_ccs_ramp_up {t in T: ord(t) > 1}:
-    ccs_ngdri[t] - ccs_ngdri[prev(t)] <= ramp[t] * n10_ccs_eta * capbase_ngdri[t] + ccs_growth_slack * ccs_ngdri[prev(t)];
-s.t. ngdri_ccs_ramp_dn {t in T: ord(t) > 1}:
-    ccs_ngdri[prev(t)] - ccs_ngdri[t] <= ramp[t] * n10_ccs_eta * capbase_ngdri[t] + ccs_growth_slack * ccs_ngdri[prev(t)];
+# Carbon-capture deployment pace is now governed by the sector-wide
+# ccs_avail[t] ceiling in q_carbon_capture.mod (infrastructure/logistics ramp),
+# which replaces the former per-route |Dccs| <= ramp*eta*capbase + slack limits.
 
 # Binary Constraints for switches
 # Linearization: phase-in switches re-expressed on the captured AMOUNT. The big-M

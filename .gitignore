@@ -1,2 +1,5 @@
 .idea/
 *.csv
+*.png
+edge_cases.py
+plot_edge.py

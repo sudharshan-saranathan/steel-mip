@@ -171,9 +171,13 @@ var total_emissions{T}          >= 0;  # X[104]- Total CO2 emitted
 #    decisions, linked linearly by dri_route_split (k_dri_h2.mod).
 # This removes every bilinear (capbase*fc) and (f_route*dri) product. The realized
 # fractions are recovered post-solve for reporting (yreport.mod).
-var capbase_bf{T}               >= 0;   # capturable CO2 base, BF-BOF route
-var capbase_cdri{T}             >= 0;   # capturable CO2 base, Coal-DRI route
-var capbase_ngdri{T}            >= 0;   # capturable CO2 base, NG-DRI route
+# Physical capturable CO2 per route (gross CO2 in the capture-amenable streams,
+# ~= route Scope-1). The infrastructure/logistics deployment ceiling (ccs_avail,
+# a growing fraction of this) is what actually limits captured CO2 -- see
+# q_carbon_capture.mod (ccs_sector_ceiling).
+var co2_capturable_bf{T}        >= 0;   # physical capturable CO2, BF-BOF route
+var co2_capturable_cdri{T}      >= 0;   # physical capturable CO2, Coal-DRI route
+var co2_capturable_ngdri{T}     >= 0;   # physical capturable CO2, NG-DRI route
 var f_bof{T}                    >= 0,   <= 1;   # BF-BOF fraction
 var f_eaf{T}                    >= 0,   <= 1;   # DRI-EAF fraction
 var dec_switch_bof {t in T} binary;
