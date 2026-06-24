@@ -21,7 +21,10 @@ Fixed (NOT sampled):
 import os, sys, csv, time
 import numpy as np
 from scipy.stats import qmc
-from amplpy import AMPL
+from amplpy import AMPL, add_to_path
+
+# Make the AMPL binary discoverable (override with AMPL_DIR if installed elsewhere).
+add_to_path(os.environ.get("AMPL_DIR", "/Applications/AMPL"))
 
 # ----------------------------- configuration -----------------------------
 PROJECT      = os.path.dirname(os.path.abspath(__file__))
@@ -46,10 +49,10 @@ with open(os.path.join(PROJECT, "template.mod")) as fh:
 # drop the human-readable report includes (we extract values via the API instead)
 TEMPLATE = "\n".join(l for l in TEMPLATE.splitlines()
                      if "include yreport.mod" not in l and "include report.mod" not in l)
-# faster, bounded solves for the sweep (linear model => sub-second; cap as safety)
+# faster, bounded solves for the sweep (linear MILP => sub-second; cap as safety)
 TEMPLATE = TEMPLATE.replace(
-    "option gurobi_options 'Threads=5 TimeLimit=600 nonconvex=2 mipgap=0.002';",
-    "option gurobi_options 'Threads=4 TimeLimit=120 nonconvex=2 mipgap=0.002';")
+    "option gurobi_options 'Threads=5 TimeLimit=600 mipgap=0.002';",
+    "option gurobi_options 'Threads=4 TimeLimit=120 mipgap=0.002';")
 
 def model_for(ng, h2end, ccs, scrap, h2year):
     s = TEMPLATE

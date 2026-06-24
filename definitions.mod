@@ -1,14 +1,12 @@
 
-
 # Crude Steel Production
-param base_demand default 144000000;  # Steel production at year 2025
-param growth_rate default 0.05;       # Production growth rate upto 2050
-
-# Fixed steel demand per year (total_steel is pinned to this by meet_demand).
-# Used to set valid upper bounds on flow variables (see modules/u_var_bounds.mod).
+param base_demand default 152200000;  # Steel production at year 2025
+param growth_rate default 0.05;
+# Fixed annual steel demand (total_steel is pinned to this by meet_demand).
+# Used to linearize the f_bof/f_eaf * total_steel products and to size route bounds.
 param dem{t in T} := base_demand * (1 + growth_rate)^(ord(t) - 1);
 
-#--------------------------------------------- TECHNICAL PARAMETERS ---------------------------------------------------------
+# TECHNICAL PARAMETERS 
 # Global parameters
 param ng_e_pell default 200;         # Electricity (kWh) per ton of pellets   
 param ng_ore_pell default 1.1;       # Iron ore (ton) per ton of pellets
@@ -29,7 +27,7 @@ param n0_cf default 1.47;            # Coal (ton) required per ton of coke
 param n0_br_c default 0.056;         # Breeze produced (ton) per ton of coke                
 param n0_tar_c default 0.04;         # Tar produced (ton) per ton of coke  
 param n0_cdq_whr default 80;        # Waste heat power (kWh)produced per ton of coke from CDQ
-param n0_cog_c default 470;          # Coke Oven Gas (Nm3) formed per ton of coke (mass eqv gas- 0.2 tons)
+param n0_cog_c default 440;          # Coke Oven Gas (Nm3) formed per ton of coke (mass eqv gas- 0.2 tons)
 param n0_rec_cog default 190;        # Recovered COG as fuel(energy) (Nm3/t coke)
 param n0_rec_bfg default 270;        # Recovered BFG as fuel (energy) (Nm3/t coke)
 # Remaining COG goes to power plant
@@ -84,13 +82,13 @@ param n3_rec_cog default 65;        # Recovered COG as fuel (Nm3/tCS)
 #reduce specific energy consumption
 
 #Coal DRI
-param n4_e_dri default 130;         # Electricity (kWh) per ton DRI 
+param n4_e_dri default 100;         # Electricity (kWh) per ton DRI 
 param n4_pel_dri default 1.5;       # Pellets (tons) per ton DRI 
 param n4_ore_dri default 0.1;       # Ore (tons) per ton DRI 
 param n4_c_dri default 1;           # Coal (tons) per ton DRI                 
 
 # NG DRI
-param n5_e_dri default 100;         # Electricity (kWh) per ton DRI 
+param n5_e_dri default 120;         # Electricity (kWh) per ton DRI 
 param n5_pel_dri default 1.5;       # Pellets (tons) per ton DRI  
 param n5_ore_dri default 0.1;       # Ore (tons) per ton DRI 
 param n5_ng_dri default 0.35;       # Natural gas (tons) per ton DRI      
@@ -126,10 +124,10 @@ param n8_eafg default 3;                 # EAF Gas (GJ) per tCS
 
 # Waste Heat Recovery
 param n9_u default 7884;                               # Utilization hours            
-param n9_eta default 0.2;                              # WHRS efficiency including losses                        
+param n9_eta default 0.15;                              # WHRS efficiency including losses                        
 param n9_whr {t in T} :=
-    0.3 +(0.7 - 0.3) * (t - 2025) / 25;               # WHRS penetration level from 30% in 2025 to 70% by 2050 
-param n9_grid_ef_start default 0.000757;
+    0.05 +(0.3 - 0.05) * (t - 2025) / 25;               # WHRS penetration level from 30% in 2025 to 70% by 2050 
+param n9_grid_ef_start default 0.000886; #0.000757 from grid having 36% share and 0.00096 from CPP having 64% share
 param n9_grid_ef_end default 0.0003; 
 param n9_grid_ef{t in T} :=
     n9_grid_ef_start + (n9_grid_ef_end - n9_grid_ef_start) * (t - 2025) /25;   # Grid emission factor from 2025 to 2050
@@ -138,11 +136,11 @@ param n9_grid_ef{t in T} :=
 param n10_ccs_eta default 0.85;                        # Carbon capture efficiency                      
 
 
-#--------------------------------------------------------- COST PARAMETERS ---------------------------------------------------------
+# COST PARAMETERS 
 #Global parameters (all costs are in $)
 param ng_cost_ccoal default 184;          # Cost per ton of coking coal
-param ng_cost_power default 0.08;         # Cost per kWh of grid power
-param ng_credit_power default 0.025;       # Selling cost per kWh of generated power
+param ng_cost_power default 0.07;         # Cost per kWh of grid power
+param ng_credit_power default 0.03;       # Selling cost per kWh of generated power
 param ng_cost_fineore default 65;         # Cost per ton of fineore
 param ng_cost_lime default 60;            # Cost per ton of lime
 param ng_cost_biochar default 60;         # Cost per ton of biomass
@@ -156,19 +154,18 @@ param ng_cost_ncoal default 98;          # Cost per ton of non coking coal
 
 param n0_credit_breeze default 55;        # Selling cost per ton of breeze
 param n0_credit_tar default 20;           # Selling cost per ton of tar
-param n0_capex default 50;                # CAPEX of cokeoven per tCS rpoduction
+param n0_capex default 40;                # CAPEX of cokeoven per tCS rpoduction
 
 param n1_cost_breeze default 85;          # Cost per ton of breeze                         
 param n1_capex default 30;                # CAPEX of sinter plant per tCS production
 
-param n2_capex default 100;               # CAPEX of blast furnace per tCS production
+param n2_capex default 80;               # CAPEX of blast furnace per tCS production
 
-param n3_capex default 60;                # CAPEX of BOF per tCS production        
+param n3_capex default 40;                # CAPEX of BOF per tCS production        
                         
 param n4_capex_coal default 110;          # CAPEX of Coal-DRI per tCS production
 
-param n5_capex_ng{t in T} :=
-    90 + (70 - 90) * (t - 2025) / 25;     # CAPEX of NG-DRI per tCS production
+param n5_capex_ng := 90;                  # CAPEX of NG-DRI per tCS production
 param n5_cost_NG {t in T} default 10;     # Cost of natural gas per MMBtu
 
 param ng_cost_h2_start default 4500;
@@ -201,7 +198,7 @@ param labor_cost default 20;              # Labor cost per tCS
 param maintenance_cost default 15;        # Maintenance cost per tCS
 param other_opex default 10;              # Other opex per tCS
 
-#--------------------------------------------------------- OTHER PARAMETERS ---------------------------------------------------------
+# OTHER PARAMETERS
 param real_discount_rate := 0.06;
 param eps := 1e-3;
 param eps2:= 1e-2;

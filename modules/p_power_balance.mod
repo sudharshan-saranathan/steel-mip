@@ -1,6 +1,4 @@
-# ============================================================
 # Total Power Balance 
-# ============================================================
 
 s.t. total_power_balance{t in T}:
       coke_power_in[t]
@@ -20,5 +18,6 @@ s.t. total_power_balance{t in T}:
     - cdq_power_out[t]
     - sinterwaste_power_out[t]
     - bf_trt_out[t]
+    - whr_power_generated[t]
     - grid_power_in[t]
-    = 0;                                                          # eq79
+    = 0;                                # eq83

@@ -1,6 +1,5 @@
-# ============================================================
+
 # Sinter Plant 
-# ============================================================
 # Power 
 s.t. sinter_power_balance{t in T}:
     n1_e_sint * bf_sinter_in[t] - sinter_power_in[t] = 0;              # eq9

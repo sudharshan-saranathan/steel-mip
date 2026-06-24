@@ -1,9 +1,7 @@
-# ============================================
-# COAL DRI 
-# ============================================
-# Fix 2: coaldri_output is now a primary decision variable; the coal/NG/H2
-# split is enforced linearly by dri_route_split (k_dri_h2.mod), replacing the
-# old bilinear  f_cdri[t] * dri_eaf_steel_out[t] = coaldri_output[t]  (eq46).
+# COAL DRI
+# Linearization: coaldri_output is now a primary decision variable; the coal/NG/H2
+# split is enforced linearly by dri_route_split (k_dri_h2.mod), replacing the old
+# bilinear  f_cdri[t] * dri_eaf_steel_out[t] = coaldri_output[t]  (eq46).
 
 # Power consumption (Coal DRI)
 s.t. coaldri_power_balance{t in T}:

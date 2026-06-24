@@ -1,10 +1,8 @@
-
-# =====================================================
 # EAF-I (DRI-EAF) 
-# =====================================================
+
 # Fraction of total steel going to EAF
 s.t. eaf_steel_fraction{t in T}:
-    f_eaf[t] * total_steel[t] - steel_eaf[t] = 0;                 # eq61
+    f_eaf[t] * dem[t] - steel_eaf[t] = 0;                 # eq61  (total_steel pinned to dem[t] by meet_demand => linear)
 
 # Power consumption
 s.t. eaf_power_balance{t in T}:

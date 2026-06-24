@@ -3,8 +3,8 @@
 # ==================================================
 let base_demand := 152200000;
 let growth_rate := 0.05;
-param avg_emi   :=1.6;
-#let emi_limit :=1.4085;
+param avg_emi   :=1.65;
+#let emi_limit :=1.5353;
 
 # ==================================================
 # NG DRI
@@ -13,21 +13,21 @@ param avg_emi   :=1.6;
 let {t in T} n5_cost_NG[t] := 10;
 
 
-# Shock period (2035–2040): only for shock case it is 15
-#let {t in 2035..2040} n5_cost_NG[t] := 1.5* n5_cost_NG[t];
+# Shock period (2035–2040): only for shock case it is 1.5 times
+#let {t in 2035..2040} n5_cost_NG[t] := 22.5;
 
 # ==================================================
 # H2 DRI
 # ==================================================
 let ng_cost_h2_start := 4500;        # Cost of hydrogen per ton at 2025
-let ng_cost_h2_end := 4000;          # Cost of hydrogen per ton by 2050
-let ng_h2_start_year := 2045;
+let ng_cost_h2_end := 1000;          # Cost of hydrogen per ton by 2050
+let ng_h2_start_year := 2030;
 # ==================================================
 # EAF (Scrap-Based)
 # ==================================================
 let n8_scrap_rate := 0.06;      # Assumed annual growth rate of scrap
 let ng_cost_scrap :=350;        #Assumed scrap cost
-let n8_scrap_limit[first(T)] := 32000000;
+let n8_scrap_limit[first(T)] := 33500000;
 
 let {t in T: ord(t) > 1}
     n8_scrap_limit[t] :=
@@ -41,7 +41,7 @@ let n9_grid_ef_end := 0.0003;      # Projected Grid emission factor by 2050
 # ==================================================
 # Carbon Capture
 # ==================================================
-let n10_ccs_cost_start := 150;   # Carbon capture cost per ton in 2025
+let n10_ccs_cost_start := 125;   # Carbon capture cost per ton in 2025
 let n10_ccs_cost_end := 75;      # Projected carbon capture cost in 2050
 
 
@@ -59,32 +59,7 @@ s.t. H2_growth_limit{t in T: t > ng_h2_start_year}:
 
 #Natural gas cap (10% of availability of national scale)
 #Policy case
-let n5_ng_cap[2025] := 5348550;
-let n5_ng_cap[2026] := 5837475;
-let n5_ng_cap[2027] := 6255750;
-let n5_ng_cap[2028] := 6858225;
-let n5_ng_cap[2029] := 7423650;
-let n5_ng_cap[2030] := 8072400;
-let n5_ng_cap[2031] := 8607675;
-let n5_ng_cap[2032] := 9406125;
-let n5_ng_cap[2033] := 10082025;
-let n5_ng_cap[2034] := 10712475;
-let n5_ng_cap[2035] := 11564325;
-let n5_ng_cap[2036] := 12288000;
-let n5_ng_cap[2037] := 13200225;
-let n5_ng_cap[2038] := 13981425;
-let n5_ng_cap[2039] := 14888175;
-let n5_ng_cap[2040] := 16005825;
-let n5_ng_cap[2041] := 17251125;
-let n5_ng_cap[2042] := 18530025;
-let n5_ng_cap[2043] := 19873800;
-let n5_ng_cap[2044] := 21298125;
-let n5_ng_cap[2045] := 22720575;
-let n5_ng_cap[2046] := 24322950;
-let n5_ng_cap[2047] := 26068350;
-let n5_ng_cap[2048] := 28078575;
-let n5_ng_cap[2049] := 30162075;
-let n5_ng_cap[2050] := 32203275;
+
 
 #BAU Values
 #let n5_ng_cap[2025] := 5348550;
@@ -115,33 +90,33 @@ let n5_ng_cap[2050] := 32203275;
 #let n5_ng_cap[2050] := 10662075;
 
 #Shock case
-#let n5_ng_cap[2025] := 5348550;
-#let n5_ng_cap[2026] := 5856675;
-#let n5_ng_cap[2027] := 6343875;
-#let n5_ng_cap[2028] := 6851550;
-#let n5_ng_cap[2029] := 7526175;
-#let n5_ng_cap[2030] := 8293950;
-#let n5_ng_cap[2031] := 8967150;
-#let n5_ng_cap[2032] := 9523425;
-#let n5_ng_cap[2033] := 10172625;
-#let n5_ng_cap[2034] := 10928175;
-#let n5_ng_cap[2035] := 7842225;
-#let n5_ng_cap[2036] := 7999125;
-#let n5_ng_cap[2037] := 8188200;
-#let n5_ng_cap[2038] := 8300550;
-#let n5_ng_cap[2039] := 8411025;
-#let n5_ng_cap[2040] := 8708775;
-#let n5_ng_cap[2041] := 11721825;
-#let n5_ng_cap[2042] := 12549000;
-#let n5_ng_cap[2043] := 13532700;
-#let n5_ng_cap[2044] := 14522775;
-#let n5_ng_cap[2045] := 15491025;
-#let n5_ng_cap[2046] := 16623450;
-#let n5_ng_cap[2047] := 17940750;
-#let n5_ng_cap[2048] := 19201050;
-#let n5_ng_cap[2049] := 20696025;
-#let n5_ng_cap[2050] := 21911625;
 
+let n5_ng_cap[2025] := 5348550;
+let n5_ng_cap[2026] := 5856675;
+let n5_ng_cap[2027] := 6343875;
+let n5_ng_cap[2028] := 6851550;
+let n5_ng_cap[2029] := 7526175;
+let n5_ng_cap[2030] := 8293950;
+let n5_ng_cap[2031] := 8967150;
+let n5_ng_cap[2032] := 9523425;
+let n5_ng_cap[2033] := 10172625;
+let n5_ng_cap[2034] := 10928175;
+let n5_ng_cap[2035] := 7842225;
+let n5_ng_cap[2036] := 7999125;
+let n5_ng_cap[2037] := 8188200;
+let n5_ng_cap[2038] := 8300550;
+let n5_ng_cap[2039] := 8411025;
+let n5_ng_cap[2040] := 8708775;
+let n5_ng_cap[2041] := 11721825;
+let n5_ng_cap[2042] := 12549000;
+let n5_ng_cap[2043] := 13532700;
+let n5_ng_cap[2044] := 14522775;
+let n5_ng_cap[2045] := 15491025;
+let n5_ng_cap[2046] := 16623450;
+let n5_ng_cap[2047] := 17940750;
+let n5_ng_cap[2048] := 19201050;
+let n5_ng_cap[2049] := 20696025;
+let n5_ng_cap[2050] := 21911625;
 
 
 #let carbon_tax :=200;

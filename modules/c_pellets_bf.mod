@@ -1,6 +1,4 @@
-# ============================================================
 # Pellets for BF 
-# ============================================================
 s.t. pellets_bf_power_balance{t in T}:
     ng_e_pell * bf_pellets_in[t] - pellets_bf_power[t] = 0;     # eq16
     

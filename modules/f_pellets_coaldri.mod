@@ -1,6 +1,4 @@
-# ============================================================
 # Pellets for Coal DRI 
-# ============================================================
 
 s.t. pellets_coaldri_fineore_balance{t in T}:
     coaldri_pellets_in[t] / ng_ore_pell - pellets_fineore_coaldri[t] = 0;    # eq40

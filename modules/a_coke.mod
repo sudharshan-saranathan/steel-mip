@@ -1,6 +1,6 @@
-# ============================
+
 # Coke Oven balances 
-# ============================
+
 s.t. coke_power_balance{t in T}:
     n0_e_c * bf_coke_in[t] - coke_power_in[t] = 0;       # eq1
     

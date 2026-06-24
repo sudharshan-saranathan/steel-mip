@@ -1,10 +1,9 @@
-# ============================================
-# H2 DRI 
-# ============================================
+# H2 DRI
 
-# Fix 2: linear route split (replaces the bilinear eq46/eq51/eq56 product
+# Linearization: linear route split (replaces the bilinear eq46/eq51/eq56 product
 # definitions). The coal/NG/H2 route outputs must sum to DRI-EAF steel; the
-# optimizer chooses the split directly, and h2 >= 0 enforces f_cdri+f_ngdri <= 1.
+# optimizer chooses the split directly, and h2dri_output >= 0 enforces the implicit
+# f_cdri + f_ngdri <= 1.
 s.t. dri_route_split{t in T}:
     coaldri_output[t] + ngdri_output[t] + h2dri_output[t] - dri_eaf_steel_out[t] = 0;   # eq56
 

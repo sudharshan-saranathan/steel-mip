@@ -1,6 +1,5 @@
-# ============================
 # Blast Furnace balances
-# ============================    
+    
 s.t. power_bf_in{t in T}:
     n2_e_hm * bf_hot_metal[t] - bf_power_in[t] = 0;      # eq18
     

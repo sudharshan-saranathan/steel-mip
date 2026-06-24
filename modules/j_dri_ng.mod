@@ -1,8 +1,6 @@
+# NG DRI
 
-# ============================================
-# NG DRI (time-series)
-# ============================================
-# Fix 2: ngdri_output is now a primary decision variable; enforced by
+# Linearization: ngdri_output is now a primary decision variable; enforced by
 # dri_route_split (k_dri_h2.mod), replacing the old bilinear
 #   f_ngdri[t] * dri_eaf_steel_out[t] = ngdri_output[t]  (eq51).
 
