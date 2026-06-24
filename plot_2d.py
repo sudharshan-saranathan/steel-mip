@@ -46,8 +46,8 @@ def heatmap(ax, grid, title, cbar_label, cmap, fmt="{:.0f}"):
     ax.xaxis.set_major_locator(ticker.MaxNLocator(5))
     ax.yaxis.set_major_locator(ticker.MaxNLocator(5))
 
-heatmap(axes[0], cost_grid, "Levelised steel cost (2050)", "$/t crude steel", "YlOrRd")
-heatmap(axes[1], emis_grid, "Emissions intensity (2050)",  "tCO₂ / t steel",  "RdYlGn_r")
+heatmap(axes[0], cost_grid, "Levelised steel cost (2050)", "$/t crude steel", "nipy_spectral")
+heatmap(axes[1], emis_grid, "Emissions intensity (2050)",  "tCO₂ / t steel",  "nipy_spectral")
 
 plt.tight_layout()
 out = os.path.join(OUTDIR, "heatmap_2d.png")

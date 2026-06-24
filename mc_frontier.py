@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+"""
+Feasibility frontier across the 48 structural cells (NG x scrap x H2-timing).
+
+Feasibility of the avg_emi target is PRICE-INDEPENDENT (it is set by physical
+limits: NG availability cap, scrap cap, H2 ramp/timing, CCS capturable base),
+so one solve per cell suffices. We solve each cell at a single representative
+price point and record solve_result + the achieved lifetime-average emissions.
+
+Output: mc_frontier.csv (one row per cell) + a printed feasibility table.
+"""
+import os, csv, itertools
+from amplpy import AMPL, add_to_path
+import ampl_module_base
+
+add_to_path(os.environ.get("AMPL_DIR",
+            os.path.join(os.path.dirname(ampl_module_base.__file__), "bin")))
+
+PROJECT = os.path.dirname(os.path.abspath(__file__))
+os.chdir(PROJECT)
+
+NG_SCENARIOS = ["normal", "shock", "optimistic"]
+SCRAP_REGIMES = ["starved", "low", "modest", "optimistic"]
+H2_YEARS = [2030, 2035, 2040, 2045]
+
+SCEN_FILE  = {s: f"scenarios/ng_avail_{s}.mod" for s in NG_SCENARIOS}
+SCRAP_FILE = {r: f"scenarios/scrap_{r}.mod"    for r in SCRAP_REGIMES}
+
+# representative price point (feasibility is price-independent; any point works)
+NG_COST, H2_COST, CCS_COST = 15.0, 2500.0, 75.0
+
+with open("template.mod") as fh:
+    TEMPLATE = fh.read()
+TEMPLATE = "\n".join(l for l in TEMPLATE.splitlines()
+                     if "include yreport.mod" not in l and "include report.mod" not in l)
+TEMPLATE = TEMPLATE.replace(
+    "option gurobi_options 'Threads=5 TimeLimit=600 mipgap=0.002';",
+    "option gurobi_options 'Threads=10 TimeLimit=120 mipgap=0.0001';")
+
+
+def model_for(scen, scrap, h2year):
+    s = TEMPLATE
+    for tok, val in (("NGVAL", NG_COST), ("H2ENDVAL", H2_COST),
+                     ("H2YEARVAL", h2year), ("CCSVAL", CCS_COST),
+                     ("SCRAPREGIMEFILE", SCRAP_FILE[scrap]),
+                     ("NGAVAILFILE", SCEN_FILE[scen])):
+        s = s.replace(tok, str(val))
+    return s
+
+
+def main():
+    rows = []
+    ampl = AMPL()
+    print(f"{'NG':11s} {'scrap':11s} {'H2yr':>5s} {'status':>11s} {'life_avg_emis':>13s}")
+    for i, (scen, scrap, h2y) in enumerate(
+            itertools.product(NG_SCENARIOS, SCRAP_REGIMES, H2_YEARS)):
+        if i and i % 16 == 0:
+            ampl.close(); ampl = AMPL()
+        emis = ""
+        try:
+            ampl.eval(model_for(scen, scrap, h2y))
+            status = ampl.get_value("solve_result")
+            if status == "solved":
+                se = ampl.get_value("sum{t in T} total_emissions[t]")
+                ss = ampl.get_value("sum{t in T} total_steel[t]")
+                emis = round(se / ss, 4) if ss else ""
+        except Exception as e:
+            status = "error:" + str(e).splitlines()[0][:40]
+        rows.append({"ng_scenario": scen, "scrap_regime": scrap,
+                     "h2_start_year": h2y, "status": status,
+                     "lifetime_avg_emis": emis})
+        flag = "" if status == "solved" else "  <-- INFEASIBLE" if status == "infeasible" else f"  <-- {status}"
+        print(f"{scen:11s} {scrap:11s} {h2y:>5d} {status:>11s} {str(emis):>13s}{flag}")
+
+    with open("mc_frontier.csv", "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        w.writeheader(); w.writerows(rows)
+
+    n_feas = sum(1 for r in rows if r["status"] == "solved")
+    print(f"\nFeasible cells: {n_feas}/{len(rows)}  "
+          f"(infeasible: {len(rows)-n_feas})  -> mc_frontier.csv")
+
+
+if __name__ == "__main__":
+    main()

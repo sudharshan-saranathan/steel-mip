@@ -29,15 +29,22 @@ N_CCS     = int(os.environ.get("MC2D_NCCS", "100"))
 H2_START  = int(os.environ.get("MC2D_H2_START", "0"))
 H2_END    = int(os.environ.get("MC2D_H2_END",   str(N_H2)))
 SCENARIO  = os.environ.get("MC_SCENARIO", "normal")
+SCRAP_REGIME = os.environ.get("MC_SCRAP_REGIME", "modest")
 OUT_CSV   = os.path.join(PROJECT, os.environ.get("MC_OUT", "mc_2d_results.csv"))
 
 SCEN_FILE = {"normal":     "scenarios/ng_avail_normal.mod",
              "shock":      "scenarios/ng_avail_shock.mod",
              "optimistic": "scenarios/ng_avail_optimistic.mod"}[SCENARIO]
 
+# Scrap-availability regime (discrete axis, mirrors the NG scenario above).
+# Common 35 Mt 2025 base; regimes differ by growth: 0/2/4/6 %/yr.
+SCRAP_FILE = {"starved":    "scenarios/scrap_starved.mod",     # 0%/yr
+              "low":        "scenarios/scrap_low.mod",          # 2%/yr
+              "modest":     "scenarios/scrap_modest.mod",       # 4%/yr
+              "optimistic": "scenarios/scrap_optimistic.mod"}[SCRAP_REGIME]  # 6%/yr
+
 NG_FIXED      = 15.0    # $/MMBtu
-H2YEAR_FIXED  = 2030
-SCRAP_FIXED   = 0.06
+H2YEAR_FIXED  = int(os.environ.get("MC_H2YEAR", "2030"))   # H2-DRI start year (structural axis)
 
 H2_GRID  = np.linspace(1000.0, 4500.0, N_H2)
 CCS_GRID = np.linspace(  25.0,  125.0, N_CCS)
@@ -49,13 +56,13 @@ TEMPLATE = "\n".join(l for l in TEMPLATE.splitlines()
                      if "include yreport.mod" not in l and "include report.mod" not in l)
 TEMPLATE = TEMPLATE.replace(
     "option gurobi_options 'Threads=5 TimeLimit=600 mipgap=0.002';",
-    f"option gurobi_options 'Threads={os.environ.get('MC2D_THREADS','10')} TimeLimit=120 mipgap=0.002';")
+    f"option gurobi_options 'Threads={os.environ.get('MC2D_THREADS','10')} TimeLimit=120 mipgap={os.environ.get('MC2D_MIPGAP','0.002')}';")
 
 def model_for(h2end, ccs):
     s = TEMPLATE
     for tok, val in (("NGVAL", NG_FIXED), ("H2ENDVAL", h2end),
                      ("H2YEARVAL", H2YEAR_FIXED), ("CCSVAL", ccs),
-                     ("SCRAPVAL", SCRAP_FIXED), ("NGAVAILFILE", SCEN_FILE)):
+                     ("SCRAPREGIMEFILE", SCRAP_FILE), ("NGAVAILFILE", SCEN_FILE)):
         s = s.replace(tok, str(val))
     return s
 
@@ -75,7 +82,7 @@ EXPR = {
     "ng2050":   "ngdri_output[2050]", "h2_2050": "h2dri_output[2050]",
 }
 
-FIELDS = (["i_h2", "i_ccs", "h2_end_cost", "ccs_end_cost", "scenario", "status",
+FIELDS = (["i_h2", "i_ccs", "h2_end_cost", "ccs_end_cost", "scenario", "scrap_regime", "status",
            "obj", "lifetime_avg_cost", "levelized_avg_cost", "lifetime_avg_emis",
            "capture_per_t", "cost_2050", "emis_2050",
            "f_bof_2050", "f_eaf_2050", "f_scrap_2050",
@@ -122,7 +129,7 @@ def main():
                 row = {"i_h2": i_h2, "i_ccs": i_ccs,
                        "h2_end_cost": round(h2end, 4),
                        "ccs_end_cost": round(ccs, 4),
-                       "scenario": SCENARIO}
+                       "scenario": SCENARIO, "scrap_regime": SCRAP_REGIME}
                 td = time.time()
                 try:
                     ampl.eval(model_for(h2end, ccs))

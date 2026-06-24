@@ -1,5 +1,11 @@
 .idea/
+.claude/
 *.csv
 *.png
+*.log
+*.out
+.DS_Store
+temp_*.mod
+cells/
 edge_cases.py
 plot_edge.py

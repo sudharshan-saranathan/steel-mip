@@ -22,10 +22,9 @@ let ng_cost_h2_end := H2ENDVAL;
 let ng_h2_start_year := H2YEARVAL;
 let n10_ccs_cost_end := CCSVAL;
 
-let n8_scrap_rate := SCRAPVAL;
-let n8_scrap_limit[first(T)] := 33500000;
-let {t in T: ord(t) > 1}
-    n8_scrap_limit[t] := n8_scrap_limit[prev(t)] * (1 + n8_scrap_rate);
+# Scrap-availability regime (starved/modest/abundant): base cap + growth.
+# Mirrors the NG-availability scenario mechanism below.
+include SCRAPREGIMEFILE;
 
 # NG-availability scenario profile (overrides n5_ng_cap set in parameters.mod)
 include NGAVAILFILE;

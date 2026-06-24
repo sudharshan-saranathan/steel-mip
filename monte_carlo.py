@@ -2,21 +2,22 @@
 """
 Monte-Carlo uncertainty study for the Steel Decarbonisation MILP.
 
-Samples four uncertain inputs from uniform priors (Latin Hypercube) over the
-old grid envelopes, solves the (now linear) model for each draw, and writes one
-CSV row per draw with the sampled inputs, key outputs, and feasibility status.
+Samples three uncertain MARKET-PRICE inputs from uniform priors (Latin Hypercube),
+solves the (now linear) model for each draw, and writes one CSV row per draw with
+the sampled inputs, key outputs, and feasibility status. Run once per structural
+cell (see below); the three discrete structural axes are fixed per run.
 
-Sampled inputs (uniform over [lo, hi]):
+Sampled inputs -- the three market prices (uniform over [lo, hi]):
     ng_cost      n5_cost_NG       $/MMBtu     [5,   25]
     h2_end_cost  ng_cost_h2_end   $/ton       [1000,4500]
     ccs_end_cost n10_ccs_cost_end $/ton       [25,  125]
-    scrap_rate   n8_scrap_rate    1/yr        [0.04,0.08]
 
-Also sampled (discrete, from the original grid years, via a 5th LHS dimension):
-    h2_start_year  ng_h2_start_year   {2030,2033,2036,2039,2042,2045}
-
-Fixed (NOT sampled):
-    NG-availability scenario          -- supply constraint, fixed to 'normal'
+Discrete STRUCTURAL axes (policy/deployment levers, fixed per run -> one "cell"):
+    NG-availability scenario  {normal, shock, optimistic}        via MC_SCENARIO
+    scrap-availability regime {starved, low, modest, optimistic} via MC_SCRAP_REGIME
+    H2-DRI start year         {e.g. 2030, 2036, 2039}            via MC_H2YEAR
+The full ensemble is the product of the three axes (e.g. 3 x 4 x 3 = 36 cells),
+each an MC of N draws over the market prices.
 """
 import os, sys, csv, time
 import numpy as np
@@ -30,20 +31,30 @@ add_to_path(os.environ.get("AMPL_DIR", _default_ampl_dir))
 
 # ----------------------------- configuration -----------------------------
 PROJECT      = os.path.dirname(os.path.abspath(__file__))
-N_SAMPLES    = int(os.environ.get("MC_N", "100000"))
+N_SAMPLES    = int(os.environ.get("MC_N", "20000"))
 SEED         = int(os.environ.get("MC_SEED", "20260624"))
-YEARS        = [2030, 2033, 2036, 2039, 2042, 2045]   # discrete H2-DRI start years (sampled)
-SCENARIO     = os.environ.get("MC_SCENARIO", "normal")     # normal|shock|optimistic
+SCENARIO     = os.environ.get("MC_SCENARIO", "normal")          # normal|shock|optimistic
+SCRAP_REGIME = os.environ.get("MC_SCRAP_REGIME", "modest")      # starved|low|modest|optimistic
+H2YEAR       = int(os.environ.get("MC_H2YEAR", "2030"))         # H2-DRI start year (discrete axis)
+GRID         = os.environ.get("MC_GRID", "")   # "nH2,nCCS,nNG" -> deterministic price grid; "" -> LHS
 OUT_CSV      = os.path.join(PROJECT, os.environ.get("MC_OUT", "mc_results.csv"))
 
 SCEN_FILE = {"normal":"scenarios/ng_avail_normal.mod",
              "shock":"scenarios/ng_avail_shock.mod",
              "optimistic":"scenarios/ng_avail_optimistic.mod"}[SCENARIO]
 
-# uniform prior bounds: [ng_cost, h2_end_cost, ccs_end_cost, scrap_rate]
-LO = np.array([5.0,   1000.0, 25.0,  0.04])
-HI = np.array([25.0,  4500.0, 125.0, 0.08])
-NAMES = ["ng_cost", "h2_end_cost", "ccs_end_cost", "scrap_rate"]
+# Scrap-availability regime: discrete structural axis (mirrors the NG scenario),
+# selected per run rather than sampled. Common 35 Mt 2025 base; regimes differ
+# by growth: starved 0%, low 2%, modest 4%, optimistic 6% per year.
+SCRAP_FILE = {"starved":"scenarios/scrap_starved.mod",
+              "low":"scenarios/scrap_low.mod",
+              "modest":"scenarios/scrap_modest.mod",
+              "optimistic":"scenarios/scrap_optimistic.mod"}[SCRAP_REGIME]
+
+# uniform prior bounds: [ng_cost, h2_end_cost, ccs_end_cost]
+LO = np.array([5.0,   1000.0, 25.0])
+HI = np.array([25.0,  4500.0, 125.0])
+NAMES = ["ng_cost", "h2_end_cost", "ccs_end_cost"]
 
 # ----------------------- build per-draw model script ----------------------
 with open(os.path.join(PROJECT, "template.mod")) as fh:
@@ -54,12 +65,14 @@ TEMPLATE = "\n".join(l for l in TEMPLATE.splitlines()
 # faster, bounded solves for the sweep (linear MILP => sub-second; cap as safety)
 TEMPLATE = TEMPLATE.replace(
     "option gurobi_options 'Threads=5 TimeLimit=600 mipgap=0.002';",
-    "option gurobi_options 'Threads=10 TimeLimit=120 mipgap=0.002';")
+    f"option gurobi_options 'Threads={os.environ.get('MC_THREADS','10')} "
+    f"TimeLimit=120 mipgap={os.environ.get('MC_MIPGAP','0.0001')}';")
 
-def model_for(ng, h2end, ccs, scrap, h2year):
+def model_for(ng, h2end, ccs, h2year):
     s = TEMPLATE
     for tok, val in (("NGVAL", ng), ("H2ENDVAL", h2end), ("H2YEARVAL", h2year),
-                     ("CCSVAL", ccs), ("SCRAPVAL", scrap), ("NGAVAILFILE", SCEN_FILE)):
+                     ("CCSVAL", ccs), ("SCRAPREGIMEFILE", SCRAP_FILE),
+                     ("NGAVAILFILE", SCEN_FILE)):
         s = s.replace(tok, str(val))
     return s
 
@@ -80,7 +93,7 @@ EXPR = {
     "ng2050":     "ngdri_output[2050]",    "h2_2050": "h2dri_output[2050]",
 }
 
-FIELDS = (["draw"] + NAMES + ["h2_start_year","scenario","status",
+FIELDS = (["draw"] + NAMES + ["h2_start_year","scenario","scrap_regime","status",
           "obj","lifetime_avg_cost","levelized_avg_cost","lifetime_avg_emis",
           "capture_per_t","cost_2050","emis_2050",
           "f_bof_2050","f_eaf_2050","f_scrap_2050",
@@ -109,28 +122,55 @@ def extract(ampl):
     }
 
 # ------------------------------- run sweep --------------------------------
+def build_inputs():
+    """Return (X, mode) where X is an (n,3) array of [ng, h2, ccs] price points.
+
+    Two modes over the three market prices (NG/H2/CCS cost); the discrete
+    structural axes (H2 year, NG availability, scrap regime) are fixed per run.
+      - MC_GRID="nH2,nCCS,nNG": deterministic asymmetric grid (a reweightable
+        "generator" -- denser on the more sensitive axes, H2 > CCS > NG).
+      - default: 3-dim Latin Hypercube of N_SAMPLES draws.
+    """
+    if GRID:
+        nh2, nccs, nng = (int(x) for x in GRID.split(","))
+        h2v  = np.linspace(LO[1], HI[1], nh2)
+        ccsv = np.linspace(LO[2], HI[2], nccs)
+        ngv  = np.linspace(LO[0], HI[0], nng)
+        NG, H2, CCS = np.meshgrid(ngv, h2v, ccsv, indexing="ij")
+        X = np.column_stack([NG.ravel(), H2.ravel(), CCS.ravel()])
+        # optional contiguous slice for parallel chunking (price grid is fixed,
+        # so any slice is reproducible and the chunks tile the full grid exactly)
+        start = int(os.environ.get("MC_GRID_START", "0"))
+        end   = int(os.environ.get("MC_GRID_END", str(len(X))))
+        total = len(X)
+        X = X[start:end]
+        return X, f"grid {nh2}x{nccs}x{nng} = {total} pts, slice [{start}:{end}]"
+    U = qmc.LatinHypercube(d=3, seed=SEED).random(n=N_SAMPLES)
+    return qmc.scale(U, LO, HI), f"LHS n={N_SAMPLES} (seed {SEED})"
+
+
 def main():
     os.chdir(PROJECT)  # so the model's relative include paths resolve
-    # 5-dim Latin Hypercube: dims 0-3 continuous (LO..HI), dim 4 -> discrete start-year
-    U = qmc.LatinHypercube(d=5, seed=SEED).random(n=N_SAMPLES)
-    X = qmc.scale(U[:, :4], LO, HI)
-    YR = [YEARS[min(len(YEARS) - 1, int(u * len(YEARS)))] for u in U[:, 4]]
+    X, mode = build_inputs()
+    n = len(X)
+    print(f"cell: NG={SCENARIO} scrap={SCRAP_REGIME} H2yr={H2YEAR}  |  {mode}", flush=True)
     RESET_EVERY = 2000   # recreate the AMPL process periodically (memory hygiene)
     ampl = AMPL()
     n_ok = n_inf = n_err = 0
     t0 = time.time()
     with open(OUT_CSV, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=FIELDS); w.writeheader()
-        for i in range(N_SAMPLES):
-            ng, h2end, ccs, scrap = X[i]; h2year = YR[i]
+        for i in range(n):
+            ng, h2end, ccs = X[i]
             if i and i % RESET_EVERY == 0:
                 ampl.close(); ampl = AMPL()
             row = {"draw": i, "ng_cost": ng, "h2_end_cost": h2end,
-                   "ccs_end_cost": ccs, "scrap_rate": scrap,
-                   "h2_start_year": h2year, "scenario": SCENARIO}
+                   "ccs_end_cost": ccs,
+                   "h2_start_year": H2YEAR, "scenario": SCENARIO,
+                   "scrap_regime": SCRAP_REGIME}
             td = time.time()
             try:
-                ampl.eval(model_for(ng, h2end, ccs, scrap, h2year))
+                ampl.eval(model_for(ng, h2end, ccs, H2YEAR))
                 status = ampl.get_value("solve_result")
                 row["status"] = status
                 if status == "solved":
@@ -144,8 +184,8 @@ def main():
             if (i + 1) % 200 == 0:
                 fh.flush()
                 el = time.time() - t0
-                print(f"{i+1}/{N_SAMPLES}  ok={n_ok} infeas={n_inf} err={n_err}  "
-                      f"{el:.0f}s  ({el/(i+1):.2f}s/draw, ETA {el/(i+1)*(N_SAMPLES-i-1)/60:.0f} min)",
+                print(f"{i+1}/{n}  ok={n_ok} infeas={n_inf} err={n_err}  "
+                      f"{el:.0f}s  ({el/(i+1):.2f}s/draw, ETA {el/(i+1)*(n-i-1)/60:.0f} min)",
                       flush=True)
     print(f"DONE  ok={n_ok} infeasible={n_inf} error={n_err}  "
           f"total {time.time()-t0:.0f}s  -> {OUT_CSV}")
