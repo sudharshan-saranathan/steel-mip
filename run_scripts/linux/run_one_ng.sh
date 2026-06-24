@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
 #
-# run_one_ng.sh — bash port of run_one_ng.bat, extended with NG-availability scenarios.
+# run_one_ng.sh (Linux) — runs the full scenario sweep for a single NG value.
 #
-# For a single NG (cost) value, loops over the requested NG-availability
-# scenarios and, within each, the (h2end x year x ccs x scrap) grid.
-# For every combination it substitutes the placeholder tokens in
-# template.mod (including the scenario include file), runs AMPL, and writes
-# output to results/NG_<NG>/<scenario>/<label>.txt
+# For one NG (cost) value, loops over the requested NG-availability scenarios
+# and, within each, the (h2end x year x ccs x scrap) grid. For every combination
+# it substitutes the placeholder tokens in template.mod (including the scenario
+# include file), runs AMPL, and writes output to
+# results/NG_<NG>/<scenario>/<label>.txt
+#
+# This script lives in run_scripts/linux/ ; the model files (template.mod,
+# modules/, scenarios/, results/) live two levels up at the project root, which
+# is where everything runs.
 #
 # Usage:   ./run_one_ng.sh <NG>
 # Example: ./run_one_ng.sh 5
 #
 # Configuration (override by exporting before calling):
-#   AMPL_EXE    path to the ampl executable   (default: /Applications/AMPL/ampl)
-#   WORKDIR     dir containing template.mod   (default: this script's dir)
+#   AMPL_EXE    path to the ampl executable   (default: ampl, i.e. found on PATH)
+#   WORKDIR     project root                  (default: two levels up)
 #   SCENARIOS   space-separated scenario keys (default: "normal shock optimistic")
 #   H2END_VALS  override h2end grid           (default: full 7 values)
 #   YEAR_VALS   override year grid            (default: full 6 values)
@@ -24,13 +28,11 @@ set -euo pipefail
 
 NG="${1:?usage: run_one_ng.sh <NG>}"
 
-AMPL_EXE="${AMPL_EXE:-/Applications/AMPL/ampl}"
-WORKDIR="${WORKDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+AMPL_EXE="${AMPL_EXE:-ampl}"
+WORKDIR="${WORKDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 cd "$WORKDIR"
 
-# Scenarios to run (default all three). Mapping to include files is done by
-# scen_file() below using a case statement (compatible with macOS bash 3.2,
-# which lacks associative arrays).
+# Scenarios to run (default all three).
 SCENARIOS="${SCENARIOS:-normal shock optimistic}"
 
 scen_file() {
@@ -74,7 +76,6 @@ for S in ${SCENARIOS}; do
 
           echo "Running ${S}/${LABEL}"
 
-          # Use | as delimiter for the scenario file (contains /).
           sed \
             -e "s/NGVAL/${NG}/g" \
             -e "s/H2ENDVAL/${A}/g" \
