@@ -12,8 +12,10 @@ Sampled inputs (uniform over [lo, hi]):
     ccs_end_cost n10_ccs_cost_end $/ton       [25,  125]
     scrap_rate   n8_scrap_rate    1/yr        [0.04,0.08]
 
+Also sampled (discrete, from the original grid years, via a 5th LHS dimension):
+    h2_start_year  ng_h2_start_year   {2030,2033,2036,2039,2042,2045}
+
 Fixed (NOT sampled):
-    H2_START_YEAR  ng_h2_start_year   -- timing assumption (change below or sample it)
     NG-availability scenario          -- supply constraint, fixed to 'normal'
 """
 import os, sys, csv, time
@@ -25,7 +27,7 @@ from amplpy import AMPL
 PROJECT      = os.path.dirname(os.path.abspath(__file__))
 N_SAMPLES    = int(os.environ.get("MC_N", "20000"))
 SEED         = int(os.environ.get("MC_SEED", "20260624"))
-H2_START_YEAR= int(os.environ.get("MC_H2YEAR", "2035"))   # fixed timing assumption
+YEARS        = [2030, 2033, 2036, 2039, 2042, 2045]   # discrete H2-DRI start years (sampled)
 SCENARIO     = os.environ.get("MC_SCENARIO", "normal")     # normal|shock|optimistic
 OUT_CSV      = os.path.join(PROJECT, os.environ.get("MC_OUT", "mc_results.csv"))
 
@@ -49,9 +51,9 @@ TEMPLATE = TEMPLATE.replace(
     "option gurobi_options 'Threads=5 TimeLimit=600 nonconvex=2 mipgap=0.002';",
     "option gurobi_options 'Threads=4 TimeLimit=120 nonconvex=2 mipgap=0.002';")
 
-def model_for(ng, h2end, ccs, scrap):
+def model_for(ng, h2end, ccs, scrap, h2year):
     s = TEMPLATE
-    for tok, val in (("NGVAL", ng), ("H2ENDVAL", h2end), ("H2YEARVAL", H2_START_YEAR),
+    for tok, val in (("NGVAL", ng), ("H2ENDVAL", h2end), ("H2YEARVAL", h2year),
                      ("CCSVAL", ccs), ("SCRAPVAL", scrap), ("NGAVAILFILE", SCEN_FILE)):
         s = s.replace(tok, str(val))
     return s
@@ -104,22 +106,26 @@ def extract(ampl):
 # ------------------------------- run sweep --------------------------------
 def main():
     os.chdir(PROJECT)  # so the model's relative include paths resolve
-    X = qmc.scale(qmc.LatinHypercube(d=4, seed=SEED).random(n=N_SAMPLES), LO, HI)
+    # 5-dim Latin Hypercube: dims 0-3 continuous (LO..HI), dim 4 -> discrete start-year
+    U = qmc.LatinHypercube(d=5, seed=SEED).random(n=N_SAMPLES)
+    X = qmc.scale(U[:, :4], LO, HI)
+    YR = [YEARS[min(len(YEARS) - 1, int(u * len(YEARS)))] for u in U[:, 4]]
     RESET_EVERY = 2000   # recreate the AMPL process periodically (memory hygiene)
     ampl = AMPL()
     n_ok = n_inf = n_err = 0
     t0 = time.time()
     with open(OUT_CSV, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=FIELDS); w.writeheader()
-        for i, (ng, h2end, ccs, scrap) in enumerate(X):
+        for i in range(N_SAMPLES):
+            ng, h2end, ccs, scrap = X[i]; h2year = YR[i]
             if i and i % RESET_EVERY == 0:
                 ampl.close(); ampl = AMPL()
             row = {"draw": i, "ng_cost": ng, "h2_end_cost": h2end,
                    "ccs_end_cost": ccs, "scrap_rate": scrap,
-                   "h2_start_year": H2_START_YEAR, "scenario": SCENARIO}
+                   "h2_start_year": h2year, "scenario": SCENARIO}
             td = time.time()
             try:
-                ampl.eval(model_for(ng, h2end, ccs, scrap))
+                ampl.eval(model_for(ng, h2end, ccs, scrap, h2year))
                 status = ampl.get_value("solve_result")
                 row["status"] = status
                 if status == "solved":
