@@ -33,7 +33,7 @@ add_to_path(os.environ.get("AMPL_DIR", _default_ampl_dir))
 PROJECT      = os.path.dirname(os.path.abspath(__file__))
 N_SAMPLES    = int(os.environ.get("MC_N", "20000"))
 SEED         = int(os.environ.get("MC_SEED", "20260624"))
-SCENARIO     = os.environ.get("MC_SCENARIO", "normal")          # normal|shock|optimistic
+SCENARIO     = "normal"                                          # NG availability fixed; not a structural axis
 SCRAP_REGIME = os.environ.get("MC_SCRAP_REGIME", "modest")      # starved|low|modest|optimistic
 H2YEAR       = int(os.environ.get("MC_H2YEAR", "2030"))         # H2-DRI start year (discrete axis)
 GRID         = os.environ.get("MC_GRID", "")   # "nH2,nCCS,nNG" -> deterministic price grid; "" -> LHS
@@ -45,12 +45,10 @@ TRAJ_OUT     = os.environ.get("MC_TRAJ_OUT", "")   # if set, also write a year-b
 TRAJ_ENTS = ["total_steel", "steel_bof", "steel_scrap_eaf", "coaldri_output",
              "ngdri_output", "h2dri_output", "total_cost", "total_emissions", "total_ccs"]
 
-SCEN_FILE = {"normal":"scenarios/ng_avail_normal.mod",
-             "shock":"scenarios/ng_avail_shock.mod",
-             "optimistic":"scenarios/ng_avail_optimistic.mod"}[SCENARIO]
+SCEN_FILE = "scenarios/ng_avail_normal.mod"
 
-# Scrap-availability regime: discrete structural axis (mirrors the NG scenario),
-# selected per run rather than sampled. Common 35 Mt 2025 base; regimes differ
+# Scrap-availability regime: discrete structural axis (see scrap_*.mod). Common
+# 35 Mt 2025 base; regimes differ
 # by growth: starved 0%, low 2%, modest 4%, optimistic 6% per year.
 SCRAP_FILE = {"starved":"scenarios/scrap_starved.mod",
               "low":"scenarios/scrap_low.mod",
@@ -99,7 +97,7 @@ EXPR = {
     "ng2050":     "ngdri_output[2050]",    "h2_2050": "h2dri_output[2050]",
 }
 
-FIELDS = (["draw"] + NAMES + ["h2_start_year","scenario","scrap_regime","status",
+FIELDS = (["draw"] + NAMES + ["h2_start_year","scrap_regime","status",
           "obj","lifetime_avg_cost","levelized_avg_cost","lifetime_avg_emis",
           "capture_per_t","cost_2050","emis_2050",
           "f_bof_2050","f_eaf_2050","f_scrap_2050",
@@ -159,7 +157,7 @@ def main():
     os.chdir(PROJECT)  # so the model's relative include paths resolve
     X, mode = build_inputs()
     n = len(X)
-    print(f"cell: NG={SCENARIO} scrap={SCRAP_REGIME} H2yr={H2YEAR}  |  {mode}", flush=True)
+    print(f"cell: scrap={SCRAP_REGIME} H2yr={H2YEAR}  |  {mode}", flush=True)
     RESET_EVERY = 2000   # recreate the AMPL process periodically (memory hygiene)
     ampl = AMPL()
     n_ok = n_inf = n_err = 0
@@ -178,8 +176,7 @@ def main():
                 ampl.close(); ampl = AMPL()
             row = {"draw": i, "ng_cost": ng, "h2_end_cost": h2end,
                    "ccs_end_cost": ccs,
-                   "h2_start_year": H2YEAR, "scenario": SCENARIO,
-                   "scrap_regime": SCRAP_REGIME}
+                   "h2_start_year": H2YEAR, "scrap_regime": SCRAP_REGIME}
             td = time.time()
             try:
                 ampl.eval(model_for(ng, h2end, ccs, H2YEAR))

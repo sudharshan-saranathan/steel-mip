@@ -1,0 +1,17 @@
+scrap_regime,h2_start_year,status,lifetime_avg_emis
+starved,2030,solved,1.601
+starved,2035,solved,1.601
+starved,2040,infeasible,
+starved,2045,infeasible,
+low,2030,solved,1.601
+low,2035,solved,1.601
+low,2040,infeasible,
+low,2045,infeasible,
+modest,2030,solved,1.601
+modest,2035,solved,1.601
+modest,2040,solved,1.601
+modest,2045,solved,1.601
+optimistic,2030,solved,1.601
+optimistic,2035,solved,1.601
+optimistic,2040,solved,1.601
+optimistic,2045,solved,1.601

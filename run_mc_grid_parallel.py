@@ -31,9 +31,7 @@ sz = (TOTAL + N_PROCS - 1) // N_PROCS
 chunks = [(i * sz, min((i + 1) * sz, TOTAL)) for i in range(N_PROCS)]
 chunks = [c for c in chunks if c[0] < c[1]]
 
-cell = f"NG={os.environ.get('MC_SCENARIO','normal')} " \
-       f"scrap={os.environ.get('MC_SCRAP_REGIME','modest')} " \
-       f"H2yr={os.environ.get('MC_H2YEAR','2030')}"
+cell = f"scrap={os.environ.get('MC_SCRAP_REGIME','modest')} H2yr={os.environ.get('MC_H2YEAR','2030')}"
 print(f"Grid generator | {cell} | {nh2}x{nccs}x{nng} = {TOTAL} pts | {len(chunks)} procs")
 t0 = time.time()
 
