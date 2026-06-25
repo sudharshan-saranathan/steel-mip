@@ -53,8 +53,11 @@ s.t. No_H2_Before{t in T: t < ng_h2_start_year}:
 s.t. H2_growth_cap{t in T: t = ng_h2_start_year}:
     h2dri_h2_in[t] <= H2_cap;
 
+# H2 availability is a FIXED additive slab (NOT CAGR): hydrogen input starts at the
+# initial availability (H2_cap, via H2_growth_cap) and grows by at most ramp_frac *
+# H2_cap per year. Replaces the old max(1.15*prev, H2_cap) compounding limiter.
 s.t. H2_growth_limit{t in T: t > ng_h2_start_year}:
-    h2dri_h2_in[t] <= max(1.15 * h2dri_h2_in[prev(t)], H2_cap);
+    h2dri_h2_in[t] - h2dri_h2_in[prev(t)] <= ramp_frac * H2_cap;
 
 
 #Natural gas cap (10% of availability of national scale)

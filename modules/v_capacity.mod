@@ -108,22 +108,32 @@ s.t. cap_lim_scrap{t in T}: steel_scrap_eaf[t] <= cap_scrap[t];
 # ----------------------------------------------------------------------------
 s.t. capex_cost_def{t in T}:
     capex_cost[t] =
-        ocapex_bof      * build_bof[t]
-      + ocapex_cdri     * build_cdri[t]
-      + ocapex_ngdri    * build_ngdri[t]
-      + ocapex_h2dri[t] * build_h2dri[t]
-      + ocapex_scrap    * build_scrap[t];
+      sunk * (   ocapex_bof      * build_bof[t]          # sunk: overnight capex on builds
+               + ocapex_cdri     * build_cdri[t]
+               + ocapex_ngdri    * build_ngdri[t]
+               + ocapex_h2dri[t] * build_h2dri[t]
+               + ocapex_scrap    * build_scrap[t] )
+    + (1-sunk) * ( acapex_bof    * steel_bof[t]          # not sunk: annualized capex on production
+               + acapex_cdri     * coaldri_output[t]
+               + acapex_ngdri    * ngdri_output[t]
+               + acapex_h2dri[t] * h2dri_output[t]
+               + acapex_scrap    * steel_scrap_eaf[t] );
 
 # Fixed opex (labour + maintenance) on installed capacity, crude-steel basis.
 # DRI-route capacities are on the 0.9*steel_eaf basis, so divide by (1-n7_phi_eaf)
 # to recover crude-steel capacity before applying the per-tCS fixed-opex rate.
 s.t. fixopex_cost_def{t in T}:
     fixopex_cost[t] =
-        fopex_bof   * cap_bof[t]
-      + fopex_cdri  * cap_cdri[t]  / (1 - n7_phi_eaf)
-      + fopex_ngdri * cap_ngdri[t] / (1 - n7_phi_eaf)
-      + fopex_h2dri * cap_h2dri[t] / (1 - n7_phi_eaf)
-      + fopex_scrap * cap_scrap[t];
+      sunk * (   fopex_bof   * cap_bof[t]                          # sunk: fixed opex on capacity
+               + fopex_cdri  * cap_cdri[t]  / (1 - n7_phi_eaf)
+               + fopex_ngdri * cap_ngdri[t] / (1 - n7_phi_eaf)
+               + fopex_h2dri * cap_h2dri[t] / (1 - n7_phi_eaf)
+               + fopex_scrap * cap_scrap[t] )
+    + (1-sunk) * ( fopex_bof   * steel_bof[t]                      # not sunk: fixed opex on production
+               + fopex_cdri  * coaldri_output[t]  / (1 - n7_phi_eaf)
+               + fopex_ngdri * ngdri_output[t] / (1 - n7_phi_eaf)
+               + fopex_h2dri * h2dri_output[t] / (1 - n7_phi_eaf)
+               + fopex_scrap * steel_scrap_eaf[t] );
 
 # ============================================================================
 # CCS retrofit capacity (sunk capex; legacy = 0, no CCS in 2025). Mirrors the

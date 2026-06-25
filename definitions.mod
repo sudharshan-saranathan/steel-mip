@@ -274,6 +274,13 @@ param ocapex_scrap := acapex_scrap / crf_scrap;
 #     exempt (future entrant; governed by the H2 availability mechanism).
 param ramp_frac default 0.15;
 
+# Ablation toggle for the sunk-capital effect:
+#   sunk=1 (default, real model): capex on BUILDS, fixed opex on CAPACITY -> capital
+#     committed once built; idling/stranding does not recover it.
+#   sunk=0 (counterfactual): capex + fixed opex charged on PRODUCTION (old LCOE style),
+#     so building-then-idling costs nothing -> the optimizer can switch tech freely.
+param sunk default 1;
+
 # --- CCS retrofit: same overnight-capex + fixed/variable-opex structure as routes.
 #     n10_ccs_cost ($/tCO2) is the NON-ENERGY capital+O&M figure; energy is charged
 #     separately as power_ccs*ng_cost_power (so CCS cost AND emissions both respond
