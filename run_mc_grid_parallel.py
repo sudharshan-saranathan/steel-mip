@@ -75,13 +75,23 @@ for p, (a, b) in enumerate(chunks):
                             stdout=subprocess.DEVNULL, stderr=ef)
     procs.append((p, proc, chunks[p], out, tout, ef, stderr_path))
 
+# Per-chunk wall-clock budget: 200 draws × 120s solver TimeLimit = 24 000s
+# theoretical max, but healthy solves finish in ~1s each so 300s is generous.
+CHUNK_TIMEOUT = int(os.environ.get("MC_CHUNK_TIMEOUT", "300"))
+
 for p, proc, (a, b), out, tout, ef, stderr_path in procs:
-    proc.wait()
+    try:
+        proc.wait(timeout=CHUNK_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+        print(f"  chunk {p} timed out after {CHUNK_TIMEOUT}s, retrying…")
     ef.close()
     if proc.returncode != 0 or not os.path.exists(out):
         with open(stderr_path) as sf:
             tail = sf.read()[-800:]
-        print(f"  chunk {p} failed (rc={proc.returncode}), retrying…\n{tail}")
+        if tail:
+            print(f"  chunk {p} failed (rc={proc.returncode}):\n{tail}")
         run_chunk(p, a, b, out, tout)
     if os.path.exists(stderr_path):
         os.remove(stderr_path)
