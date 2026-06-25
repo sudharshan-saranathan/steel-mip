@@ -83,40 +83,12 @@ s.t. h2dri_prod_down{t in T: t > ng_h2_start_year}:
 # ccs_avail[t] ceiling in q_carbon_capture.mod (infrastructure/logistics ramp),
 # which replaces the former per-route |Dccs| <= ramp*eta*capbase + slack limits.
 
-# Binary Constraints for switches
-# Linearization: phase-in switches re-expressed on the captured AMOUNT. The big-M
-# is route/year specific (Mccs_* = n10_ccs_eta*fc_max*cap_ub_*, defined in
-# q_carbon_capture.mod). Semantics unchanged: while dec_switch=0 the captured
-# amount is non-decreasing; once the (monotone) switch flips to 1 it is non-increasing.
-#BF Carbon Capture
-s.t. bf_switch_monotonic {t in T: ord(t) > 1}:
-    dec_switch_bf[t] >= dec_switch_bf[prev(t)];
-
-s.t. bf_increase_phase {t in T: ord(t) > 1}:
-    ccs_bf[t] - ccs_bf[prev(t)] >= -Mccs_bf[t] * dec_switch_bf[t];
-
-s.t. bf_decrease_phase {t in T: ord(t) > 1}:
-    ccs_bf[t] - ccs_bf[prev(t)] <= Mccs_bf[t] * (1 - dec_switch_bf[t]);
-
-#Coal DRI Carbon Capture
-s.t. cdri_switch_monotonic {t in T: ord(t) > 1}:
-    dec_switch_cdri[t] >= dec_switch_cdri[prev(t)];
-
-s.t. cdri_increase_phase {t in T: ord(t) > 1}:
-    ccs_cdri[t] - ccs_cdri[prev(t)] >= -Mccs_cdri[t] * dec_switch_cdri[t];
-
-s.t. cdri_decrease_phase {t in T: ord(t) > 1}:
-    ccs_cdri[t] - ccs_cdri[prev(t)] <= Mccs_cdri[t] * (1 - dec_switch_cdri[t]);
-
-# NG DRI Carbon Capture
-s.t. ngdri_switch_monotonic {t in T: ord(t) > 1}:
-    dec_switch_ngdri[t] >= dec_switch_ngdri[prev(t)];
-
-s.t. ngdri_increase_phase {t in T: ord(t) > 1}:
-   ccs_ngdri[t] - ccs_ngdri[prev(t)] >= -Mccs_ngdri[t] * dec_switch_ngdri[t];
-
-s.t. ngdri_decrease_phase {t in T: ord(t) > 1}:
-    ccs_ngdri[t] - ccs_ngdri[prev(t)] <= Mccs_ngdri[t] * (1 - dec_switch_ngdri[t]);
+# CCS phase-in switches REMOVED: the old dec_switch_* binaries forced each route's
+# capture to be single-peaked (monotone up then down). That anti-churn role is now
+# served economically by the CCS retrofit's sunk capex (build_ccs_* in v_capacity.mod),
+# and the unimodality conflicted with capacity aging (it forbade rebuilding capture
+# after a dip). Deployment pace is still bounded by ccs_avail (q_carbon_capture.mod).
+# Dropping them removes the model's last binaries -> near-pure LP.
    
     
       

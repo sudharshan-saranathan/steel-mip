@@ -180,11 +180,6 @@ var co2_capturable_cdri{T}      >= 0;   # physical capturable CO2, Coal-DRI rout
 var co2_capturable_ngdri{T}     >= 0;   # physical capturable CO2, NG-DRI route
 var f_bof{T}                    >= 0,   <= 1;   # BF-BOF fraction
 var f_eaf{T}                    >= 0,   <= 1;   # DRI-EAF fraction
-var dec_switch_bof {t in T} binary;
-var dec_switch_ceaf {t in T} binary;
-var dec_switch_ngeaf {t in T} binary;
-var dec_switch_h2eaf {t in T} binary;
-var dec_switch_bf{t in T} binary;
-var dec_switch_cdri{t in T} binary;
-var dec_switch_ngdri{t in T} binary;
+# dec_switch_* CCS phase-in binaries removed (see t_additional_constraints.mod):
+# anti-churn now via CCS sunk capex; dec_switch_bof/ceaf/ngeaf/h2eaf were already dead.
 
