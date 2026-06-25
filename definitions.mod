@@ -208,4 +208,92 @@ param n8_scrap_limit{t in T};
 param n5_ng_cap {T};   
 #param n6_h2_avail {t in T};  
 param N := 1e8;
-         
+
+# ============================================================================
+# CAPACITY-EXPANSION PARAMETERS  (branch: capex-opex-framework)
+# Overnight-capex + fixed/variable-opex framework; consumed by v_capacity.mod
+# and r_cost.mod. See modules/v_capacity.mod for the formulation notes.
+# ============================================================================
+
+# --- 2025 installed capacity per route (tonnes), on each route's OUTPUT-var basis.
+#     DRI routes carry the 0.9*steel_eaf (crude-steel-equiv) factor (see derivation):
+#       BF-BOF 90.0, coal-DRI 70.6, NG-DRI 12.9 (crude-steel MTPA); scrap-EAF 33.5 (mip-v1).
+param cap0_bof   default 90.00e6;             # steel_bof
+param cap0_cdri  default 63.54e6;             # coaldri_output = 0.9 * 70.6e6
+param cap0_ngdri default 11.61e6;             # ngdri_output   = 0.9 * 12.9e6
+param cap0_h2dri default 0;                   # h2dri_output   (none in 2025)
+param cap0_scrap default 33.50e6;             # steel_scrap_eaf (mip-v1 baseline)
+
+# --- Asset lifetimes (yr) = build lock-in horizon (from former u_lockin horizons).
+param life_bof   default 25;
+param life_cdri  default 20;
+param life_ngdri default 15;
+param life_h2dri default 15;
+param life_scrap default 10;
+
+# --- Fixed opex per unit CRUDE-STEEL capacity per year (labour + maintenance).
+#     Incurred on installed capacity whether or not it runs. Route-indexed so
+#     per-route values can be supplied later; defaults to the global figure.
+param fopex_bof   default labor_cost + maintenance_cost;
+param fopex_cdri  default labor_cost + maintenance_cost;
+param fopex_ngdri default labor_cost + maintenance_cost;
+param fopex_h2dri default labor_cost + maintenance_cost;
+param fopex_scrap default labor_cost + maintenance_cost;
+
+# --- Capital recovery factor CRF(L) at the real discount rate.
+param crf_bof   := real_discount_rate*(1+real_discount_rate)^life_bof  /((1+real_discount_rate)^life_bof  -1);
+param crf_cdri  := real_discount_rate*(1+real_discount_rate)^life_cdri /((1+real_discount_rate)^life_cdri -1);
+param crf_ngdri := real_discount_rate*(1+real_discount_rate)^life_ngdri/((1+real_discount_rate)^life_ngdri-1);
+param crf_h2dri := real_discount_rate*(1+real_discount_rate)^life_h2dri/((1+real_discount_rate)^life_h2dri-1);
+param crf_scrap := real_discount_rate*(1+real_discount_rate)^life_scrap/((1+real_discount_rate)^life_scrap-1);
+
+# --- Annualised capital charge per unit route output (bundled over the route's
+#     process chain; reuses the existing n*_capex levelized figures). DRI routes
+#     divide by (1-n7_phi_eaf) to align the DRI plant / pellet / shared-EAF capex
+#     with the coaldri/ngdri/h2dri_output basis (each DRI route carries its EAF share).
+param acapex_bof   := n0_capex + n1_capex + ng_capex_pell + n2_capex + n3_capex;          # $/tCS/yr
+param acapex_cdri  := (n4_capex_coal + ng_capex_pell + n7_capex)/(1 - n7_phi_eaf);
+param acapex_ngdri := (n5_capex_ng   + ng_capex_pell + n7_capex)/(1 - n7_phi_eaf);
+param acapex_h2dri {t in T} := (n6_capex_h2[t] + ng_capex_pell + n7_capex)/(1 - n7_phi_eaf);
+param acapex_scrap := n8_capex;                                                           # $/tCS/yr
+
+# --- Overnight capex per unit capacity = annualised charge / CRF.
+param ocapex_bof   := acapex_bof   / crf_bof;
+param ocapex_cdri  := acapex_cdri  / crf_cdri;
+param ocapex_ngdri := acapex_ngdri / crf_ngdri;
+param ocapex_h2dri {t in T} := acapex_h2dri[t] / crf_h2dri;
+param ocapex_scrap := acapex_scrap / crf_scrap;
+
+# (Fixed opex is the labour+maintenance figure declared above as fopex_*,
+#  charged on installed capacity in v_capacity.mod; no %-of-capex term.)
+
+# --- Production ramp as a FIXED annual slab (NOT a compounding %): the max YoY
+#     change is ramp_frac * the route's pinned 2025 production. Reflects that
+#     capacity additions are limited by ~constant annual capital availability,
+#     not by current fleet size. Tunable lever (typically 0.15-0.20). H2-DRI is
+#     exempt (future entrant; governed by the H2 availability mechanism).
+param ramp_frac default 0.15;
+
+# --- CCS retrofit: same overnight-capex + fixed/variable-opex structure as routes.
+#     n10_ccs_cost ($/tCO2) is the NON-ENERGY capital+O&M figure; energy is charged
+#     separately as power_ccs*ng_cost_power (so CCS cost AND emissions both respond
+#     to the grid-EF scenario, and the old uncosted-CCS-power gap is closed).
+param life_ccs default 15;                       # retrofit asset life (yr)
+param crf_ccs := real_discount_rate*(1+real_discount_rate)^life_ccs/((1+real_discount_rate)^life_ccs-1);
+param ccs_capex_share default 0.80;              # capex fraction of n10_ccs_cost (rest = fixed O&M)
+param ocapex_ccs {t in T} := ccs_capex_share * n10_ccs_cost[t] / crf_ccs;   # overnight $/tCO2-capacity
+param fom_ccs    {t in T} := (1 - ccs_capex_share) * n10_ccs_cost[t];       # fixed O&M $/tCO2-cap/yr
+param ccs_vopex_solvent default 5;               # non-energy variable opex $/tCO2 (solvent makeup; placeholder)
+
+# --- Stream-specific CCS adjustment: capture cost & energy depend on the stream's
+#     CO2 concentration. Multiplier scales the base ocapex_ccs/fom_ccs; ccs_kwh_* is
+#     per-stream capture energy (kWh/tCO2, feeds both cost and Scope-2 consistently).
+#     NG-DRI typically cheapest (concentrated, already-separated process CO2);
+#     coal-DRI dearest (dilute kiln gas); BF-BOF mid (concentrated BFG).
+param ccs_mult_bf    default 1.0;    # baseline (concentrated BFG ~20-25% CO2)
+param ccs_mult_cdri  default 1.2;    # dilute rotary-kiln off-gas -> dearer
+param ccs_mult_ngdri default 0.5;    # near-pure CO2 already separated in process gas -> cheap
+param ccs_kwh_bf     default 800;
+param ccs_kwh_cdri   default 850;    # dilute -> more capture energy
+param ccs_kwh_ngdri  default 200;    # mostly compression of the separated stream
+

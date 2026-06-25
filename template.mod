@@ -21,6 +21,8 @@ let {t in T} n5_cost_NG[t] := NGVAL;
 let ng_cost_h2_end := H2ENDVAL;
 let ng_h2_start_year := H2YEARVAL;
 let n10_ccs_cost_end := CCSVAL;
+let avg_emi := AVGEMIVAL;
+let ramp_frac := RAMPVAL;
 
 # Scrap-availability regime (starved/modest/abundant): base cap + growth.
 # Mirrors the NG-availability scenario mechanism below.
@@ -49,15 +51,17 @@ include modules/n_steel_balance.mod;
 include modules/q_carbon_capture.mod;
 include modules/o_waste_heat.mod;
 include modules/p_power_balance.mod;
+include modules/v_capacity.mod;          # capacity stock + builds (supersedes u_lockin)
 include modules/r_cost.mod;
 include modules/s_emissions.mod;
 include modules/t_additional_constraints.mod;
-include modules/u_lockin.mod;
+# u_lockin.mod retired: capacity stock + asset-life lock-in now handled in v_capacity.mod
 
 param discount_factor{t in T} :=
     1 / (1 + real_discount_rate)^(ord(t) - 1);
 
 minimize obj:
+  # Overnight, fully sunk capex (no salvage/resale credit) -- see main.mod.
     sum {t in T} discount_factor[t] * total_cost[t];
 
 option solver gurobi;

@@ -1,9 +1,11 @@
 # Initialization
 
-s.t. init_f_bof: f_bof[first(T)] = 0.51;
-s.t. init_f_eaf: f_eaf[first(T)] = 0.30;
-# Linearization: init coal-route share 0.84 expressed on the route output (linear).
-s.t. init_f_cdri: coaldri_output[first(T)] = 0.84 * dri_eaf_steel_out[first(T)];
+# 2025 actual production split (pinned): BF-BOF 0.38, DRI-EAF 0.43 (coal:NG = 0.884:0.116
+# -> coal 0.38, NG 0.05 of total steel), scrap-EAF 0.19. BF-BOF ~ Coal-DRI by design.
+s.t. init_f_bof: f_bof[first(T)] = 0.38;
+s.t. init_f_eaf: f_eaf[first(T)] = 0.43;
+# Linearization: init coal-route share expressed on the route output (linear).
+s.t. init_f_cdri: coaldri_output[first(T)] = 0.884 * dri_eaf_steel_out[first(T)];
 
 # Linearization: no capture before 2027 expressed directly on the captured amount.
 s.t. no_ccs_bf {t in T: t < 2027}:
@@ -44,24 +46,38 @@ s.t. avg_emis_upper_total:
     (sum {t in T} total_emissions[t]) <= (avg_emi + eps) * (sum {t in T} total_steel[t]);
 
 
-#Production ramp
+# Production ramp: +-15%/yr off the prior year, anchored to the pinned 2025 actual.
+# Applied to the four incumbent routes (BF-BOF, Coal-DRI, NG-DRI, Scrap). H2-DRI is
+# a future entrant with no 2025 stock, so its growth stays governed by the H2
+# availability mechanism (parameters.mod); only its down-ramp is aligned to 0.85.
+# Fixed annual slab: max YoY change = ramp_frac * the pinned 2025 production of
+# the route (additive, not compounding). steel_*[first(T)] is fixed by the init_f
+# constraints above, so the RHS is effectively constant.
 s.t. bof_prod_up {t in T: t != first(T)}:
-    steel_bof[t] <= 1.2 * steel_bof[prev(t)];
-
+    steel_bof[t] - steel_bof[prev(t)] <= ramp_frac * steel_bof[first(T)];
 s.t. bof_prod_down {t in T: t != first(T)}:
-    steel_bof[t] >= 0.8 * steel_bof[prev(t)];
-    
+    steel_bof[prev(t)] - steel_bof[t] <= ramp_frac * steel_bof[first(T)];
+
 s.t. cdri_prod_up {t in T: t != first(T)}:
-    coaldri_output[t] <= 1.2 * coaldri_output[prev(t)];
-
+    coaldri_output[t] - coaldri_output[prev(t)] <= ramp_frac * coaldri_output[first(T)];
 s.t. cdri_prod_down {t in T: t != first(T)}:
-    coaldri_output[t] >= 0.8 * coaldri_output[prev(t)];
-    
-# NG-DRI production is governed solely by the n5_ng_cap[t] availability curve;
-# no additional up/down ramps are applied.
+    coaldri_output[prev(t)] - coaldri_output[t] <= ramp_frac * coaldri_output[first(T)];
 
+# NG-DRI: fixed-slab ramp in addition to the n5_ng_cap[t] availability curve.
+s.t. ngdri_prod_up {t in T: t != first(T)}:
+    ngdri_output[t] - ngdri_output[prev(t)] <= ramp_frac * ngdri_output[first(T)];
+s.t. ngdri_prod_down {t in T: t != first(T)}:
+    ngdri_output[prev(t)] - ngdri_output[t] <= ramp_frac * ngdri_output[first(T)];
+
+s.t. scrap_prod_up {t in T: t != first(T)}:
+    steel_scrap_eaf[t] - steel_scrap_eaf[prev(t)] <= ramp_frac * steel_scrap_eaf[first(T)];
+s.t. scrap_prod_down {t in T: t != first(T)}:
+    steel_scrap_eaf[prev(t)] - steel_scrap_eaf[t] <= ramp_frac * steel_scrap_eaf[first(T)];
+
+# H2-DRI: future entrant, governed by the H2 availability mechanism; keep only a
+# modest multiplicative down-floor once it is active.
 s.t. h2dri_prod_down{t in T: t > ng_h2_start_year}:
-    h2dri_output[t] >= 0.8* h2dri_output[prev(t)];
+    h2dri_output[t] >= 0.85 * h2dri_output[prev(t)];
 
 # Carbon-capture deployment pace is now governed by the sector-wide
 # ccs_avail[t] ceiling in q_carbon_capture.mod (infrastructure/logistics ramp),

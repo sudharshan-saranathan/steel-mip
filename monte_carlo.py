@@ -36,6 +36,8 @@ SEED         = int(os.environ.get("MC_SEED", "20260624"))
 SCENARIO     = "normal"                                          # NG availability fixed; not a structural axis
 SCRAP_REGIME = os.environ.get("MC_SCRAP_REGIME", "modest")      # starved|low|modest|optimistic
 H2YEAR       = int(os.environ.get("MC_H2YEAR", "2030"))         # H2-DRI start year (discrete axis)
+AVG_EMI      = float(os.environ.get("MC_AVG_EMI", "1.6"))       # cumulative avg-emissions target (tCO2/tCS)
+RAMP         = float(os.environ.get("MC_RAMP", "0.15"))         # additive production ramp slab (frac of 2025 level/yr)
 GRID_EF      = os.environ.get("MC_GRID_EF", "moderate_re")      # bau|moderate_re|aggressive_re
 GRID         = os.environ.get("MC_GRID", "")   # "nH2,nCCS,nNG" -> deterministic price grid; "" -> LHS
 OUT_CSV      = os.path.join(PROJECT, os.environ.get("MC_OUT", "mc_results.csv"))
@@ -79,7 +81,8 @@ TEMPLATE = TEMPLATE.replace(
 def model_for(ng, h2end, ccs, h2year):
     s = TEMPLATE
     for tok, val in (("NGVAL", ng), ("H2ENDVAL", h2end), ("H2YEARVAL", h2year),
-                     ("CCSVAL", ccs), ("SCRAPREGIMEFILE", SCRAP_FILE),
+                     ("CCSVAL", ccs), ("AVGEMIVAL", AVG_EMI), ("RAMPVAL", RAMP),
+                     ("SCRAPREGIMEFILE", SCRAP_FILE),
                      ("NGAVAILFILE", SCEN_FILE), ("GRIDEFFILE", GRID_EF_FILE)):
         s = s.replace(tok, str(val))
     return s
@@ -101,7 +104,7 @@ EXPR = {
     "ng2050":     "ngdri_output[2050]",    "h2_2050": "h2dri_output[2050]",
 }
 
-FIELDS = (["draw"] + NAMES + ["h2_start_year","scrap_regime","grid_ef_scenario","status",
+FIELDS = (["draw"] + NAMES + ["h2_start_year","scrap_regime","grid_ef_scenario","avg_emi_target","status",
           "obj","lifetime_avg_cost","levelized_avg_cost","lifetime_avg_emis",
           "capture_per_t","cost_2050","emis_2050",
           "f_bof_2050","f_eaf_2050","f_scrap_2050",
@@ -161,7 +164,7 @@ def main():
     os.chdir(PROJECT)  # so the model's relative include paths resolve
     X, mode = build_inputs()
     n = len(X)
-    print(f"cell: scrap={SCRAP_REGIME} H2yr={H2YEAR} grid_ef={GRID_EF}  |  {mode}", flush=True)
+    print(f"cell: scrap={SCRAP_REGIME} H2yr={H2YEAR} grid_ef={GRID_EF} avg_emi={AVG_EMI}  |  {mode}", flush=True)
     RESET_EVERY = 2000   # recreate the AMPL process periodically (memory hygiene)
     ampl = AMPL()
     n_ok = n_inf = n_err = 0
@@ -181,7 +184,7 @@ def main():
             row = {"draw": i, "ng_cost": ng, "h2_end_cost": h2end,
                    "ccs_end_cost": ccs,
                    "h2_start_year": H2YEAR, "scrap_regime": SCRAP_REGIME,
-                   "grid_ef_scenario": GRID_EF}
+                   "grid_ef_scenario": GRID_EF, "avg_emi_target": AVG_EMI}
             td = time.time()
             try:
                 ampl.eval(model_for(ng, h2end, ccs, H2YEAR))

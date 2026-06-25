@@ -54,11 +54,18 @@ print(f"Reading {TRAJ_IN} …")
 df = pd.read_csv(TRAJ_IN)
 df = df[df["year"].isin(YEARS)].copy()
 
-# Compute fractions: each route / total_steel (safe against zero)
+# Compute fractions: each route's CRUDE-STEEL output / total_steel.
+# The DRI route variables (coaldri/ngdri/h2dri_output) are on the 0.9*steel_eaf
+# basis (DRI-derived part only), so divide by (1-n7_phi_eaf) to recover the route's
+# full crude-steel line output (incl. its EAF scrap charge). With this the five
+# route shares sum to 100%. BF-BOF and scrap-EAF are already crude-steel.
+PHI_EAF  = 0.1                      # n7_phi_eaf
+DRI_COLS = {"coaldri_output", "ngdri_output", "h2dri_output"}
 total = df["total_steel"].replace(0, np.nan)
 route_cols = [r for r, _ in ROUTES]
 for col in route_cols:
-    df[f"f_{col}"] = df[col] / total
+    series = df[col] / (1 - PHI_EAF) if col in DRI_COLS else df[col]
+    df[f"f_{col}"] = series / total
 
 # Identify unique draws by price triplet
 draw_id = df.groupby(["ng_cost", "h2_end_cost", "ccs_end_cost"]).ngroup()

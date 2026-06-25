@@ -3,8 +3,7 @@
 
 # Coke Oven
 s.t. cost_cokeov_def{t in T}:
-    n0_capex       * steel_bof[t]
-  + ng_cost_ccoal   * coking_coal_in[t]
+    ng_cost_ccoal   * coking_coal_in[t]
   + ng_cost_power  * coke_power_in[t]
   - n0_credit_breeze * coke_breeze_out[t]
   - n0_credit_tar    * tar_out[t]
@@ -13,8 +12,7 @@ s.t. cost_cokeov_def{t in T}:
 
 # Sinter
 s.t. cost_sinter_def{t in T}:
-    n1_capex      * steel_bof[t]
-  + n1_cost_breeze  * sinter_breeze_in[t]
+    n1_cost_breeze  * sinter_breeze_in[t]
   + ng_cost_fineore * sinter_fineore_in[t]
   + ng_cost_power   * sinter_power_in[t]
   + ng_cost_lime    * sinter_lime_in[t]
@@ -24,15 +22,13 @@ s.t. cost_sinter_def{t in T}:
 
 # Pellets BF
 s.t. cost_pellet_bf_def{t in T}:
-    ng_capex_pell         * steel_bof[t]
-  + ng_cost_fineore  * pellets_fineore_bf[t]
+    ng_cost_fineore  * pellets_fineore_bf[t]
   + ng_cost_power    * pellets_bf_power[t]
   - cost_pellet_bf[t] = 0;                           # eq91
   
 # Blast Furnace
 s.t. cost_bf_def{t in T}:
-    n2_capex        * steel_bof[t]
-  + ng_cost_lumpore * bf_lumpore_in[t]
+    ng_cost_lumpore * bf_lumpore_in[t]
   + ng_cost_pcoal     * bf_coalpci_in[t]
   + ng_cost_biochar * bf_biopci_in[t]
   + ng_cost_power   * bf_power_in[t]
@@ -44,8 +40,7 @@ s.t. cost_bf_def{t in T}:
 
 # BOF
 s.t. cost_bof_def{t in T}:
-    n3_capex       * steel_bof[t]
-  + ng_cost_scrap  * bof_scrap_in[t]
+    ng_cost_scrap  * bof_scrap_in[t]
   + ng_cost_power  * bof_power_in[t]
   + ng_cost_lime   * bof_lime_in[t]
   - ng_credit_slag * bof_slag_out[t]
@@ -54,53 +49,46 @@ s.t. cost_bof_def{t in T}:
 # Pellets Coal DRI
 # Linearization: f_cdri*steel_eaf = coaldri_output/(1-n7_phi_eaf) (steel_eaf cancels).
 s.t. cost_pellet_coaldri_def{t in T}:
-    ng_capex_pell         * coaldri_output[t] / (1 - n7_phi_eaf)
-  + ng_cost_fineore  * pellets_fineore_coaldri[t]
+    ng_cost_fineore  * pellets_fineore_coaldri[t]
   + ng_cost_power    * pellets_power_coaldri[t]
   - cost_pellet_coaldri[t] = 0;                      # eq94
 
 #  Pellets NG DRI
 s.t. cost_pellet_ngdri_def{t in T}:
-    ng_capex_pell        * ngdri_output[t] / (1 - n7_phi_eaf)
-  + ng_cost_fineore * pellets_fineore_ngdri[t]
+    ng_cost_fineore * pellets_fineore_ngdri[t]
   + ng_cost_power   * pellets_power_ngdri[t]
   - cost_pellet_ngdri[t] = 0;                        # eq95
        
 # Pellets H2 DRI
 s.t. cost_pellet_h2dri_def{t in T}:
-    ng_capex_pell        * h2dri_output[t] / (1 - n7_phi_eaf)
-  + ng_cost_fineore * pellets_fineore_h2dri[t]
+    ng_cost_fineore * pellets_fineore_h2dri[t]
   + ng_cost_power   * pellets_power_h2dri[t]
   - cost_pellet_h2dri[t] = 0;                        # eq96
   
 # Coal DRI
 s.t. cost_coaldri_def{t in T}:
-    n4_capex_coal * coaldri_output[t] / (1 - n7_phi_eaf)
-  + ng_cost_power * coaldri_power_in[t]
+    ng_cost_power * coaldri_power_in[t]
   + ng_cost_lumpore * coaldri_lumpore_in[t]
   + ng_cost_ncoal     * coaldri_coal_in[t]
   - cost_coaldri[t] = 0;                             # eq97
 
 # NG DRI 
 s.t. cost_ngdri_def{t in T}:
-    n5_capex_ng    * ngdri_output[t] / (1 - n7_phi_eaf)
-  + ng_cost_power  * ngdri_power_in[t]
+    ng_cost_power  * ngdri_power_in[t]
   + ng_cost_lumpore * ngdri_lumpore_in[t]
   + n5_cost_NG[t] *50     * ngdri_ng_in[t]
   - cost_ngdri[t] = 0;                               # eq98
 
 # H2 DRI 
 s.t. cost_h2dri_def{t in T}:
-    n6_capex_h2[t]    * h2dri_output[t] / (1 - n7_phi_eaf)
-  + ng_cost_power  * h2dri_power_in[t]
+    ng_cost_power  * h2dri_power_in[t]
   + ng_cost_lumpore * h2dri_lumpore_in[t]
   + ng_cost_h2[t]     * h2dri_h2_in[t]
   - cost_h2dri[t] = 0;                               # eq99
   
 # EAF-I (DRI-EAF)
 s.t. cost_eaf_def{t in T}:
-    n7_capex         * steel_eaf[t]
-  + ng_cost_scrap    * eaf_scrap_in[t]
+    ng_cost_scrap    * eaf_scrap_in[t]
   + ng_cost_power    * eaf_power_in[t]
   + ng_cost_lime     * eaf_lime_in[t]
   + ng_cost_ncoal     * eaf_coal_in[t]
@@ -110,8 +98,7 @@ s.t. cost_eaf_def{t in T}:
         
 # Scrap EAF 
 s.t. cost_scrap_eaf_def{t in T}:
-    n8_capex        * steel_scrap_eaf[t]
-  + ng_cost_scrap   * scrap_eaf_scrap_in[t]
+    ng_cost_scrap   * scrap_eaf_scrap_in[t]
   + ng_cost_power   * scrap_eaf_power_in[t]
   + ng_cost_lime    * scrap_eaf_lime_in[t]
   + ng_cost_ncoal    * scrap_eaf_coal_in[t]
@@ -126,8 +113,15 @@ s.t. cost_wasteheat{t in T}:
    - whr_cost[t] = 0;                              #eq102
    
 # Carbon capture
-s.t. cost_captured_co2{t in T}:
-    (total_ccs[t]* n10_ccs_cost[t]) - cost_ccs[t] = 0;   #eq103 
+# CCS on the capacity framework: sunk overnight capex on retrofit builds + fixed
+# O&M on installed capture capacity + variable opex (energy = power_ccs*ng_cost_power,
+# grid-responsive and closing the old uncosted-CCS-power gap; + solvent makeup).
+s.t. cost_ccs_def{t in T}:
+    cost_ccs[t] =
+        ocapex_ccs[t] * (ccs_mult_bf*build_ccs_bf[t] + ccs_mult_cdri*build_ccs_cdri[t] + ccs_mult_ngdri*build_ccs_ngdri[t])
+      + fom_ccs[t]    * (ccs_mult_bf*ccs_cap_bf[t]   + ccs_mult_cdri*ccs_cap_cdri[t]   + ccs_mult_ngdri*ccs_cap_ngdri[t])
+      + ng_cost_power * power_ccs[t]
+      + ccs_vopex_solvent * total_ccs[t];                #eq103 
     
        
 # Total cost
@@ -146,7 +140,9 @@ s.t. total_cost_def{t in T}:
     + cost_ngdri[t]
     + cost_h2dri[t]
     + cost_ccs[t]
-    + (labor_cost + maintenance_cost + other_opex)* total_steel[t]
+    + other_opex * total_steel[t]                                    # variable other-opex (labour+maint now fixed)
+    + capex_cost[t]                                                  # overnight capex on builds (v_capacity.mod)
+    + fixopex_cost[t]                                                # fixed opex (labour+maintenance) on capacity
     + whr_cost[t]
     - total_cost[t] = 0;                            # eq104
 

@@ -78,8 +78,9 @@ param Mccs_ngdri{t in T} := n10_ccs_eta*fc_max*cap_ub_ngdri[t];
 s.t. total_captured_co2{t in T}:
    ccs_bf[t] +ccs_cdri[t] +ccs_ngdri[t]  - total_ccs[t] = 0;           # eq87
  
-#Power used in capture (kWh/t)
+#Power used in capture (kWh/tCO2), stream-specific (depends on CO2 concentration)
 s.t. power_capture{t in T}:
-  total_ccs[t] * 800 - power_ccs[t] = 0;                                # eq88
+  ccs_kwh_bf*ccs_bf[t] + ccs_kwh_cdri*ccs_cdri[t] + ccs_kwh_ngdri*ccs_ngdri[t]
+  - power_ccs[t] = 0;                                                   # eq88
    
    

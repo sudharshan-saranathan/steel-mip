@@ -178,56 +178,57 @@ for {t in T} {
     printf "\n%4d %12.2f %15.2f %15.2f %15.2f %15.2f",
         t,
 
-        # BF-BOF
+        # BF-BOF  (levelized: annualized capex + fixed O&M on capacity, variable
+        # opex on production; capex_free cost_* vars; new stream-specific CCS)
         if steel_bof[t] > 0 then
-           (carbon_tax*scope1_bf[t] + n10_ccs_cost[t]*ccs_bf[t]
-           + cost_bf[t] + cost_bof[t] + cost_cokeov[t] + cost_sinter[t] + cost_pellet_bf[t]
-           + (labor_cost + maintenance_cost + other_opex)*steel_bof[t]
-           - (wasteheat_bf_bof[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] *ng_credit_power 
-           - wasteheat_bf_bof[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] * n9_whr_capex
-           - wasteheat_bf_bof[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] * n9_whr_opex))
+           ( acapex_bof*cap_bof[t] + fopex_bof*cap_bof[t]
+           + cost_cokeov[t] + cost_sinter[t] + cost_pellet_bf[t] + cost_bf[t] + cost_bof[t]
+           + other_opex*steel_bof[t]
+           + carbon_tax*scope1_bf[t]
+           + n10_ccs_cost[t]*ccs_mult_bf*ccs_cap_bf[t] + (ng_cost_power*ccs_kwh_bf + ccs_vopex_solvent)*ccs_bf[t]
+           - wasteheat_bf_bof[t]*0.9*277.78*n9_eta*n9_whr[t]*(ng_credit_power - n9_whr_capex - n9_whr_opex))
            / steel_bof[t]
         else 0,
 
         # Coal DRI-EAF
         if steel_eaf[t]*f_cdri[t] > 0 then
-           (carbon_tax*scope1_cdri[t] + n10_ccs_cost[t]*ccs_cdri[t]
+           ( acapex_cdri*cap_cdri[t] + fopex_cdri*cap_cdri[t]/(1-n7_phi_eaf)
            + cost_coaldri[t] + f_cdri[t]*cost_eaf[t] + cost_pellet_coaldri[t]
-           + (labor_cost + maintenance_cost + other_opex)*(steel_eaf[t]*f_cdri[t])
-           - (wasteheat_eaf[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] *ng_credit_power 
-           - wasteheat_eaf[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] * n9_whr_capex
-           - wasteheat_eaf[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] * n9_whr_opex) * f_cdri[t])/ (steel_eaf[t]*f_cdri[t])
+           + other_opex*(steel_eaf[t]*f_cdri[t])
+           + carbon_tax*scope1_cdri[t]
+           + n10_ccs_cost[t]*ccs_mult_cdri*ccs_cap_cdri[t] + (ng_cost_power*ccs_kwh_cdri + ccs_vopex_solvent)*ccs_cdri[t]
+           - wasteheat_eaf[t]*0.9*277.78*n9_eta*n9_whr[t]*(ng_credit_power - n9_whr_capex - n9_whr_opex)*f_cdri[t] )
+           / (steel_eaf[t]*f_cdri[t])
         else 0,
 
         # NG DRI-EAF
         if steel_eaf[t]*f_ngdri[t] > 0 then
-           (carbon_tax*scope1_ngdri[t] + n10_ccs_cost[t]*ccs_ngdri[t]
+           ( acapex_ngdri*cap_ngdri[t] + fopex_ngdri*cap_ngdri[t]/(1-n7_phi_eaf)
            + cost_ngdri[t] + f_ngdri[t]*cost_eaf[t] + cost_pellet_ngdri[t]
-           + (labor_cost + maintenance_cost + other_opex)*(steel_eaf[t]*f_ngdri[t])
-           - (wasteheat_eaf[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] *ng_credit_power 
-           - wasteheat_eaf[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] * n9_whr_capex
-           - wasteheat_eaf[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] * n9_whr_opex) * f_ngdri[t])
+           + other_opex*(steel_eaf[t]*f_ngdri[t])
+           + carbon_tax*scope1_ngdri[t]
+           + n10_ccs_cost[t]*ccs_mult_ngdri*ccs_cap_ngdri[t] + (ng_cost_power*ccs_kwh_ngdri + ccs_vopex_solvent)*ccs_ngdri[t]
+           - wasteheat_eaf[t]*0.9*277.78*n9_eta*n9_whr[t]*(ng_credit_power - n9_whr_capex - n9_whr_opex)*f_ngdri[t] )
            / (steel_eaf[t]*f_ngdri[t])
         else 0,
 
-        # H2 DRI-EAF
+        # H2 DRI-EAF  (no CCS stream)
         if t >= ng_h2_start_year && steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]) > 0 then
-           (carbon_tax*scope1_h2dri[t] + cost_h2dri[t]
-           + (1-f_cdri[t]-f_ngdri[t])*cost_eaf[t] + cost_pellet_h2dri[t]
-           + (labor_cost + maintenance_cost + other_opex)*(steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]))
-           - (wasteheat_eaf[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] *ng_credit_power 
-           - wasteheat_eaf[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] * n9_whr_capex
-           - wasteheat_eaf[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] * n9_whr_opex) * (1- f_cdri[t] - f_ngdri[t]))
+           ( acapex_h2dri[t]*cap_h2dri[t] + fopex_h2dri*cap_h2dri[t]/(1-n7_phi_eaf)
+           + cost_h2dri[t] + (1-f_cdri[t]-f_ngdri[t])*cost_eaf[t] + cost_pellet_h2dri[t]
+           + other_opex*(steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]))
+           + carbon_tax*scope1_h2dri[t]
+           - wasteheat_eaf[t]*0.9*277.78*n9_eta*n9_whr[t]*(ng_credit_power - n9_whr_capex - n9_whr_opex)*(1-f_cdri[t]-f_ngdri[t]) )
            / (steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]))
         else 0,
 
-        # Scrap-EAF
+        # Scrap-EAF  (no CCS stream)
         if steel_scrap_eaf[t] > 0 then
-           (carbon_tax*scope1_scrapeaf[t] + cost_scrap_eaf[t]
-           + (labor_cost + maintenance_cost + other_opex)*steel_scrap_eaf[t]
-           - (scrap_eaf_wasteheat[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] *ng_credit_power 
-           - scrap_eaf_wasteheat[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] * n9_whr_capex
-           - scrap_eaf_wasteheat[t] * 0.9 * 277.78 * n9_eta * n9_whr[t] * n9_whr_opex))
+           ( acapex_scrap*cap_scrap[t] + fopex_scrap*cap_scrap[t]
+           + cost_scrap_eaf[t]
+           + other_opex*steel_scrap_eaf[t]
+           + carbon_tax*scope1_scrapeaf[t]
+           - scrap_eaf_wasteheat[t]*0.9*277.78*n9_eta*n9_whr[t]*(ng_credit_power - n9_whr_capex - n9_whr_opex))
            / steel_scrap_eaf[t]
         else 0;
 }

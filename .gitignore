@@ -11,3 +11,6 @@ cells_traj/
 results/
 edge_cases.py
 plot_edge.py
+
+# transient parallel-runner stderr
+mc_grid_err_*.txt
