@@ -37,23 +37,54 @@ cell = f"NG={os.environ.get('MC_SCENARIO','normal')} " \
 print(f"Grid generator | {cell} | {nh2}x{nccs}x{nng} = {TOTAL} pts | {len(chunks)} procs")
 t0 = time.time()
 
-procs, chunk_csvs, chunk_trajs = [], [], []
-for p, (a, b) in enumerate(chunks):
-    out = os.path.join(PROJECT, f"mc_grid_chunk_{p}.csv")
-    chunk_csvs.append(out)
+def run_chunk(p, a, b, out, traj_out=""):
+    """Spawn one monte_carlo.py subprocess for the slice [a:b]; return exit code."""
     env = os.environ.copy()
     env.update({"MC_GRID": GRID, "MC_GRID_START": str(a), "MC_GRID_END": str(b),
                 "MC_THREADS": "1", "MC_OUT": out})
-    if TRAJ:
-        tout = os.path.join(PROJECT, f"mc_grid_traj_{p}.csv")
-        chunk_trajs.append(tout)
-        env["MC_TRAJ_OUT"] = tout
-    proc = subprocess.Popen([sys.executable, SCRIPT], env=env,
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    procs.append((p, proc))
+    if traj_out:
+        env["MC_TRAJ_OUT"] = traj_out
+    stderr_path = os.path.join(PROJECT, f"mc_grid_err_{p}.txt")
+    with open(stderr_path, "w") as ef:
+        proc = subprocess.Popen([sys.executable, SCRIPT], env=env,
+                                stdout=subprocess.DEVNULL, stderr=ef)
+        proc.wait()
+    rc = proc.returncode
+    if rc != 0 or not os.path.exists(out):
+        with open(stderr_path) as ef:
+            tail = ef.read()[-800:]
+        print(f"  chunk {p} failed (rc={rc}):\n{tail}")
+    if os.path.exists(stderr_path):
+        os.remove(stderr_path)
+    return rc
 
-for p, proc in procs:
+procs, chunk_csvs, chunk_trajs = [], [], []
+for p, (a, b) in enumerate(chunks):
+    out = os.path.join(PROJECT, f"mc_grid_chunk_{p}.csv")
+    tout = os.path.join(PROJECT, f"mc_grid_traj_{p}.csv") if TRAJ else ""
+    chunk_csvs.append(out)
+    chunk_trajs.append(tout)
+    proc_env = os.environ.copy()
+    proc_env.update({"MC_GRID": GRID, "MC_GRID_START": str(a), "MC_GRID_END": str(b),
+                     "MC_THREADS": "1", "MC_OUT": out})
+    if TRAJ:
+        proc_env["MC_TRAJ_OUT"] = tout
+    stderr_path = os.path.join(PROJECT, f"mc_grid_err_{p}.txt")
+    ef = open(stderr_path, "w")
+    proc = subprocess.Popen([sys.executable, SCRIPT], env=proc_env,
+                            stdout=subprocess.DEVNULL, stderr=ef)
+    procs.append((p, proc, chunks[p], out, tout, ef, stderr_path))
+
+for p, proc, (a, b), out, tout, ef, stderr_path in procs:
     proc.wait()
+    ef.close()
+    if proc.returncode != 0 or not os.path.exists(out):
+        with open(stderr_path) as sf:
+            tail = sf.read()[-800:]
+        print(f"  chunk {p} failed (rc={proc.returncode}), retrying…\n{tail}")
+        run_chunk(p, a, b, out, tout)
+    if os.path.exists(stderr_path):
+        os.remove(stderr_path)
 
 elapsed = time.time() - t0
 rows, fieldnames = [], None
