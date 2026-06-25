@@ -57,11 +57,8 @@ s.t. cdri_prod_up {t in T: t != first(T)}:
 s.t. cdri_prod_down {t in T: t != first(T)}:
     coaldri_output[t] >= 0.8 * coaldri_output[prev(t)];
     
-s.t. ngdri_prod_up {t in T: t != first(T)}:
-    ngdri_output[t] <= 1.2 * ngdri_output[prev(t)];
-
-s.t. ngdri_prod_down {t in T: t != first(T)}:
-    ngdri_output[t] >= 0.8 * ngdri_output[prev(t)];
+# NG-DRI production is governed solely by the n5_ng_cap[t] availability curve;
+# no additional up/down ramps are applied.
 
 s.t. h2dri_prod_down{t in T: t > ng_h2_start_year}:
     h2dri_output[t] >= 0.8* h2dri_output[prev(t)];
