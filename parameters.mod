@@ -3,7 +3,7 @@
 # ==================================================
 let base_demand := 152200000;
 let growth_rate := 0.05;
-param avg_emi   :=1.65;
+param avg_emi   :=1.6;
 #let emi_limit :=1.5353;
 
 # ==================================================
@@ -25,9 +25,9 @@ let ng_h2_start_year := 2030;
 # ==================================================
 # EAF (Scrap-Based)
 # ==================================================
-let n8_scrap_rate := 0.06;      # Assumed annual growth rate of scrap
+let n8_scrap_rate := 0.04;      # Assumed annual growth rate of scrap
 let ng_cost_scrap :=350;        #Assumed scrap cost
-let n8_scrap_limit[first(T)] := 33500000;
+let n8_scrap_limit[first(T)] := 35000000;
 
 let {t in T: ord(t) > 1}
     n8_scrap_limit[t] :=
