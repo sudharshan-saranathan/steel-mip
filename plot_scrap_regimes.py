@@ -30,7 +30,9 @@ REGIMES = [("starved",    "Starved  (0.5%/yr)"),
            ("modest",     "Modest  (4%/yr)"),
            ("optimistic", "Optimistic  (6%/yr)")]
 
-CMAP = plt.get_cmap("nipy_spectral").copy()
+CMAP_NAME = os.environ.get("MC_CMAP", "nipy_spectral")
+SUFFIX    = "" if CMAP_NAME == "nipy_spectral" else f"_{CMAP_NAME.lower()}"
+CMAP = plt.get_cmap(CMAP_NAME).copy()
 CMAP.set_bad(color="0.6")   # masked / infeasible cells -> grey
 
 
@@ -58,7 +60,7 @@ def make_figure(value_col, title, cbar_label, out_name):
 
     n = len(grids)
     fig, axes = plt.subplots(n, 1, figsize=(11, 9), constrained_layout=False)
-    fig.subplots_adjust(left=0.10, right=0.86, top=0.93, bottom=0.07, hspace=0.12)
+    fig.subplots_adjust(left=0.10, right=0.86, top=0.93, bottom=0.07, hspace=0.04)
     fig.suptitle(title, fontsize=13)
 
     im = None
@@ -71,13 +73,14 @@ def make_figure(value_col, title, cbar_label, out_name):
                 bbox=dict(facecolor="black", alpha=0.45, edgecolor="none",
                           boxstyle="round,pad=0.2"))
         if ax is not axes[-1]:
-            ax.set_xticklabels([])
+            ax.tick_params(axis="x", which="both", bottom=False, labelbottom=False)
     axes[-1].set_xlabel("H₂ end-cost ($/kg)", fontsize=11)
 
     cax = fig.add_axes([0.88, 0.07, 0.022, 0.86])
     fig.colorbar(im, cax=cax, label=cbar_label)
 
-    out = os.path.join(OUT_DIR, out_name)
+    base, ext = os.path.splitext(out_name)
+    out = os.path.join(OUT_DIR, f"{base}{SUFFIX}{ext}")
     fig.savefig(out, dpi=160)
     plt.close(fig)
     print(f"Saved -> {out}")
