@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """
 Production driver: generate the price-grid table for every FEASIBLE structural
-cell (scrap regime × H2 start year), writing one CSV per cell into cells/.
+cell (scrap regime × H2 start year × grid EF scenario), writing one CSV per cell
+into cells/ and year-by-year trajectories into cells_traj/.
 
-NG availability is fixed at "normal" (not a structural axis). Cells already
-present in cells/ with the expected row count are SKIPPED -> resumable.
+Cells already present with the expected row count are SKIPPED -> resumable.
 
 Env:
   MC_GRID   grid spec (default 25,12,8 = 2400 pts/cell)
@@ -24,7 +24,7 @@ EXPECTED_TRAJ = EXPECTED * 26   # 26 years (2025-2050) per draw
 
 with open(os.path.join(PROJECT, "mc_frontier.csv")) as fh:
     cells = [r for r in csv.DictReader(fh) if r["status"] == "solved"]
-cells.sort(key=lambda r: (r["scrap_regime"], int(r["h2_start_year"])))
+cells.sort(key=lambda r: (r["scrap_regime"], int(r["h2_start_year"]), r["grid_ef_scenario"]))
 
 if not cells:
     sys.exit("No feasible cells found in mc_frontier.csv")
@@ -38,15 +38,15 @@ def rowcount(path):
 
 t0 = time.time()
 for k, c in enumerate(cells, 1):
-    scrap, h2y = c["scrap_regime"], c["h2_start_year"]
-    name = f"{scrap}_{h2y}.csv"
+    scrap, h2y, grid_ef = c["scrap_regime"], c["h2_start_year"], c["grid_ef_scenario"]
+    name = f"{scrap}_{h2y}_{grid_ef}.csv"
     out  = os.path.join(CELLS_DIR, name)
     traj = os.path.join(TRAJ_DIR, name)
     if rowcount(out) == EXPECTED and rowcount(traj) == EXPECTED_TRAJ:
         print(f"[{k}/{len(cells)}] {name}  SKIP (already complete)"); continue
     env = os.environ.copy()
     env.update({"MC_GRID": GRID, "MC_SCRAP_REGIME": scrap,
-                "MC_H2YEAR": h2y, "MC_OUT": out, "MC_TRAJ_OUT": traj})
+                "MC_H2YEAR": h2y, "MC_GRID_EF": grid_ef, "MC_OUT": out, "MC_TRAJ_OUT": traj})
     print(f"[{k}/{len(cells)}] {name}  running...", flush=True)
     subprocess.run([sys.executable, os.path.join(PROJECT, "run_mc_grid_parallel.py")],
                    env=env, check=True)

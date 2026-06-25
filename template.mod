@@ -29,6 +29,9 @@ include SCRAPREGIMEFILE;
 # NG-availability scenario profile (overrides n5_ng_cap set in parameters.mod)
 include NGAVAILFILE;
 
+# Grid emission-factor scenario (overrides n9_grid_ef defined in definitions.mod)
+include GRIDEFFILE;
+
 include modules/a_coke.mod;
 include modules/b_sinter.mod;
 include modules/c_pellets_bf.mod;

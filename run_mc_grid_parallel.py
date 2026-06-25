@@ -5,14 +5,16 @@ with MC_GRID set). Splits the flat grid index range into N_PROCS contiguous
 chunks, runs each as a separate subprocess (own AMPL instance, 1 Gurobi thread),
 then concatenates the chunk CSVs into one per-cell generator table.
 
-The structural cell (NG scenario / scrap regime / H2 year) is taken from the
-environment (MC_SCENARIO, MC_SCRAP_REGIME, MC_H2YEAR) and passed through.
+The structural cell (scrap regime / H2 year / grid EF scenario) is taken from the
+environment (MC_SCRAP_REGIME, MC_H2YEAR, MC_GRID_EF) and passed through.
 
 Env:
   MC_GRID        "nH2,nCCS,nNG"  (required; e.g. 25,12,8 -> 2400 pts)
   MC_PROCS       parallel processes (default 12)
   MC_OUT         final CSV (default mc_results.csv)
-  plus MC_SCENARIO / MC_SCRAP_REGIME / MC_H2YEAR for the cell.
+  MC_SCRAP_REGIME {starved, low, modest, optimistic} (default modest)
+  MC_H2YEAR      H2-DRI start year (default 2030)
+  MC_GRID_EF     {bau, moderate_re, aggressive_re} (default moderate_re)
 """
 import os, sys, subprocess, csv, time
 
@@ -31,7 +33,7 @@ sz = (TOTAL + N_PROCS - 1) // N_PROCS
 chunks = [(i * sz, min((i + 1) * sz, TOTAL)) for i in range(N_PROCS)]
 chunks = [c for c in chunks if c[0] < c[1]]
 
-cell = f"scrap={os.environ.get('MC_SCRAP_REGIME','modest')} H2yr={os.environ.get('MC_H2YEAR','2030')}"
+cell = f"scrap={os.environ.get('MC_SCRAP_REGIME','modest')} H2yr={os.environ.get('MC_H2YEAR','2030')} grid_ef={os.environ.get('MC_GRID_EF','moderate_re')}"
 print(f"Grid generator | {cell} | {nh2}x{nccs}x{nng} = {TOTAL} pts | {len(chunks)} procs")
 t0 = time.time()
 
@@ -39,7 +41,10 @@ def run_chunk(p, a, b, out, traj_out=""):
     """Spawn one monte_carlo.py subprocess for the slice [a:b]; return exit code."""
     env = os.environ.copy()
     env.update({"MC_GRID": GRID, "MC_GRID_START": str(a), "MC_GRID_END": str(b),
-                "MC_THREADS": "1", "MC_OUT": out})
+                "MC_THREADS": "1", "MC_OUT": out,
+                "MC_SCRAP_REGIME": os.environ.get("MC_SCRAP_REGIME", "modest"),
+                "MC_H2YEAR": os.environ.get("MC_H2YEAR", "2030"),
+                "MC_GRID_EF": os.environ.get("MC_GRID_EF", "moderate_re")})
     if traj_out:
         env["MC_TRAJ_OUT"] = traj_out
     stderr_path = os.path.join(PROJECT, f"mc_grid_err_{p}.txt")
@@ -64,7 +69,10 @@ for p, (a, b) in enumerate(chunks):
     chunk_trajs.append(tout)
     proc_env = os.environ.copy()
     proc_env.update({"MC_GRID": GRID, "MC_GRID_START": str(a), "MC_GRID_END": str(b),
-                     "MC_THREADS": "1", "MC_OUT": out})
+                     "MC_THREADS": "1", "MC_OUT": out,
+                     "MC_SCRAP_REGIME": os.environ.get("MC_SCRAP_REGIME", "modest"),
+                     "MC_H2YEAR": os.environ.get("MC_H2YEAR", "2030"),
+                     "MC_GRID_EF": os.environ.get("MC_GRID_EF", "moderate_re")})
     if TRAJ:
         proc_env["MC_TRAJ_OUT"] = tout
     stderr_path = os.path.join(PROJECT, f"mc_grid_err_{p}.txt")

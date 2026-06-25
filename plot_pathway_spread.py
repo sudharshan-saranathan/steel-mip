@@ -2,8 +2,8 @@
 """
 Pathway-fraction trend lines with Monte-Carlo spread for one structural cell.
 
-Reads cells_traj/<scenario>_<scrap_regime>_<h2year>.csv (year-by-year
-trajectory data produced by run_mc_grid_parallel.py with MC_TRAJ_OUT set).
+Reads cells_traj/<scrap_regime>_<h2year>_<grid_ef>.csv (year-by-year
+trajectory data produced by run_all_cells.py with MC_TRAJ_OUT set).
 
 For each route, plots:
   - solid line  : mean fraction across all draws
@@ -11,9 +11,9 @@ For each route, plots:
   - light band  : 10th–90th percentile
 
 Config via env:
-  MC_SCENARIO      {normal, shock, optimistic}          (default normal)
   MC_SCRAP_REGIME  {starved, low, modest, optimistic}   (default modest)
   MC_H2YEAR        H2-DRI start year                   (default 2035)
+  MC_GRID_EF       {bau, moderate_re, aggressive_re}   (default moderate_re)
   TRAJ_IN          override trajectory CSV path
   PLOT_OUT         override output PNG path
 """
@@ -30,13 +30,14 @@ os.chdir(PROJECT)
 
 REG   = os.environ.get("MC_SCRAP_REGIME", "modest")
 H2YR  = int(os.environ.get("MC_H2YEAR",  "2035"))
+GRID_EF = os.environ.get("MC_GRID_EF", "moderate_re")
 
 TRAJ_IN  = os.environ.get("TRAJ_IN",
-    os.path.join(PROJECT, "cells_traj", f"{REG}_{H2YR}.csv"))
+    os.path.join(PROJECT, "cells_traj", f"{REG}_{H2YR}_{GRID_EF}.csv"))
 OUT_DIR  = os.path.join(PROJECT, "results")
 os.makedirs(OUT_DIR, exist_ok=True)
 PLOT_OUT = os.environ.get("PLOT_OUT",
-    os.path.join(OUT_DIR, f"fig_pathway_spread_{REG}_{H2YR}.png"))
+    os.path.join(OUT_DIR, f"fig_pathway_spread_{REG}_{H2YR}_{GRID_EF}.png"))
 
 ROUTES = [
     ("steel_scrap_eaf", "Scrap-EAF"),
@@ -108,7 +109,7 @@ ax.set_ylim(0, 1)
 ax.set_xlabel("Year", fontsize=11)
 ax.set_ylabel("Share of crude-steel production", fontsize=11)
 ax.set_title(
-    f"Production-pathway fractions  —  scrap {REG}, H₂ {H2YR}\n"
+    f"Production-pathway fractions  —  scrap {REG}, H₂ {H2YR}, grid EF {GRID_EF}\n"
     f"Solid line = mean across {n_draws} draws  |  "
     f"bands = 25th–75th (dark) and 10th–90th (light) percentile",
     fontsize=10,
