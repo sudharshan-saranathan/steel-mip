@@ -38,6 +38,12 @@ SCRAP_REGIME = os.environ.get("MC_SCRAP_REGIME", "modest")      # starved|low|mo
 H2YEAR       = int(os.environ.get("MC_H2YEAR", "2030"))         # H2-DRI start year (discrete axis)
 GRID         = os.environ.get("MC_GRID", "")   # "nH2,nCCS,nNG" -> deterministic price grid; "" -> LHS
 OUT_CSV      = os.path.join(PROJECT, os.environ.get("MC_OUT", "mc_results.csv"))
+TRAJ_OUT     = os.environ.get("MC_TRAJ_OUT", "")   # if set, also write a year-by-year trajectory CSV
+
+# year-indexed entities archived for the full-trajectory store (one batched
+# get_data call per solve -> a 26-year x len rows DataFrame).
+TRAJ_ENTS = ["total_steel", "steel_bof", "steel_scrap_eaf", "coaldri_output",
+             "ngdri_output", "h2dri_output", "total_cost", "total_emissions", "total_ccs"]
 
 SCEN_FILE = {"normal":"scenarios/ng_avail_normal.mod",
              "shock":"scenarios/ng_avail_shock.mod",
@@ -158,6 +164,12 @@ def main():
     ampl = AMPL()
     n_ok = n_inf = n_err = 0
     t0 = time.time()
+    traj_fh = open(TRAJ_OUT, "w", newline="") if TRAJ_OUT else None
+    traj_w = None
+    if traj_fh is not None:
+        traj_w = csv.writer(traj_fh)
+        traj_w.writerow(["ng_cost", "h2_end_cost", "ccs_end_cost", "year"] + TRAJ_ENTS)
+    n_retry = 0
     with open(OUT_CSV, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=FIELDS); w.writeheader()
         for i in range(n):
@@ -172,9 +184,22 @@ def main():
             try:
                 ampl.eval(model_for(ng, h2end, ccs, H2YEAR))
                 status = ampl.get_value("solve_result")
+                if status == "infeasible":
+                    # Feasibility is price-independent (prices enter only the
+                    # objective); an "infeasible" report in a frontier-feasible
+                    # cell is a stale-instance artifact -> retry on a fresh AMPL.
+                    ampl.close(); ampl = AMPL()
+                    ampl.eval(model_for(ng, h2end, ccs, H2YEAR))
+                    status = ampl.get_value("solve_result")
+                    n_retry += 1
                 row["status"] = status
                 if status == "solved":
                     row.update(extract(ampl)); n_ok += 1
+                    if traj_w is not None:
+                        tdf = ampl.get_data(*TRAJ_ENTS).to_pandas()
+                        for yr, vr in tdf.iterrows():
+                            traj_w.writerow([ng, h2end, ccs, int(yr)]
+                                            + [float(vr[e]) for e in TRAJ_ENTS])
                 else:
                     n_inf += 1
             except Exception as e:
@@ -183,11 +208,15 @@ def main():
             w.writerow(row)
             if (i + 1) % 200 == 0:
                 fh.flush()
+                if traj_fh is not None:
+                    traj_fh.flush()
                 el = time.time() - t0
-                print(f"{i+1}/{n}  ok={n_ok} infeas={n_inf} err={n_err}  "
+                print(f"{i+1}/{n}  ok={n_ok} infeas={n_inf} err={n_err} retry={n_retry}  "
                       f"{el:.0f}s  ({el/(i+1):.2f}s/draw, ETA {el/(i+1)*(n-i-1)/60:.0f} min)",
                       flush=True)
-    print(f"DONE  ok={n_ok} infeasible={n_inf} error={n_err}  "
+    if traj_fh is not None:
+        traj_fh.close()
+    print(f"DONE  ok={n_ok} infeasible={n_inf} error={n_err} retry={n_retry}  "
           f"total {time.time()-t0:.0f}s  -> {OUT_CSV}")
 
 if __name__ == "__main__":

@@ -20,6 +20,7 @@ PROJECT  = os.path.dirname(os.path.abspath(__file__))
 GRID     = os.environ["MC_GRID"]                       # required
 N_PROCS  = int(os.environ.get("MC_PROCS", "12"))
 FINAL    = os.path.join(PROJECT, os.environ.get("MC_OUT", "mc_results.csv"))
+TRAJ     = os.path.join(PROJECT, os.environ["MC_TRAJ_OUT"]) if os.environ.get("MC_TRAJ_OUT") else ""
 SCRIPT   = os.path.join(PROJECT, "monte_carlo.py")
 
 nh2, nccs, nng = (int(x) for x in GRID.split(","))
@@ -36,13 +37,17 @@ cell = f"NG={os.environ.get('MC_SCENARIO','normal')} " \
 print(f"Grid generator | {cell} | {nh2}x{nccs}x{nng} = {TOTAL} pts | {len(chunks)} procs")
 t0 = time.time()
 
-procs, chunk_csvs = [], []
+procs, chunk_csvs, chunk_trajs = [], [], []
 for p, (a, b) in enumerate(chunks):
     out = os.path.join(PROJECT, f"mc_grid_chunk_{p}.csv")
     chunk_csvs.append(out)
     env = os.environ.copy()
     env.update({"MC_GRID": GRID, "MC_GRID_START": str(a), "MC_GRID_END": str(b),
                 "MC_THREADS": "1", "MC_OUT": out})
+    if TRAJ:
+        tout = os.path.join(PROJECT, f"mc_grid_traj_{p}.csv")
+        chunk_trajs.append(tout)
+        env["MC_TRAJ_OUT"] = tout
     proc = subprocess.Popen([sys.executable, SCRIPT], env=env,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     procs.append((p, proc))
@@ -70,3 +75,20 @@ with open(FINAL, "w", newline="") as fh:
 
 n_ok = sum(1 for r in rows if r["status"] == "solved")
 print(f"Done in {elapsed:.0f}s. Merged {len(rows)} rows (ok={n_ok}) -> {FINAL}")
+
+# merge the year-by-year trajectory chunks (line-concat; prices are the key,
+# so no draw renumbering is needed)
+if TRAJ:
+    n_traj, header_done = 0, False
+    with open(TRAJ, "w", newline="") as tout_fh:
+        for tp in chunk_trajs:
+            if not os.path.exists(tp):
+                print(f"  WARNING: traj {tp} missing"); continue
+            with open(tp, newline="") as tfh:
+                lines = tfh.readlines()
+            if lines:
+                if not header_done:
+                    tout_fh.write(lines[0]); header_done = True
+                tout_fh.writelines(lines[1:]); n_traj += len(lines) - 1
+            os.remove(tp)
+    print(f"  trajectory: {n_traj} rows -> {TRAJ}")

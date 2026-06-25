@@ -20,10 +20,13 @@ PROJECT   = os.path.dirname(os.path.abspath(__file__))
 SCENARIO  = os.environ.get("MC_SCENARIO", "all")
 GRID      = os.environ.get("MC_GRID", "25,12,8")
 CELLS_DIR = os.path.join(PROJECT, "cells")
+TRAJ_DIR  = os.path.join(PROJECT, "cells_traj")    # year-by-year trajectory store
 os.makedirs(CELLS_DIR, exist_ok=True)
+os.makedirs(TRAJ_DIR, exist_ok=True)
 
 nh2, nccs, nng = (int(x) for x in GRID.split(","))
-EXPECTED = nh2 * nccs * nng
+EXPECTED      = nh2 * nccs * nng
+EXPECTED_TRAJ = EXPECTED * 26                       # 26 years (2025-2050) per draw
 
 # feasible cells from the frontier map (optionally restricted to one NG scenario)
 with open(os.path.join(PROJECT, "mc_frontier.csv")) as fh:
@@ -48,11 +51,12 @@ for k, c in enumerate(cells, 1):
     scen, scrap, h2y = c["ng_scenario"], c["scrap_regime"], c["h2_start_year"]
     name = f"{scen}_{scrap}_{h2y}.csv"
     out  = os.path.join(CELLS_DIR, name)
-    if rowcount(out) == EXPECTED:
+    traj = os.path.join(TRAJ_DIR, name)
+    if rowcount(out) == EXPECTED and rowcount(traj) == EXPECTED_TRAJ:
         print(f"[{k}/{len(cells)}] {name}  SKIP (already complete)"); continue
     env = os.environ.copy()
     env.update({"MC_GRID": GRID, "MC_SCENARIO": scen, "MC_SCRAP_REGIME": scrap,
-                "MC_H2YEAR": h2y, "MC_OUT": out})
+                "MC_H2YEAR": h2y, "MC_OUT": out, "MC_TRAJ_OUT": traj})
     print(f"[{k}/{len(cells)}] {name}  running...", flush=True)
     subprocess.run([sys.executable, os.path.join(PROJECT, "run_mc_grid_parallel.py")],
                    env=env, check=True)
