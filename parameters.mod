@@ -3,7 +3,7 @@
 # ==================================================
 let base_demand := 152200000;
 let growth_rate := 0.05;
-param avg_emi   default 1.6;   # overridable via `let` (MC_AVG_EMI); cumulative target
+param avg_emi   default 1.75;  # uniform cumulative ET across all regimes (overridable via MC_AVG_EMI)
 #let emi_limit :=1.5353;
 
 # ==================================================
