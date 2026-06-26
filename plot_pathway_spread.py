@@ -34,7 +34,7 @@ GRID_EF = os.environ.get("MC_GRID_EF", "moderate_re")
 
 TRAJ_IN  = os.environ.get("TRAJ_IN",
     os.path.join(PROJECT, "cells_traj", f"{REG}_{H2YR}_{GRID_EF}.csv"))
-OUT_DIR  = os.path.join(PROJECT, "results")
+OUT_DIR  = __import__("_runpaths").PLOTS
 os.makedirs(OUT_DIR, exist_ok=True)
 PLOT_OUT = os.environ.get("PLOT_OUT",
     os.path.join(OUT_DIR, f"fig_pathway_spread_{REG}_{H2YR}_{GRID_EF}.png"))

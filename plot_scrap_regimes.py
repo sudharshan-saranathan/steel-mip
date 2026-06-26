@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from matplotlib import colors as mcolors
 
 CSV_DIR  = os.environ.get("MC_CSV_DIR", ".")
-OUT_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
+OUT_DIR  = __import__("_runpaths").PLOTS
 os.makedirs(OUT_DIR, exist_ok=True)
 
 REGIMES = [("starved",    "Starved  (0.5%/yr)"),

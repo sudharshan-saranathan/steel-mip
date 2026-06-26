@@ -9,6 +9,7 @@ temp_*.mod
 cells/
 cells_traj/
 results/
+runs/
 edge_cases.py
 plot_edge.py
 

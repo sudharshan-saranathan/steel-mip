@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 from matplotlib import colors as mcolors
 
 PROJECT = os.path.dirname(os.path.abspath(__file__))
-OUT_DIR = os.path.join(PROJECT, "results")
+OUT_DIR = __import__("_runpaths").PLOTS
 os.makedirs(OUT_DIR, exist_ok=True)
 
 PANELS = [("mc_2d_modest.csv",          "H₂ start 2030  (ramps to 2050)"),

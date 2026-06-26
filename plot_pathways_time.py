@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 add_to_path(os.environ.get("AMPL_DIR",
             os.path.join(os.path.dirname(ampl_module_base.__file__), "bin")))
 PROJECT = os.path.dirname(os.path.abspath(__file__)); os.chdir(PROJECT)
-OUT = os.path.join(PROJECT, "results"); os.makedirs(OUT, exist_ok=True)
+OUT = __import__("_runpaths").PLOTS
 
 SCEN  = os.environ.get("MC_SCENARIO", "normal")
 REG   = os.environ.get("MC_SCRAP_REGIME", "modest")

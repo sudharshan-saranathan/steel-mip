@@ -22,7 +22,7 @@ import matplotlib.ticker as mticker
 
 PROJECT = os.path.dirname(os.path.abspath(__file__)); os.chdir(PROJECT)
 TRAJ_IN = os.environ["TRAJ_IN"]
-OUT = os.environ.get("PLOT_OUT", os.path.join(PROJECT, "results", "fig_emis_traj.png"))
+OUT = os.environ.get("PLOT_OUT", os.path.join(__import__("_runpaths").PLOTS, "fig_emis_traj.png"))
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 AVG_EMI = os.environ.get("AVG_EMI")
 YEARS = list(range(2025, 2051))

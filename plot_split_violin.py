@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
 PROJECT  = os.path.dirname(os.path.abspath(__file__))
-OUT      = os.path.join(PROJECT, "results"); os.makedirs(OUT, exist_ok=True)
+OUT      = __import__("_runpaths").PLOTS
 NBINS    = 24
 
 # Matrix layout: rows = scrap regimes, columns = H2-start years, at a FIXED grid-EF.

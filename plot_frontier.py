@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
 PROJECT = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(PROJECT, "results"); os.makedirs(OUT, exist_ok=True)
+OUT = __import__("_runpaths").PLOTS
 
 NG = ["normal", "shock", "optimistic"]
 SCRAP = ["starved", "low", "modest", "optimistic"]      # rows, bottom->top

@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
 PROJECT = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(PROJECT, "results"); os.makedirs(OUT, exist_ok=True)
+OUT = __import__("_runpaths").PLOTS
 ORDER = ["starved", "low", "modest", "optimistic"]   # pessimistic -> optimistic
 
 def load(path):
