@@ -58,7 +58,10 @@ def run_chunk(p, a, b, out, traj_out=""):
             tail = ef.read()[-800:]
         print(f"  chunk {p} failed (rc={rc}):\n{tail}")
     if os.path.exists(stderr_path):
-        os.remove(stderr_path)
+        try:
+            os.remove(stderr_path)
+        except OSError:
+            pass   # Windows: worker may still hold the handle briefly; harmless to leave
     return rc
 
 procs, chunk_csvs, chunk_trajs = [], [], []
@@ -100,7 +103,10 @@ for p, proc, (a, b), out, tout, ef, stderr_path in procs:
             print(f"  chunk {p} failed (rc={proc.returncode}):\n{tail}")
         run_chunk(p, a, b, out, tout)
     if os.path.exists(stderr_path):
-        os.remove(stderr_path)
+        try:
+            os.remove(stderr_path)
+        except OSError:
+            pass   # Windows: worker may still hold the handle briefly; harmless to leave
 
 elapsed = time.time() - t0
 rows, fieldnames = [], None
