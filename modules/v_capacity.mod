@@ -46,6 +46,14 @@ var cap_scrap {T} >= 0;
 var capex_cost   {T} >= 0;   # overnight capex booked on this year's builds
 var fixopex_cost {T} >= 0;   # fixed O&M on installed capacity
 
+# --- scrap supply-chain (collection + processing yards) ---
+# Operating cost and the EXISTING chain are already in the delivered scrap price
+# (ng_cost_scrap). Here we charge only the SUNK capital to GROW scrap-handling
+# capacity above the 2025 baseline (overnight ocapex_scrapchain, $/t-scrap/yr).
+# Capacity is monotone -> once built it cannot be un-built (sunk, strandable).
+var scrapchain_cap   {T} >= 0;   # scrap-handling capacity (t scrap/yr)
+var build_scrapchain {T} >= 0;   # capacity added this year (t scrap/yr)
+
 # ----------------------------------------------------------------------------
 # Capacity stock:  cap = surviving legacy + builds still within their life L.
 # A build in year j contributes until year j+L-1, then retires automatically.
@@ -106,13 +114,26 @@ s.t. cap_lim_scrap{t in T}: steel_scrap_eaf[t] <= cap_scrap[t];
 #                  objective, see main.mod).
 #   fixopex_cost = fixed O&M (fraction of overnight capex) on installed capacity.
 # ----------------------------------------------------------------------------
+# scrap-chain capacity must cover total scrap throughput (all 3 streams: scrap-EAF
+# charge + BOF scrap + DRI-EAF scrap charge). 2025 capacity is pinned to that
+# year's throughput (legacy, free); growth above it pays sunk capex. Monotone.
+s.t. scrapchain_legacy{t in T: ord(t) = 1}:
+    scrapchain_cap[t] = bof_scrap_in[t] + eaf_scrap_in[t] + scrap_eaf_scrap_in[t];
+s.t. scrapchain_cover{t in T: ord(t) > 1}:
+    scrapchain_cap[t] >= bof_scrap_in[t] + eaf_scrap_in[t] + scrap_eaf_scrap_in[t];
+s.t. scrapchain_mono{t in T: ord(t) > 1}:
+    scrapchain_cap[t] >= scrapchain_cap[prev(t)];
+s.t. scrapchain_build_def{t in T: ord(t) > 1}:
+    build_scrapchain[t] >= scrapchain_cap[t] - scrapchain_cap[prev(t)];
+
 s.t. capex_cost_def{t in T}:
     capex_cost[t] =
       sunk * (   ocapex_bof      * build_bof[t]          # sunk: overnight capex on builds
                + ocapex_cdri     * build_cdri[t]
                + ocapex_ngdri    * build_ngdri[t]
                + ocapex_h2dri[t] * build_h2dri[t]
-               + ocapex_scrap    * build_scrap[t] )
+               + ocapex_scrap    * build_scrap[t]
+               + ocapex_scrapchain * build_scrapchain[t] )  # scrap collection+yard expansion
     + (1-sunk) * ( acapex_bof    * steel_bof[t]          # not sunk: annualized capex on production
                + acapex_cdri     * coaldri_output[t]
                + acapex_ngdri    * ngdri_output[t]

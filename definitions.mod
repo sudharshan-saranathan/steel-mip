@@ -264,6 +264,14 @@ param ocapex_ngdri := acapex_ngdri / crf_ngdri;
 param ocapex_h2dri {t in T} := acapex_h2dri[t] / crf_h2dri;
 param ocapex_scrap := acapex_scrap / crf_scrap;
 
+# Scrap supply-chain expansion capex (collection + high-end processing/purification
+# yards), overnight $/(t scrap/yr). ~$100/t-cap reflects shredding + sensor-sorting
+# + copper/tramp purification (furnace-ready scrap), not just collection. Charged on
+# growth in scrap-handling capacity above the 2025 baseline (v_capacity.mod). Operating
+# cost + the existing chain are already embedded in the delivered scrap price.
+# Plain data param -> sweep with `let ocapex_scrapchain := X;`.
+param ocapex_scrapchain default 100;
+
 # (Fixed opex is the labour+maintenance figure declared above as fopex_*,
 #  charged on installed capacity in v_capacity.mod; no %-of-capex term.)
 

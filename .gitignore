@@ -1,5 +1,6 @@
 .idea/
 .claude/
+__pycache__/
 *.csv
 *.png
 *.log

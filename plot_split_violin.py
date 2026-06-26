@@ -31,6 +31,7 @@ NBINS    = 24
 # Cells that are infeasible at the target are drawn as marked empty slots (the
 # matrix doubles as a feasibility map). All three configurable via env.
 GRID_EF     = os.environ.get("MC_GRID_EF", "aggressive_re")
+ET          = os.environ.get("MC_AVG_EMI", "1.8")
 SCRAP_ROWS  = os.environ.get("MC_VIOLIN_SCRAPS", "low,modest,optimistic").split(",")
 H2_COLS     = os.environ.get("MC_VIOLIN_H2", "2030,2035,2040,2045").split(",")
 _GLAB       = {"bau": "BAU", "moderate_re": "moderate RE", "aggressive_re": "aggressive RE"}
@@ -119,7 +120,7 @@ fig, axes = plt.subplots(len(rows_data), 1, figsize=(2.3 * NCOL + 1.4,
                          3.3 * len(rows_data)), squeeze=False)
 axes = axes[:, 0]
 fig.suptitle(f"Split composition-violins  —  grid: {_GLAB.get(GRID_EF, GRID_EF)}"
-             f"  (ET target 1.6, ramp 0.20)\n"
+             f"  (ET target {ET}, ramp 0.20)\n"
              "LEFT half = 2050 cost (left axis)   |   RIGHT half = 2050 emissions (right axis)"
              "   |   fill = mean production mix   |   rows = scrap, cols = H₂ year",
              fontsize=11.5, y=0.985)
@@ -157,6 +158,6 @@ for irow, (axL, (scrap, yrs)) in enumerate(zip(axes, rows_data)):
 axes[0].legend(handles=[Patch(facecolor=c, label=l, **EDGE) for _, l, c in ROUTES],
                loc="upper right", ncol=5, fontsize=8, frameon=False)
 fig.subplots_adjust(left=0.09, right=0.91, top=0.88, bottom=0.06, hspace=0.30)
-out = os.path.join(OUT, f"fig_splitviolin_et1.6_{GRID_EF}.png")
+out = os.path.join(OUT, f"fig_splitviolin_et{ET}_{GRID_EF}.png")
 fig.savefig(out, dpi=160)
 print(f"Saved -> {out}")

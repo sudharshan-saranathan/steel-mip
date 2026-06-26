@@ -102,13 +102,18 @@ EXPR = {
     "scrap2050":  "steel_scrap_eaf[2050]",
     "dri2050":    "dri_eaf_steel_out[2050]","coal2050": "coaldri_output[2050]",
     "ng2050":     "ngdri_output[2050]",    "h2_2050": "h2dri_output[2050]",
+    # new-capacity investment (NPV): route overnight capex + stream-weighted CCS capex
+    "Sd_capex_rt":  "sum{t in T} discount_factor[t]*capex_cost[t]",
+    "Sd_capex_ccs": "sum{t in T} discount_factor[t]*ocapex_ccs[t]*"
+                    "(ccs_mult_bf*build_ccs_bf[t]+ccs_mult_cdri*build_ccs_cdri[t]+ccs_mult_ngdri*build_ccs_ngdri[t])",
 }
 
 FIELDS = (["draw"] + NAMES + ["h2_start_year","scrap_regime","grid_ef_scenario","avg_emi_target","status",
           "obj","lifetime_avg_cost","levelized_avg_cost","lifetime_avg_emis",
           "capture_per_t","cost_2050","emis_2050",
           "f_bof_2050","f_eaf_2050","f_scrap_2050",
-          "f_coal_2050","f_ng_2050","f_h2_2050","solve_s"])
+          "f_coal_2050","f_ng_2050","f_h2_2050",
+          "invest_npv","invest_per_t","solve_s"])
 
 def safe_div(a, b):
     return a / b if b not in (0, 0.0) else 0.0
@@ -130,6 +135,8 @@ def extract(ampl):
         "f_coal_2050":       safe_div(v["coal2050"], s50),
         "f_ng_2050":         safe_div(v["ng2050"], s50),
         "f_h2_2050":         safe_div(v["h2_2050"], s50),
+        "invest_npv":        v["Sd_capex_rt"] + v["Sd_capex_ccs"],
+        "invest_per_t":      safe_div(v["Sd_capex_rt"] + v["Sd_capex_ccs"], v["Sd_steel"]),
     }
 
 # ------------------------------- run sweep --------------------------------
