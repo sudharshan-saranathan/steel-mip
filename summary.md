@@ -298,8 +298,8 @@ with `ccs_bf[t] ≤ ccs_cap_bf[t]`, etc.
 ## 7. Capacity-expansion framework (defining feature)
 
 `modules/v_capacity.mod`. This module **supersedes the retired `u_lockin.mod`**
-(still in the tree for reference, not included by `main.mod`). It replaces the old
-hard production-floor lock-in with a real, costed capacity stock.
+(which has been **deleted** from the tree; it was no longer included anywhere). It
+replaces the old hard production-floor lock-in with a real, costed capacity stock.
 
 ### 7.1 Capacity accounting (vintaging)
 
