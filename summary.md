@@ -15,8 +15,9 @@
 > the review fixes: CO₂ target relaxed to an upper-bound cap; per-route reported capex
 > excludes the free legacy fleet; dead code removed; `u_lockin.mod` deleted; and the
 > **green-H₂ supply chain split out** into explicit sunk electrolyser + dedicated-
-> renewable capacity, §7.8). Implementation: **AMPL** (GMPL-style `.mod`), solver
-> **Gurobi**.
+> renewable capacity, §7.8; and a **unified feedstock/fuel supply-chain rule** with
+> coal/NG growth-capex levers defaulting to 0, §7.6). Implementation: **AMPL**
+> (GMPL-style `.mod`), solver **Gurobi**.
 
 ---
 
@@ -358,17 +359,36 @@ ccs_cap_X[t] = Σ_{j: t−life_ccs+1 ≤ j ≤ t} build_ccs_X[j]
 ccs_X[t] ≤ ccs_cap_X[t]                                    # for X ∈ {bf, cdri, ngdri}
 ```
 
-### 7.6 Scrap supply-chain capacity
+### 7.6 Feedstock / fuel supply-chain capacity (one rule, different baselines)
 
-Collection + sensor-sorting + copper/tramp purification yards that deliver
-furnace-ready scrap. 2025 capacity is pinned (free) to that year's total scrap
-throughput; growth above baseline pays sunk overnight capex; monotone:
+Every input feedstock and fuel is treated by **one consistent rule**: the established
+supply network is **absorbed in the delivered commodity price**, and **sunk overnight
+capex is charged only on supply capacity built above the 2025 baseline**. What differs
+between inputs is purely the *baseline* — i.e. how much of the network already exists.
+The test for whether an input carries explicit supply-chain capex is therefore not
+"old vs new fuel" but **"does incremental supply face a binding must-build constraint?"**
+
+| Input | Baseline (free, in price) | Growth capex lever | Default |
+|---|---|---|---|
+| **Coal** (coking + PCI + DRI + EAF) | full mature network | `ocapex_coalchain` | **0** — mature, capital in price |
+| **Natural gas** (NG-DRI) | full mature network | `ocapex_ngchain` | **0** — mature, capital in price |
+| **Scrap** (high-grade processing) | partial (basic collection) | `ocapex_scrapchain` | 100 $/t — furnace-ready processing must be built |
+| **Green H₂** (electrolyser + renewable) | ≈ 0 (does not exist) | `ocapex_h2elec`, `ocapex_h2re` | full build (§7.8) |
+
+All supply chains share the same monotone, free-baseline structure (illustrated for
+scrap; coal/NG are identical over their own flows):
 ```
-scrapchain_cap[2025] = bof_scrap_in + eaf_scrap_in + scrap_eaf_scrap_in        # legacy (free)
-scrapchain_cap[t]   ≥ bof_scrap_in + eaf_scrap_in + scrap_eaf_scrap_in         # cover all 3 streams
-scrapchain_cap[t]   ≥ scrapchain_cap[prev(t)]                                  # monotone
-build_scrapchain[t] ≥ scrapchain_cap[t] − scrapchain_cap[prev(t)]              # builds pay ocapex_scrapchain
+chain_cap[2025] = Σ(2025 throughput of the covered streams)                # legacy (free)
+chain_cap[t]   ≥ Σ(throughput[t])                                          # cover demand
+chain_cap[t]   ≥ chain_cap[prev(t)]                                        # monotone (sunk, never un-built)
+build_chain[t] ≥ chain_cap[t] − chain_cap[prev(t)]                        # growth pays ocapex_*chain
 ```
+Streams covered: scrap = `bof_scrap_in + eaf_scrap_in + scrap_eaf_scrap_in`; coal =
+`coking_coal_in + bf_coalpci_in + coaldri_coal_in + eaf_coal_in + scrap_eaf_coal_in`;
+NG = `ngdri_ng_in`. **With the fossil levers at their default 0, the model is exactly
+as before** (no fossil supply-chain cost); set them > 0 to charge capex on fossil
+supply *growth* — e.g. to test new mine/pipeline build-out under demand expansion —
+making the framework fully symmetric across all inputs.
 
 ### 7.7 Capital-cost parameterisation
 
@@ -426,20 +446,18 @@ The renewable *capital* is explicit and sunk; only its (zero-carbon) energy is k
 off the shared grid balance. *(A grid-coupled variant — renewables partially cover,
 grid backs up with emissions — is a documented future option, not the current model.)*
 
-**Why only green H₂ gets explicit supply-chain capital (deliberate asymmetry).** Coal
-and natural gas reach the plant through **mature, long-established supply networks**
-(mines, processing, pipelines, import terminals) whose capital was sunk decades ago
-and is fully embedded in the **delivered commodity prices** — coking/non-coking coal
-($184 / $98 /t), PCI coal ($110/t), natural gas ($/MMBtu), and likewise scrap ($350/t).
-There is no *new* fuel-supply capacity to build, so charging those routes a separate
-supply-chain capex would double-count. Green hydrogen is the opposite: its supply
-network (electrolysers + dedicated renewables) **does not yet exist at scale and must
-be built**, so its capital is the live investment decision — exactly the kind of sunk,
-irreversible buildout the model exists to study. Hence H₂ is the one fuel whose supply
-chain is modelled as explicit capacity expansion; all incumbent fuels keep their
-network capital absorbed in the price. (The downstream *steelmaking* plants — BF, BOF,
-DRI shafts, EAFs — are of course built explicitly for every route; the asymmetry is
-only about the **upstream fuel-supply** network.)
+**Green H₂ is the baseline ≈ 0 extreme of the §7.6 rule.** It is *not* a special-cased
+asymmetry: green H₂ obeys the same "established baseline in price + sunk capex on growth
+above baseline" rule as every other input — it simply has **no established baseline**,
+because its supply network (electrolysers + dedicated renewables) does not yet exist at
+scale and must be built from ≈ 0. So essentially *all* of its supply capital is an
+explicit, sunk, irreversible build — exactly the investment the model exists to study.
+At the other end of the same rule, coal and NG reach the plant through mature networks
+whose capital is already embedded in the delivered prices (coking/non-coking coal
+$184/$98/t, PCI $110/t, NG $/MMBtu), so their growth-capex levers default to 0 (§7.6);
+scrap sits in between. The downstream *steelmaking* plants (BF, BOF, DRI shafts, EAFs)
+are always built explicitly for every route — the supply-chain rule concerns only the
+**upstream fuel/feedstock** network.
 
 **Parameters (placeholders in published 2024–25 ranges; see §12.4):** electrolyser
 capex `1000→400 $/kW`, life 15 yr, energy `55 000 kWh/t-H₂` (~55 kWh/kg incl. BoP);
@@ -652,6 +670,7 @@ power `820→650`; WHR penetration `0.05→0.30`; grid EF `0.000886→0.0003`.
 | Asset lives `life_*` | 25 / 20 / 15 / 15 / 10 yr |
 | Fixed opex `fopex_*` | 35 $/tCS/yr (= labour 20 + maint 15) |
 | Overnight scrap-chain capex `ocapex_scrapchain` | 100 $/(t-scrap/yr) |
+| Fossil supply-chain capex `ocapex_coalchain` / `ocapex_ngchain` | 0 / 0 (mature; lever) |
 | Ramp slab `ramp_frac` | 0.15 |
 | Sunk toggle `sunk` | 1 |
 | CCS life / capex share / solvent opex | 15 yr / 0.80 / 5 $/tCO₂ |
@@ -800,13 +819,14 @@ carbon tax are also applied.
   them to your chosen sources before publication. A grid-coupled electrolysis variant
   (renewables partial, grid backup with emissions) is a possible extension, not the
   current model.
-- **Fuel-supply capex is modelled asymmetrically — on purpose** (§7.8): only green H₂
-  carries explicit supply-chain capacity expansion (electrolysers + renewables),
-  because that network must still be built. Coal, NG, PCI and scrap arrive through
-  mature networks whose capital is already embedded in their delivered prices, so they
-  carry no separate supply-chain capex (adding one would double-count). The asymmetry
-  is confined to upstream fuel supply; all routes' steelmaking plants are built
-  explicitly.
+- **Fuel-supply capex follows one rule with input-specific baselines** (§7.6): all
+  inputs share a single "baseline-in-price + sunk capex on growth above baseline"
+  mechanism. Coal and NG carry the lever too (`ocapex_coalchain`, `ocapex_ngchain`)
+  but **default to 0** (mature networks, capital in price), so the model is unchanged
+  unless a fossil supply-growth scenario is being tested; scrap charges growth in
+  furnace-ready processing; green H₂ (baseline ≈ 0) is essentially all explicit build.
+  The framework is symmetric — what varies is only how much of each network already
+  exists. (Steelmaking plants are always built explicitly, for every route.)
 - **Overnight, fully sunk capex; no salvage** — central thesis; isolate via `sunk=0`.
 - **Linear** — route shares and capture fractions are recovered post-solve; the model
   has no integer variables (§13).

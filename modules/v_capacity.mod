@@ -46,13 +46,24 @@ var cap_scrap {T} >= 0;
 var capex_cost   {T} >= 0;   # overnight capex booked on this year's builds
 var fixopex_cost {T} >= 0;   # fixed O&M on installed capacity
 
-# --- scrap supply-chain (collection + processing yards) ---
-# Operating cost and the EXISTING chain are already in the delivered scrap price
-# (ng_cost_scrap). Here we charge only the SUNK capital to GROW scrap-handling
-# capacity above the 2025 baseline (overnight ocapex_scrapchain, $/t-scrap/yr).
-# Capacity is monotone -> once built it cannot be un-built (sunk, strandable).
+# --- Feedstock / fuel SUPPLY-CHAIN capacity (one rule, different baselines) ---
+# Every input obeys the SAME treatment: the established supply network is absorbed
+# in the delivered commodity price, and SUNK overnight capex is charged only on
+# capacity GROWTH above the 2025 baseline. The routes differ only in their baseline:
+#   - scrap:  partial baseline -> capex on growth in furnace-ready processing
+#             (shredding/sorting/purification); ocapex_scrapchain default 100.
+#   - coal / NG: mature networks, no must-build growth -> ocapex_*chain default 0,
+#             so by default all their capital stays in the delivered price (no
+#             behaviour change). Non-zero values turn on supply-growth capex.
+#   - green H2 (electrolyser + renewable, below): zero baseline -> essentially all
+#             capital is an explicit build.
+# All chains are monotone -> once built, supply capacity cannot be un-built (sunk).
 var scrapchain_cap   {T} >= 0;   # scrap-handling capacity (t scrap/yr)
 var build_scrapchain {T} >= 0;   # capacity added this year (t scrap/yr)
+var coalchain_cap    {T} >= 0;   # coal supply capacity (t coal/yr, all coal types)
+var build_coalchain  {T} >= 0;
+var ngchain_cap      {T} >= 0;   # natural-gas supply capacity (t NG/yr)
+var build_ngchain    {T} >= 0;
 
 # ----------------------------------------------------------------------------
 # Capacity stock:  cap = surviving legacy + builds still within their life L.
@@ -127,6 +138,31 @@ s.t. scrapchain_mono{t in T: ord(t) > 1}:
 s.t. scrapchain_build_def{t in T: ord(t) > 1}:
     build_scrapchain[t] >= scrapchain_cap[t] - scrapchain_cap[prev(t)];
 
+# coal supply chain: covers ALL coal throughput (coking + PCI + DRI + EAF coal).
+# 2025 throughput is the free baseline; growth above it pays ocapex_coalchain
+# (default 0 -> mature network, capital stays in the delivered coal prices).
+s.t. coalchain_legacy{t in T: ord(t) = 1}:
+    coalchain_cap[t] = coking_coal_in[t] + bf_coalpci_in[t] + coaldri_coal_in[t]
+                     + eaf_coal_in[t] + scrap_eaf_coal_in[t];
+s.t. coalchain_cover{t in T: ord(t) > 1}:
+    coalchain_cap[t] >= coking_coal_in[t] + bf_coalpci_in[t] + coaldri_coal_in[t]
+                      + eaf_coal_in[t] + scrap_eaf_coal_in[t];
+s.t. coalchain_mono{t in T: ord(t) > 1}:
+    coalchain_cap[t] >= coalchain_cap[prev(t)];
+s.t. coalchain_build_def{t in T: ord(t) > 1}:
+    build_coalchain[t] >= coalchain_cap[t] - coalchain_cap[prev(t)];
+
+# natural-gas supply chain: covers NG-DRI gas use. Same structure; ocapex_ngchain
+# default 0 (mature pipeline/import network, capital in the delivered NG price).
+s.t. ngchain_legacy{t in T: ord(t) = 1}:
+    ngchain_cap[t] = ngdri_ng_in[t];
+s.t. ngchain_cover{t in T: ord(t) > 1}:
+    ngchain_cap[t] >= ngdri_ng_in[t];
+s.t. ngchain_mono{t in T: ord(t) > 1}:
+    ngchain_cap[t] >= ngchain_cap[prev(t)];
+s.t. ngchain_build_def{t in T: ord(t) > 1}:
+    build_ngchain[t] >= ngchain_cap[t] - ngchain_cap[prev(t)];
+
 s.t. capex_cost_def{t in T}:
     capex_cost[t] =
       sunk * (   ocapex_bof      * build_bof[t]          # sunk: overnight capex on builds
@@ -135,6 +171,8 @@ s.t. capex_cost_def{t in T}:
                + ocapex_h2dri[t] * build_h2dri[t]
                + ocapex_scrap    * build_scrap[t]
                + ocapex_scrapchain * build_scrapchain[t]   # scrap collection+yard expansion
+               + ocapex_coalchain * build_coalchain[t]     # coal supply-network growth (default 0)
+               + ocapex_ngchain   * build_ngchain[t]       # NG supply-network growth  (default 0)
                + ocapex_h2elec[t] * build_h2elec[t]        # green-H2: electrolyser builds
                + ocapex_h2re[t]   * build_h2re[t] )        # green-H2: dedicated renewable builds
     + (1-sunk) * ( acapex_bof    * steel_bof[t]          # not sunk: annualized capex on production

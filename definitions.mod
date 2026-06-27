@@ -272,6 +272,16 @@ param ocapex_scrap := acapex_scrap / crf_scrap;
 # Plain data param -> sweep with `let ocapex_scrapchain := X;`.
 param ocapex_scrapchain default 100;
 
+# Fossil supply-network expansion capex (coal mines/transport; NG pipelines/terminals),
+# overnight $/(t-fuel/yr), charged on growth in supply capacity above the 2025 baseline
+# (v_capacity.mod). DEFAULT 0: these are MATURE networks whose capital is already
+# absorbed in the delivered commodity prices (coking/non-coking/PCI coal, NG $/MMBtu),
+# so by default they add no cost and the model is unchanged. Set > 0 to charge capex on
+# fossil supply GROWTH (e.g. to test new mine/pipeline build-out under demand expansion);
+# the framework is then symmetric with scrap and green-H2. Sweep with `let ocapex_* := X;`.
+param ocapex_coalchain default 0;     # $/(t-coal/yr)
+param ocapex_ngchain   default 0;     # $/(t-NG/yr)
+
 # (Fixed opex is the labour+maintenance figure declared above as fopex_*,
 #  charged on installed capacity in v_capacity.mod; no %-of-capex term.)
 
