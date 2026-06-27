@@ -52,11 +52,19 @@ s.t. No_H2_Before{t in T: t < ng_h2_start_year}:
 s.t. H2_growth_cap{t in T: t = ng_h2_start_year}:
     h2dri_h2_in[t] <= H2_cap;
 
+# Couple the Gaussian buildout peak to the H2 debut now that the start year is concrete
+# (mode 2 only uses it; harmless otherwise). A driver may re-let h2_peak_year afterwards
+# to treat the peak as an independent axis.
+let h2_peak_year := ng_h2_start_year + 5;
+
 # H2 availability is a FIXED additive slab (NOT CAGR): hydrogen input starts at the
 # initial availability (H2_cap, via H2_growth_cap) and grows by at most ramp_frac *
 # H2_cap per year. Replaces the old max(1.15*prev, H2_cap) compounding limiter.
+# This flow slab governs only in mode 0; in modes 1/2 the big-M term relaxes it and the
+# electrolyser-capacity ceiling (v_capacity.mod) governs the H2 scale-up instead.
 s.t. H2_growth_limit{t in T: t > ng_h2_start_year}:
-    h2dri_h2_in[t] - h2dri_h2_in[prev(t)] <= ramp_frac * H2_cap;
+    h2dri_h2_in[t] - h2dri_h2_in[prev(t)]
+        <= ramp_frac * H2_cap + H2_BIGM * (if h2_ramp_mode >= 1 then 1 else 0);
 
 
 #Natural gas cap (10% of availability of national scale)

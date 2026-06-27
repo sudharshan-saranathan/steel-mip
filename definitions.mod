@@ -367,3 +367,41 @@ param ocapex_h2re{t in T} := h2_capex_mult * re_capex_kw[t];    # overnight $/kW
 param acapex_h2re{t in T} := ocapex_h2re[t] * crf_re;           # annualized $/kW/yr (for the 1-sunk branch)
 param fopex_h2re default 15;          # fixed O&M, $/kW/yr (placeholder ~2% of capex)
 
+# --- H2 ramp mode: how fast green H2 may scale (three mutually-exclusive limiters) ---
+# Selected by h2_ramp_mode; the model stays a pure LP in every mode. Only the
+# electrolyser stock is bound; dedicated renewables follow via h2re_cover.
+#   0 (default): FIXED ADDITIVE slab on H2 *adoption* (the flow ramp in parameters.mod).
+#   1: CONSTANT compounding ceiling on electrolyser *capacity* -- flat h2_peak_rate %/yr.
+#   2: RISING-BASELINE + GAUSSIAN-TRANSITION ceiling on the annual capacity ADDITION
+#      (the ALLOWED EXPANSION). The yearly build is bounded by a fixed reference scale
+#      times a (rising baseline + Gaussian surge) rate -- it does NOT compound off last
+#      year's installed capacity:
+#        cap[t] - cap[t-1] <= h2_ref_cap * ( base(t) + h2_gauss_amp * kernel(t) )
+#        base(t)   = h2_base_start + (h2_base_end - h2_base_start) * (t-2025)/25
+#        kernel(t) = exp( -(t - h2_peak_year)^2 / (2*h2_gauss_sigma^2) )
+#      (i)  a RISING baseline: a fixed amount of capital buys MORE capacity over time as
+#           logistics/manufacturing mature (the same capital-efficiency that already drives
+#           the declining h2elec_capex_kw); so the floor tilts up h2_base_start -> h2_base_end.
+#      (ii) a RAPID-TRANSITION surge at the peak year, tapering each side (a Gaussian
+#           add-rate -> a smooth S-step in installed capacity). The surge amplitude is
+#           PINNED so the TOTAL rate at the peak equals h2_peak_rate (25%):
+#               surge_amp = h2_peak_rate - base(h2_peak_year)
+#           i.e. base(peak) + surge_amp = h2_peak_rate exactly. A later peak (higher
+#           baseline) therefore gets a smaller surge; the total peak is always 25%.
+#      Because the baseline rises, the post-transition right tail sits permanently above the
+#      pre-transition left tail (the visible "step" = the capital-efficiency gain). The peak
+#      YEAR shifts per scenario; reference scale, baseline endpoints, peak rate and width fixed.
+param h2_ramp_mode  default 0;          # 0 additive | 1 constant-compound | 2 rising+gaussian
+param h2elec_seed   default 1500000;    # initial electrolyser hub size at start year (t-H2/yr)
+param H2_BIGM       := 1e10;            # deactivates whichever limiter is off (~300x max cap)
+param h2_ref_cap    := 10000000;        # fixed reference scale for mode-2 add-rates (t-H2/yr)
+param h2_peak_rate  := 0.25;            # mode 1 flat compounding rate; ALSO the pinned mode-2 peak
+param h2_base_start := 0.05;            # mode 2 baseline coeff at 2025 (x h2_ref_cap, per yr)
+param h2_base_end   := 0.10;            # mode 2 baseline coeff at 2050 (rising -> capital efficiency)
+param h2_gauss_sigma := 5;              # Gaussian width (years)
+param h2_base{t in T} := h2_base_start + (h2_base_end - h2_base_start)*(t-2025)/25;  # rising baseline rate
+# Scenario knob: year the buildout window crests. parameters.mod couples it to the H2
+# debut (h2_peak_year := ng_h2_start_year + 5) once the start year is concrete; a driver
+# may override it afterwards to treat the peak as a fully independent axis.
+param h2_peak_year  default 2035;
+

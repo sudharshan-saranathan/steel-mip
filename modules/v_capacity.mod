@@ -262,3 +262,40 @@ s.t. h2elec_cover{t in T}:
 # electrolyser electricity demand (h2_kwh_per_t per tonne of H2 produced).
 s.t. h2re_cover{t in T}:
     h2_kwh_per_t * (h2dri_h2_in[t] + bf_h2_in[t]) <= cap_h2re[t] * 8760 * re_cf;
+
+# ----------------------------------------------------------------------------
+# ACCELERATING (compounding) ceiling on ELECTROLYSER capacity buildout.
+# Active only when h2_cap_compound = 1; otherwise the big-M term relaxes these so
+# the additive flow ramp (parameters.mod) governs instead. All linear -> pure LP.
+# Only electrolysers are bound; dedicated renewables follow via h2re_cover above.
+# ----------------------------------------------------------------------------
+# The capacity ceiling is active in modes 1 (constant-compound) and 2 (gaussian); in
+# mode 0 (additive flow slab) the big-M term relaxes both so parameters.mod governs.
+# The rate is inlined (not a precomputed param) so it re-evaluates on every solve when a
+# driver changes h2_ramp_mode / h2_peak_year / ng_h2_start_year on a warm AMPL process.
+
+# Up to and including the start year, electrolyser capacity is capped at the initial
+# hub size (this also covers the small pre-start BF H2-injection baseline, so it is
+# NOT forced to zero). This is the base the compounding then grows from.
+s.t. h2elec_seed_cap{t in T: t <= ng_h2_start_year}:
+    cap_h2elec[t] <= h2elec_seed + H2_BIGM * (if h2_ramp_mode = 0 then 1 else 0);
+# After the start year (this bounds ALLOWED EXPANSION; the optimiser's CHOSEN build,
+# build_h2elec, may sit below it):
+#   mode 1: COMPOUNDING ceiling -- allowed add is h2_peak_rate x last year's capacity.
+#   mode 2: RISING-BASELINE + GAUSSIAN-TRANSITION -- allowed add is a fixed reference
+#           (h2_ref_cap) times a baseline that rises 2025->2050 (capital efficiency) plus
+#           a Gaussian surge whose amplitude is pinned so base(peak)+surge = h2_peak_rate
+#           (total peak rate = 25%). It does NOT scale with current capacity; installed
+#           capacity is a tilted ramp with an S-step (right tail above left = efficiency).
+s.t. h2elec_growth{t in T: t > ng_h2_start_year}:
+    cap_h2elec[t] - cap_h2elec[prev(t)] <=
+        (if h2_ramp_mode = 1 then h2_peak_rate * cap_h2elec[prev(t)] else 0)
+      + (if h2_ramp_mode = 2
+         then h2_ref_cap * ( h2_base[t]
+                             + (h2_peak_rate
+                                - (h2_base_start + (h2_base_end - h2_base_start)
+                                                   *(h2_peak_year-2025)/25))
+                               * exp( -((t - h2_peak_year)^2)
+                                      / (2*h2_gauss_sigma^2) ) )
+         else 0)
+      + H2_BIGM * (if h2_ramp_mode = 0 then 1 else 0);
