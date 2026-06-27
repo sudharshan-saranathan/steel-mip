@@ -10,7 +10,7 @@ Config via env (defaults give a representative central case):
   MC_SCENARIO   {normal, shock, optimistic}   (default normal)
   MC_SCRAP_REGIME {starved, low, modest, optimistic} (default modest)
   MC_H2YEAR     H2-DRI start year             (default 2030)
-  NGVAL H2ENDVAL CCSVAL  market prices        (default 15 / 2500 / 75)
+  NGVAL H2CAPXVAL CCSVAL  NG $/MMBtu / green-H2 capex mult / CCS $/t  (default 15 / 1.0 / 75)
 
 -> results/fig_pathways_<scenario>_<regime>_<h2yr>.png
 """
@@ -31,7 +31,7 @@ SCEN  = os.environ.get("MC_SCENARIO", "normal")
 REG   = os.environ.get("MC_SCRAP_REGIME", "modest")
 H2YR  = int(os.environ.get("MC_H2YEAR", "2030"))
 NG    = float(os.environ.get("NGVAL", "15"))
-H2    = float(os.environ.get("H2ENDVAL", "2500"))
+H2    = float(os.environ.get("H2CAPXVAL", "1.0"))   # green-H2 capex multiplier
 CCS   = float(os.environ.get("CCSVAL", "75"))
 
 YEARS = list(range(2025, 2051))
@@ -45,7 +45,7 @@ ROUTES = [("steel_scrap_eaf", "scrap-EAF", _PAL[0]),
 with open("template.mod") as fh:
     T = fh.read()
 T = "\n".join(l for l in T.splitlines() if "include yreport" not in l and "include report" not in l)
-for tok, val in (("NGVAL", NG), ("H2ENDVAL", H2), ("H2YEARVAL", H2YR), ("CCSVAL", CCS),
+for tok, val in (("NGVAL", NG), ("H2CAPXVAL", H2), ("H2YEARVAL", H2YR), ("CCSVAL", CCS),
                  ("SCRAPREGIMEFILE", f"scenarios/scrap_{REG}.mod"),
                  ("NGAVAILFILE", f"scenarios/ng_avail_{SCEN}.mod")):
     T = T.replace(tok, str(val))

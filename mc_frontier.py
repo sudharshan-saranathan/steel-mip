@@ -35,7 +35,8 @@ SCRAP_FILE    = {r: f"scenarios/scrap_{r}.mod"   for r in SCRAP_REGIMES}
 GRID_EF_FILE  = {g: f"scenarios/grid_ef_{g}.mod" for g in GRID_EFS}
 
 # representative price point (feasibility is price-independent; any point works)
-NG_COST, H2_COST, CCS_COST = 15.0, 2500.0, 75.0
+NG_COST, H2_CAPEX_MULT, CCS_COST = 15.0, 1.0, 75.0   # H2 axis = green-H2 capex multiplier
+# (feasibility is price/capex-independent -> the H2 value here is immaterial, set to central 1.0)
 
 # structural knobs (template.mod has AVGEMIVAL/RAMPVAL tokens)
 AVG_EMI = float(os.environ.get("MC_AVG_EMI", "1.6"))
@@ -52,7 +53,7 @@ TEMPLATE = TEMPLATE.replace(
 
 def model_for(scrap, h2year, grid_ef):
     s = TEMPLATE
-    for tok, val in (("NGVAL", NG_COST), ("H2ENDVAL", H2_COST),
+    for tok, val in (("NGVAL", NG_COST), ("H2CAPXVAL", H2_CAPEX_MULT),
                      ("H2YEARVAL", h2year), ("CCSVAL", CCS_COST),
                      ("AVGEMIVAL", AVG_EMI), ("RAMPVAL", RAMP),
                      ("SCRAPREGIMEFILE", SCRAP_FILE[scrap]),

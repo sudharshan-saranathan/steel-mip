@@ -41,15 +41,15 @@ for %%S in (%SCENARIOS%) do (
     if not exist "results\NG_%NG%\%%S" mkdir "results\NG_%NG%\%%S"
     echo === NG=%NG% scenario=%%S ^(!SFILE!^) ===
 
-    for %%A in (1000 1500 2000 2500 3000 3500 4000) do (
+    for %%A in (0.5 0.75 1.0 1.25 1.5) do (
     for %%B in (2030 2033 2036 2039 2042 2045) do (
     for %%C in (25 50 75 100 125) do (
     for %%D in (0.04 0.05 0.06 0.07 0.08) do (
-        set "LABEL=h2end%%A_yr%%B_ccs%%C_scrap%%D"
+        set "LABEL=h2cx%%A_yr%%B_ccs%%C_scrap%%D"
         set "OUTFILE=results\NG_%NG%\%%S\!LABEL!.txt"
         echo Running %%S/!LABEL!
         copy /y template.mod "!TEMPFILE!" >nul
-        powershell -NoProfile -Command "(Get-Content '!TEMPFILE!') -replace 'NGVAL','%NG%' -replace 'H2ENDVAL','%%A' -replace 'H2YEARVAL','%%B' -replace 'CCSVAL','%%C' -replace 'SCRAPVAL','%%D' -replace 'NGAVAILFILE','!SFILE!' | Set-Content '!TEMPFILE!'"
+        powershell -NoProfile -Command "(Get-Content '!TEMPFILE!') -replace 'NGVAL','%NG%' -replace 'H2CAPXVAL','%%A' -replace 'H2YEARVAL','%%B' -replace 'CCSVAL','%%C' -replace 'SCRAPVAL','%%D' -replace 'NGAVAILFILE','!SFILE!' | Set-Content '!TEMPFILE!'"
         "%AMPL_EXE%" "!TEMPFILE!" > "!OUTFILE!" 2>&1
     ))))
 )

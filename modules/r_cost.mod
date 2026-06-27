@@ -85,8 +85,8 @@ s.t. cost_ngdri_def{t in T}:
 # H2 DRI
 # Green-H2 capital (electrolysers + dedicated renewables) is now an explicit SUNK
 # build in v_capacity.mod; here only the residual H2 variable opex h2_opex (water +
-# stack O&M) is charged. (ng_cost_h2 is retained in definitions.mod for reference and
-# for backward compatibility of the sweep token H2ENDVAL, but no longer drives cost.)
+# stack O&M) is charged. (The old delivered-price ng_cost_h2 has been removed; the H2
+# cost-uncertainty axis is the capex multiplier h2_capex_mult, swept via H2CAPXVAL.)
 s.t. cost_h2dri_def{t in T}:
     ng_cost_power  * h2dri_power_in[t]
   + ng_cost_lumpore * h2dri_lumpore_in[t]

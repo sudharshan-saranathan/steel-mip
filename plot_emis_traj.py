@@ -29,7 +29,7 @@ YEARS = list(range(2025, 2051))
 
 df = pd.read_csv(TRAJ_IN)
 df = df[df["year"].isin(YEARS)].copy()
-df["draw_id"] = df.groupby(["ng_cost", "h2_end_cost", "ccs_end_cost"]).ngroup()
+df["draw_id"] = df.groupby(["ng_cost", "h2_capex_mult", "ccs_end_cost"]).ngroup()
 n = df["draw_id"].nunique()
 print(f"Reading {TRAJ_IN}: {n} draws")
 

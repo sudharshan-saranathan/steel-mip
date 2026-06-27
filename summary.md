@@ -15,8 +15,9 @@
 > the review fixes: CO₂ target relaxed to an upper-bound cap; per-route reported capex
 > excludes the free legacy fleet; dead code removed; `u_lockin.mod` deleted; and the
 > **green-H₂ supply chain split out** into explicit sunk electrolyser + dedicated-
-> renewable capacity, §7.8; and a **unified feedstock/fuel supply-chain rule** with
-> coal/NG growth-capex levers defaulting to 0, §7.6). Implementation: **AMPL**
+> renewable capacity, §7.8; a **unified feedstock/fuel supply-chain rule** with coal/NG
+> growth-capex levers defaulting to 0, §7.6; and the **sweep/MC H₂ axis repointed** to
+> the green-H₂ capex multiplier `h2_capex_mult`, §16). Implementation: **AMPL**
 > (GMPL-style `.mod`), solver **Gurobi**.
 
 ---
@@ -462,8 +463,8 @@ are always built explicitly for every route — the supply-chain rule concerns o
 **Parameters (placeholders in published 2024–25 ranges; see §12.4):** electrolyser
 capex `1000→400 $/kW`, life 15 yr, energy `55 000 kWh/t-H₂` (~55 kWh/kg incl. BoP);
 renewable capex `800→450 $/kW` (blended solar/wind), life 25 yr, `re_cf = 0.45`;
-residual `h2_opex = 300 $/t-H₂`. `ng_cost_h2` is retained only so the sweep token
-`H2ENDVAL` still resolves — **it no longer drives any cost** (see §16 follow-up).
+residual `h2_opex = 300 $/t-H₂`. The H₂ cost-uncertainty sweep axis is the multiplier
+`h2_capex_mult` (token `H2CAPXVAL`); the old delivered-price `ng_cost_h2` was removed.
 
 ---
 
@@ -654,7 +655,7 @@ power `820→650`; WHR penetration `0.05→0.30`; grid EF `0.000886→0.0003`.
 | Slag credit `ng_credit_slag` | 15 | $/t |
 | Breeze / tar credit | 55 / 20 | $/t |
 | Natural gas `n5_cost_NG` | 10 | $/MMBtu (×50 in cost eq) |
-| Hydrogen `ng_cost_h2` | 4500 → 1000–1500 | $/t (declining) — **deprecated as a cost driver, see §7.8/§12.4** |
+| Green-H₂ supply chain | — | **explicit sunk capex (electrolyser + renewable), §7.8/§12.4**; sweep axis `h2_capex_mult` |
 | H₂ start year `ng_h2_start_year` | 2030 | — |
 | CCS cost `n10_ccs_cost` | 125 → 75 | $/tCO₂ |
 | Carbon tax `carbon_tax` | 0 | $/tCO₂ (lever) |
@@ -809,12 +810,15 @@ carbon tax are also applied.
   H₂ assumption. Unlike the earlier version, the H₂ supply chain is **no longer exempt
   from the sunk-capital logic**: its capital is a real, irreversible build, and only a
   small residual `h2_opex` remains in the price.
-- **Sweep follow-up (Python layer):** because the H₂ capital moved out of `ng_cost_h2`,
-  the Monte-Carlo / sweep "H₂ cost" axis (token `H2ENDVAL` → `ng_cost_h2_end`) now
-  drives nothing. To recover an H₂-cost uncertainty axis, repoint that token to the
-  new levers (`h2elec_capex_kw`, `re_capex_kw`, `re_cf`, `h2_opex`) in
-  `monte_carlo*.py` / `template.mod`. The `.mod` model is updated; the driver scripts
-  are not yet.
+- **H₂ uncertainty axis = green-H₂ capex multiplier.** The sweep/Monte-Carlo "H₂ cost"
+  axis has been repointed from the (removed) delivered price to a single multiplier
+  `h2_capex_mult` (template token `H2CAPXVAL`, default 1) that scales the electrolyser +
+  dedicated-renewable overnight capex (`ocapex_h2elec`, `ocapex_h2re`). Driver default
+  range ≈ [0.5, 1.6]× central. All drivers (`monte_carlo.py`, `monte_carlo_2d.py`,
+  `capex_sweep.py`, `mc_frontier.py`, `regret*.py`, `run_scripts/*`) and the H₂-axis
+  plots were updated; the CSV column is `h2_capex_mult`. The old `ng_cost_h2` price was
+  removed entirely. (`re_cf` and `h2_opex` remain separate sweepable params if a finer
+  H₂ decomposition is wanted.)
 - **Green-H₂ parameters are placeholders** (§12.4) in published 2024–25 ranges; pin
   them to your chosen sources before publication. A grid-coupled electrolysis variant
   (renewables partial, grid backup with emissions) is a possible extension, not the

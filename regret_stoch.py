@@ -34,7 +34,7 @@ H2_YEARS = [2030, 2035, 2040, 2045]
 def sample_world(rng):
     w = dict(rr.CENTRAL)
     w["ng"]     = float(np.clip(rng.normal(15,   4),    5, 25))     # 2nd-order
-    w["h2_end"] = float(np.clip(rng.normal(2500, 700), 1000, 4500)) # wide
+    w["h2_end"] = float(np.clip(rng.normal(1.0, 0.25), 0.5, 1.6))  # green-H2 capex mult (was $/t price)
     w["ccs"]    = float(np.clip(rng.normal(75,   20),   25, 125))   # moderate
     w["ccoal"]  = float(np.clip(rng.normal(190,  60),  120, 450))   # DOMINANT, right-skew via clip
     w["h2_year"]= int(rng.choice(H2_YEARS, p=[0.20, 0.40, 0.25, 0.15]))
@@ -84,7 +84,7 @@ def evaluate(world):
     i = world["draw"]
     pf   = rr.solve(world)
     roll = rolling_multi(world)
-    row = dict(draw=i, ng=round(world["ng"],1), h2_end=round(world["h2_end"]),
+    row = dict(draw=i, ng=round(world["ng"],1), h2_end=round(world["h2_end"],3),
                ccs=round(world["ccs"],1), ccoal=round(world["ccoal"]), h2_year=world["h2_year"])
     if pf is None:
         row.update(status="pf_infeasible", pf_cost_t="", realised_cost_t="", regret_t="", ef_miss="")
@@ -115,7 +115,7 @@ def main():
         os.environ["MC_THREADS"] = str(max(1, ((os.cpu_count() or 4) - 2) // procs))
     print(f"Stochastic regret prototype | N={N} seed={SEED} procs={procs} "
           f"threads/worker={os.environ.get('MC_THREADS','8')} | central A | ET={AVG_EMI} ramp={rr.RAMP}")
-    print(f"sampled: ng~N(15,4) h2_end~N(2500,700) ccs~N(75,20) ccoal~N(190,60) h2_year~cat\n")
+    print(f"sampled: ng~N(15,4) h2_capexmult~N(1.0,0.25) ccs~N(75,20) ccoal~N(190,60) h2_year~cat\n")
     if procs <= 1:
         rows = [evaluate(w) for w in worlds]
     else:

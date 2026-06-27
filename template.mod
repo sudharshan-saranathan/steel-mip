@@ -2,7 +2,9 @@
 # Monte-Carlo / sweep template for the linearized (MILP) steel model.
 #
 # The MC driver (monte_carlo.py) and the run_scripts substitute the tokens
-#   NGVAL  H2ENDVAL  H2YEARVAL  CCSVAL  SCRAPVAL  NGAVAILFILE
+#   NGVAL  H2CAPXVAL  H2YEARVAL  CCSVAL  SCRAPVAL  NGAVAILFILE
+# (H2CAPXVAL is the green-H2 supply-chain capex multiplier; it replaced the old
+#  H2ENDVAL delivered-price axis when H2 capital was split into explicit builds.)
 # then solve one instance per draw. Mirrors main.mod but parameterized and with
 # the human-readable report includes left for the driver to strip.
 #
@@ -18,7 +20,7 @@ include parameters.mod;
 
 # --- sampled inputs (token substitution by the driver) ---
 let {t in T} n5_cost_NG[t] := NGVAL;
-let ng_cost_h2_end := H2ENDVAL;
+let h2_capex_mult := H2CAPXVAL;
 let ng_h2_start_year := H2YEARVAL;
 let n10_ccs_cost_end := CCSVAL;
 let avg_emi := AVGEMIVAL;

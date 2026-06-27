@@ -7,10 +7,14 @@ solves the (now linear) model for each draw, and writes one CSV row per draw wit
 the sampled inputs, key outputs, and feasibility status. Run once per structural
 cell (see below); the three discrete structural axes are fixed per run.
 
-Sampled inputs -- the three market prices (uniform over [lo, hi]):
-    ng_cost      n5_cost_NG       $/MMBtu     [5,   25]
-    h2_end_cost  ng_cost_h2_end   $/ton       [1000,4500]
-    ccs_end_cost n10_ccs_cost_end $/ton       [25,  125]
+Sampled uncertain inputs (uniform over [lo, hi]):
+    ng_cost       n5_cost_NG       $/MMBtu          [5,   25]
+    h2_capex_mult h2_capex_mult    x central capex  [0.5, 1.6]   (green-H2 supply-chain
+                                                                  capex: electrolyser +
+                                                                  dedicated renewable)
+    ccs_end_cost  n10_ccs_cost_end $/ton            [25,  125]
+NB: the H2 axis is now the green-H2 CAPEX multiplier (the delivered-price hydrogen
+cost was removed when H2 capital was split into explicit electrolyser+renewable builds).
 
 Discrete STRUCTURAL axes (policy/deployment levers, fixed per run -> one "cell"):
     NG-availability scenario  {normal, shock, optimistic}        via MC_SCENARIO
@@ -61,10 +65,10 @@ SCRAP_FILE = {"starved":"scenarios/scrap_starved.mod",
               "modest":"scenarios/scrap_modest.mod",
               "optimistic":"scenarios/scrap_optimistic.mod"}[SCRAP_REGIME]
 
-# uniform prior bounds: [ng_cost, h2_end_cost, ccs_end_cost]
-LO = np.array([5.0,   1000.0, 25.0])
-HI = np.array([25.0,  4500.0, 125.0])
-NAMES = ["ng_cost", "h2_end_cost", "ccs_end_cost"]
+# uniform prior bounds: [ng_cost, h2_capex_mult, ccs_end_cost]
+LO = np.array([5.0,   0.5, 25.0])
+HI = np.array([25.0,  1.6, 125.0])
+NAMES = ["ng_cost", "h2_capex_mult", "ccs_end_cost"]
 
 # ----------------------- build per-draw model script ----------------------
 with open(os.path.join(PROJECT, "template.mod")) as fh:
@@ -80,7 +84,7 @@ TEMPLATE = TEMPLATE.replace(
 
 def model_for(ng, h2end, ccs, h2year):
     s = TEMPLATE
-    for tok, val in (("NGVAL", ng), ("H2ENDVAL", h2end), ("H2YEARVAL", h2year),
+    for tok, val in (("NGVAL", ng), ("H2CAPXVAL", h2end), ("H2YEARVAL", h2year),
                      ("CCSVAL", ccs), ("AVGEMIVAL", AVG_EMI), ("RAMPVAL", RAMP),
                      ("SCRAPREGIMEFILE", SCRAP_FILE),
                      ("NGAVAILFILE", SCEN_FILE), ("GRIDEFFILE", GRID_EF_FILE)):
@@ -180,7 +184,7 @@ def main():
     traj_w = None
     if traj_fh is not None:
         traj_w = csv.writer(traj_fh)
-        traj_w.writerow(["ng_cost", "h2_end_cost", "ccs_end_cost", "year"] + TRAJ_ENTS)
+        traj_w.writerow(["ng_cost", "h2_capex_mult", "ccs_end_cost", "year"] + TRAJ_ENTS)
     n_retry = 0
     with open(OUT_CSV, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=FIELDS); w.writeheader()
@@ -188,7 +192,7 @@ def main():
             ng, h2end, ccs = X[i]
             if i and i % RESET_EVERY == 0:
                 ampl.close(); ampl = AMPL()
-            row = {"draw": i, "ng_cost": ng, "h2_end_cost": h2end,
+            row = {"draw": i, "ng_cost": ng, "h2_capex_mult": h2end,
                    "ccs_end_cost": ccs,
                    "h2_start_year": H2YEAR, "scrap_regime": SCRAP_REGIME,
                    "grid_ef_scenario": GRID_EF, "avg_emi_target": AVG_EMI}

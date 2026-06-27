@@ -42,7 +42,9 @@ AVG_EMI = float(os.environ.get("MC_AVG_EMI", "1.8"))
 
 # published central forecast (the consensus bundle the planner commits to)
 # ccoal = coking-coal price ($/t, imported, BF-only); 184 == definitions.mod default.
-CENTRAL = dict(scrap="modest", h2_year=2035, h2_end=2500, grid="moderate_re",
+# h2_end is the green-H2 supply-chain capex MULTIPLIER (was a $/t delivered price);
+# 1.0 = central placeholder trajectory, >1 dearer, <1 cheaper.
+CENTRAL = dict(scrap="modest", h2_year=2035, h2_end=1.0, grid="moderate_re",
                ng=15, ccs=75, ccoal=184)
 
 # axis -> {below(worse), central, above(better)} deviation levels (trifurcation)
@@ -50,7 +52,7 @@ AXES = {
     "h2_year": {"worse": 2045, "central": 2035, "better": 2030},
     "grid":    {"worse": "bau", "central": "moderate_re", "better": "aggressive_re"},
     "scrap":   {"worse": "starved", "central": "modest", "better": "optimistic"},
-    "h2_end":  {"worse": 4500, "central": 2500, "better": 1000},
+    "h2_end":  {"worse": 1.5, "central": 1.0, "better": 0.6},   # capex multiplier
 }
 
 _base = open("template.mod").read()
@@ -65,7 +67,7 @@ _base = _base.replace("option gurobi_options 'Threads=5 TimeLimit=600 mipgap=0.0
 
 def model_text(world, avg_emi=AVG_EMI):
     s = _base
-    for tok, val in (("NGVAL", world["ng"]), ("H2ENDVAL", world["h2_end"]),
+    for tok, val in (("NGVAL", world["ng"]), ("H2CAPXVAL", world["h2_end"]),
                      ("H2YEARVAL", world["h2_year"]), ("CCSVAL", world["ccs"]),
                      ("AVGEMIVAL", avg_emi), ("RAMPVAL", RAMP),
                      ("SCRAPREGIMEFILE", f"scenarios/scrap_{world['scrap']}.mod"),

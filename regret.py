@@ -40,7 +40,8 @@ H2YEAR  = os.environ.get("MC_H2YEAR", "2030")
 GRID_EF = os.environ.get("MC_GRID_EF", "aggressive_re")
 RAMP    = os.environ.get("MC_RAMP", "0.20")
 AVG_EMI = os.environ.get("MC_AVG_EMI", "1.6")
-NG, H2, CCS = os.environ.get("NG", "15"), os.environ.get("H2", "2500"), os.environ.get("CCS", "75")
+# H2 = green-H2 supply-chain capex multiplier (was a $/t delivered price; 1.0 = central)
+NG, H2, CCS = os.environ.get("NG", "15"), os.environ.get("H2", "1.0"), os.environ.get("CCS", "75")
 
 _base = open("template.mod").read()
 _base = "\n".join(l for l in _base.splitlines()
@@ -50,7 +51,7 @@ _base = _base.replace("option gurobi_options 'Threads=5 TimeLimit=600 mipgap=0.0
 
 def model_for(scrap):
     s = _base
-    for tok, val in (("NGVAL", NG), ("H2ENDVAL", H2), ("H2YEARVAL", H2YEAR), ("CCSVAL", CCS),
+    for tok, val in (("NGVAL", NG), ("H2CAPXVAL", H2), ("H2YEARVAL", H2YEAR), ("CCSVAL", CCS),
                      ("AVGEMIVAL", AVG_EMI), ("RAMPVAL", RAMP),
                      ("SCRAPREGIMEFILE", f"scenarios/scrap_{scrap}.mod"),
                      ("NGAVAILFILE", "scenarios/ng_avail_normal.mod"),

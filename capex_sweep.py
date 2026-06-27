@@ -12,7 +12,7 @@ from _runpaths import PLOTS, CSV
 add_to_path(os.path.join(os.path.dirname(ampl_module_base.__file__), "bin"))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 ET="1.8"; RAMP="0.20"
-NGS=[5,15,25]; H2S=[1000,2500,4500]; CCSS=[25,75,125]
+NGS=[5,15,25]; H2S=[0.5,1.0,1.5]; CCSS=[25,75,125]   # H2S = green-H2 capex multiplier (was $/t price)
 SCRAP=["starved","low","modest","optimistic"]; H2Y=["2030","2035","2040","2045"]
 GRID=["bau","moderate_re","aggressive_re"]; GCOL={"bau":"#d62728","moderate_re":"#ff7f0e","aggressive_re":"#2ca02c"}
 base=open("template.mod").read()
@@ -22,7 +22,7 @@ feas=[(r["scrap_regime"],r["h2_start_year"],r["grid_ef_scenario"])
       for r in csv.DictReader(open("mc_frontier.csv")) if r["status"]=="solved"]
 def model(scrap,h2y,grid):
     s=base
-    for tok,val in (("NGVAL",15),("H2ENDVAL",2500),("H2YEARVAL",h2y),("CCSVAL",75),
+    for tok,val in (("NGVAL",15),("H2CAPXVAL",1.0),("H2YEARVAL",h2y),("CCSVAL",75),
                     ("AVGEMIVAL",ET),("RAMPVAL",RAMP),("SCRAPREGIMEFILE",f"scenarios/scrap_{scrap}.mod"),
                     ("NGAVAILFILE","scenarios/ng_avail_normal.mod"),("GRIDEFFILE",f"scenarios/grid_ef_{grid}.mod")):
         s=s.replace(tok,str(val))
@@ -33,7 +33,7 @@ for (scrap,h2y,grid) in feas:
     a.eval("option solver gurobi; option gurobi_options 'Threads=6 mipgap=0.0001 outlev=0';")
     vals=[]
     for ng,h2,ccs in itertools.product(NGS,H2S,CCSS):
-        a.eval(f"let {{t in T}} n5_cost_NG[t]:={ng}; let ng_cost_h2_end:={h2}; let n10_ccs_cost_end:={ccs};")
+        a.eval(f"let {{t in T}} n5_cost_NG[t]:={ng}; let h2_capex_mult:={h2}; let n10_ccs_cost_end:={ccs};")
         a.solve()
         if a.get_value("solve_result")!="solved": continue
         g=lambda e:a.get_value(e)

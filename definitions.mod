@@ -168,18 +168,11 @@ param n4_capex_coal default 110;          # CAPEX of Coal-DRI per tCS production
 param n5_capex_ng := 90;                  # CAPEX of NG-DRI per tCS production
 param n5_cost_NG {t in T} default 10;     # Cost of natural gas per MMBtu
 
-param ng_cost_h2_start default 4500;
-param ng_cost_h2_end default 1500;   
+# The former all-in delivered H2 price (ng_cost_h2_start/end -> ng_cost_h2) has been
+# REMOVED: hydrogen capital is now explicit sunk electrolyser + renewable builds (see
+# the green-H2 block at the end of this file and v_capacity.mod) and only a residual
+# variable opex (h2_opex) remains in the price. The uncertainty axis is h2_capex_mult.
 param ng_h2_start_year default 2040;
-# DEPRECATED as a cost driver: the all-in delivered H2 price below has been split
-# into explicit sunk electrolyser + renewable capital (see the green-H2 block at the
-# end of this file and v_capacity.mod) plus a residual variable opex (h2_opex). It is
-# retained only so the sweep token H2ENDVAL (-> ng_cost_h2_end) still resolves; it no
-# longer enters any cost equation.
-param ng_cost_h2{t in T} :=
-    if t <= 2025
-     then ng_cost_h2_start
-    else ng_cost_h2_start + (ng_cost_h2_end-ng_cost_h2_start) * (t-2025)/25; # Cost of hydrogen from 2025 to 2050
 param n6_capex_h2{t in T} :=
     if t <= 2025 then 120
     else 120+ (90-120) * (t-2025)/25;     # CAPEX of H2-DRI per tCS from 2025 to 2050
@@ -348,6 +341,11 @@ param ccs_kwh_ngdri  default 200;    # mostly compression of the separated strea
 param h2_kwh_per_t default 55000;     # electrolyser electricity, kWh per t H2 (~55 kWh/kg incl BoP)
 param re_cf        default 0.45;      # dedicated renewable capacity factor (solar/wind hybrid)
 param h2_opex{t in T} default 300;    # residual H2 variable opex (water + stack O&M), $/t H2
+# Uncertainty multiplier on the green-H2 supply-chain overnight capex (electrolyser +
+# renewable). This is the sweep/Monte-Carlo "H2 cost" axis now that the delivered-price
+# ng_cost_h2 is retired: 1 = central placeholder trajectory, <1 cheaper, >1 dearer.
+# Set via `let h2_capex_mult := X;` (template token H2CAPXVAL).
+param h2_capex_mult default 1;
 
 # --- Electrolyser: overnight capex $/kW (placeholder decline 2025->2050) ---
 param h2elec_capex_kw{t in T} := 1000 + (400 - 1000)*(t-2025)/25;
@@ -355,7 +353,7 @@ param life_h2elec default 15;         # electrolyser plant life (incl stack repl
 param crf_h2elec := real_discount_rate*(1+real_discount_rate)^life_h2elec/((1+real_discount_rate)^life_h2elec-1);
 # Convert $/kW -> overnight $ per (t-H2/yr) of nameplate output at the renewable CF:
 #   1 kW over a year at re_cf -> 8760*re_cf kWh -> / h2_kwh_per_t  t-H2/yr.
-param ocapex_h2elec{t in T} := h2elec_capex_kw[t] / (8760*re_cf/h2_kwh_per_t);
+param ocapex_h2elec{t in T} := h2_capex_mult * h2elec_capex_kw[t] / (8760*re_cf/h2_kwh_per_t);
 param acapex_h2elec{t in T} := ocapex_h2elec[t] * crf_h2elec;   # annualized (for the 1-sunk branch)
 param fopex_h2elec default 400;       # fixed O&M, $/(t-H2/yr)/yr (placeholder ~3% of capex)
 
@@ -365,7 +363,7 @@ param fopex_h2elec default 400;       # fixed O&M, $/(t-H2/yr)/yr (placeholder ~
 param re_capex_kw{t in T} := 800 + (450 - 800)*(t-2025)/25;
 param life_re default 25;             # renewable plant life
 param crf_re := real_discount_rate*(1+real_discount_rate)^life_re/((1+real_discount_rate)^life_re-1);
-param ocapex_h2re{t in T} := re_capex_kw[t];                    # overnight $/kW (charged on build, in kW)
+param ocapex_h2re{t in T} := h2_capex_mult * re_capex_kw[t];    # overnight $/kW (charged on build, in kW)
 param acapex_h2re{t in T} := ocapex_h2re[t] * crf_re;           # annualized $/kW/yr (for the 1-sunk branch)
 param fopex_h2re default 15;          # fixed O&M, $/kW/yr (placeholder ~2% of capex)
 

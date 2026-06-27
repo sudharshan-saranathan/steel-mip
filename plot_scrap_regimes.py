@@ -46,7 +46,7 @@ def load_grid(regime, value_col):
     vals = np.where(df["status"].values == "solved", vals, np.nan)
     # reshape to [i_h2, i_ccs] then transpose -> [i_ccs, i_h2] for (y=CCUS, x=H2)
     Z = vals.reshape(n_h2, n_ccs).T
-    h2  = df["h2_end_cost"].values.reshape(n_h2, n_ccs)[:, 0] / 1000.0   # $/t -> $/kg
+    h2  = df["h2_capex_mult"].values.reshape(n_h2, n_ccs)[:, 0]   # green-H2 capex multiplier
     ccs = df["ccs_end_cost"].values.reshape(n_h2, n_ccs)[0, :]
     extent = [h2.min(), h2.max(), ccs.min(), ccs.max()]
     return Z, extent
@@ -74,7 +74,7 @@ def make_figure(value_col, title, cbar_label, out_name):
                           boxstyle="round,pad=0.2"))
         if ax is not axes[-1]:
             ax.tick_params(axis="x", which="both", bottom=False, labelbottom=False)
-    axes[-1].set_xlabel("H₂ end-cost ($/kg)", fontsize=11)
+    axes[-1].set_xlabel("green-H₂ capex multiplier (× central)", fontsize=11)
 
     cax = fig.add_axes([0.88, 0.07, 0.022, 0.86])
     fig.colorbar(im, cax=cax, label=cbar_label)

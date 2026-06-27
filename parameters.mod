@@ -18,8 +18,8 @@ let {t in T} n5_cost_NG[t] := 10;
 # ==================================================
 # H2 DRI
 # ==================================================
-let ng_cost_h2_start := 4500;        # Cost of hydrogen per ton at 2025
-let ng_cost_h2_end := 1000;          # Cost of hydrogen per ton by 2050
+# (H2 cost is now the explicit electrolyser + renewable build capex, swept via
+#  h2_capex_mult; the old delivered-price ng_cost_h2 was removed.)
 let ng_h2_start_year := 2030;
 # ==================================================
 # EAF (Scrap-Based)

@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 """
-High-density 2-D grid sweep: H2 cost × CCS cost.
+High-density 2-D grid sweep: green-H2 capex multiplier × CCS cost.
 
 Sweeps a 100×100 full grid (10,000 points) over the two axes; all other
 uncertain inputs are fixed at their mid-range values.
 
 Grid axes:
-    h2_end_cost  ng_cost_h2_end   $/ton       linspace(1000, 4500, 100)
-    ccs_end_cost n10_ccs_cost_end $/tCO2      linspace(  25,  125, 100)
+    h2_capex_mult h2_capex_mult   x central   linspace(0.5, 1.6, 100)   (green-H2
+                                                                         supply-chain capex)
+    ccs_end_cost  n10_ccs_cost_end $/tCO2      linspace( 25,  125, 100)
 
 Fixed at mid-range:
     ng_cost      n5_cost_NG       $/MMBtu     15
@@ -46,7 +47,7 @@ SCRAP_FILE = {"starved":    "scenarios/scrap_starved.mod",     # 0%/yr
 NG_FIXED      = 15.0    # $/MMBtu
 H2YEAR_FIXED  = int(os.environ.get("MC_H2YEAR", "2030"))   # H2-DRI start year (structural axis)
 
-H2_GRID  = np.linspace(1000.0, 4500.0, N_H2)
+H2_GRID  = np.linspace(0.5, 1.6, N_H2)     # green-H2 supply-chain capex multiplier
 CCS_GRID = np.linspace(  25.0,  125.0, N_CCS)
 
 # ----------------------- build per-draw model script ----------------------
@@ -60,7 +61,7 @@ TEMPLATE = TEMPLATE.replace(
 
 def model_for(h2end, ccs):
     s = TEMPLATE
-    for tok, val in (("NGVAL", NG_FIXED), ("H2ENDVAL", h2end),
+    for tok, val in (("NGVAL", NG_FIXED), ("H2CAPXVAL", h2end),
                      ("H2YEARVAL", H2YEAR_FIXED), ("CCSVAL", ccs),
                      ("SCRAPREGIMEFILE", SCRAP_FILE), ("NGAVAILFILE", SCEN_FILE)):
         s = s.replace(tok, str(val))
@@ -82,7 +83,7 @@ EXPR = {
     "ng2050":   "ngdri_output[2050]", "h2_2050": "h2dri_output[2050]",
 }
 
-FIELDS = (["i_h2", "i_ccs", "h2_end_cost", "ccs_end_cost", "scenario", "scrap_regime", "status",
+FIELDS = (["i_h2", "i_ccs", "h2_capex_mult", "ccs_end_cost", "scenario", "scrap_regime", "status",
            "obj", "lifetime_avg_cost", "levelized_avg_cost", "lifetime_avg_emis",
            "capture_per_t", "cost_2050", "emis_2050",
            "f_bof_2050", "f_eaf_2050", "f_scrap_2050",
@@ -127,7 +128,7 @@ def main():
                 if draw and draw % RESET_EVERY == 0:
                     ampl.close(); ampl = AMPL()
                 row = {"i_h2": i_h2, "i_ccs": i_ccs,
-                       "h2_end_cost": round(h2end, 4),
+                       "h2_capex_mult": round(h2end, 4),
                        "ccs_end_cost": round(ccs, 4),
                        "scenario": SCENARIO, "scrap_regime": SCRAP_REGIME}
                 td = time.time()

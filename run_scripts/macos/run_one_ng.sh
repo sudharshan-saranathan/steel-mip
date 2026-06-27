@@ -19,7 +19,7 @@
 #   AMPL_EXE    path to the ampl executable   (default: /Applications/AMPL/ampl)
 #   WORKDIR     project root                  (default: two levels up)
 #   SCENARIOS   space-separated scenario keys (default: "normal shock optimistic")
-#   H2END_VALS  override h2end grid           (default: full 7 values)
+#   H2CAPX_VALS override green-H2 capex-multiplier grid (default: 5 values)
 #   YEAR_VALS   override year grid            (default: full 6 values)
 #   CCS_VALS    override ccs grid             (default: full 5 values)
 #   SCRAP_VALS  override scrap grid           (default: full 5 values)
@@ -47,7 +47,7 @@ scen_file() {
 }
 
 # Scenario grid (override via env for subset runs)
-read -r -a H2END_ARR <<< "${H2END_VALS:-1000 1500 2000 2500 3000 3500 4000}"
+read -r -a H2CAPX_ARR <<< "${H2CAPX_VALS:-0.5 0.75 1.0 1.25 1.5}"
 read -r -a YEAR_ARR  <<< "${YEAR_VALS:-2030 2033 2036 2039 2042 2045}"
 read -r -a CCS_ARR   <<< "${CCS_VALS:-25 50 75 100 125}"
 read -r -a SCRAP_ARR <<< "${SCRAP_VALS:-0.04 0.05 0.06 0.07 0.08}"
@@ -68,12 +68,12 @@ for S in ${SCENARIOS}; do
   mkdir -p "results/NG_${NG}/${S}"
   echo "=== NG=${NG} scenario=${S} (${SFILE}) ==="
 
-  for A in "${H2END_ARR[@]}"; do
+  for A in "${H2CAPX_ARR[@]}"; do
     for B in "${YEAR_ARR[@]}"; do
       for C in "${CCS_ARR[@]}"; do
         for D in "${SCRAP_ARR[@]}"; do
 
-          LABEL="h2end${A}_yr${B}_ccs${C}_scrap${D}"
+          LABEL="h2cx${A}_yr${B}_ccs${C}_scrap${D}"
           OUTFILE="results/NG_${NG}/${S}/${LABEL}.txt"
 
           echo "Running ${S}/${LABEL}"
@@ -81,7 +81,7 @@ for S in ${SCENARIOS}; do
           # Use | as delimiter for the scenario file (contains /).
           sed \
             -e "s/NGVAL/${NG}/g" \
-            -e "s/H2ENDVAL/${A}/g" \
+            -e "s/H2CAPXVAL/${A}/g" \
             -e "s/H2YEARVAL/${B}/g" \
             -e "s/CCSVAL/${C}/g" \
             -e "s/SCRAPVAL/${D}/g" \

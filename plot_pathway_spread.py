@@ -68,7 +68,7 @@ for col in route_cols:
     df[f"f_{col}"] = series / total
 
 # Identify unique draws by price triplet
-draw_id = df.groupby(["ng_cost", "h2_end_cost", "ccs_end_cost"]).ngroup()
+draw_id = df.groupby(["ng_cost", "h2_capex_mult", "ccs_end_cost"]).ngroup()
 df["draw_id"] = draw_id
 n_draws = df["draw_id"].nunique()
 print(f"  {n_draws} draws × {df['year'].nunique()} years")
