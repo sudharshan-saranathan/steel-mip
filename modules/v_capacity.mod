@@ -109,10 +109,11 @@ s.t. cap_lim_scrap{t in T}: steel_scrap_eaf[t] <= cap_scrap[t];
 
 # ----------------------------------------------------------------------------
 # Cost pieces (consumed by total_cost_def in r_cost.mod).
-#   capex_cost   = overnight capex on this year's builds (full amount, at build
-#                  year; the residual-life salvage credit is taken in the
-#                  objective, see main.mod).
-#   fixopex_cost = fixed O&M (fraction of overnight capex) on installed capacity.
+#   capex_cost   = overnight capex on this year's builds, charged in FULL in the
+#                  build year and fully sunk (no residual-life salvage credit; see
+#                  the objective note in main.mod).
+#   fixopex_cost = fixed O&M (labour + maintenance, a flat per-capacity rate -- NOT
+#                  a fraction of capex) on installed capacity.
 # ----------------------------------------------------------------------------
 # scrap-chain capacity must cover total scrap throughput (all 3 streams: scrap-EAF
 # charge + BOF scrap + DRI-EAF scrap charge). 2025 capacity is pinned to that

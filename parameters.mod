@@ -3,8 +3,7 @@
 # ==================================================
 let base_demand := 152200000;
 let growth_rate := 0.05;
-param avg_emi   default 1.75;  # uniform cumulative ET across all regimes (overridable via MC_AVG_EMI)
-#let emi_limit :=1.5353;
+param avg_emi   default 1.75;  # cumulative average CO2-intensity CAP, tCO2/tCS (overridable via MC_AVG_EMI)
 
 # ==================================================
 # NG DRI
@@ -123,4 +122,3 @@ let n5_ng_cap[2050] := 21911625;
 
 
 #let carbon_tax :=200;
-#let emi_limit   := 0.75;

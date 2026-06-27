@@ -23,11 +23,12 @@ include modules/n_steel_balance.mod;
 include modules/q_carbon_capture.mod;
 include modules/o_waste_heat.mod;
 include modules/p_power_balance.mod;
-include modules/v_capacity.mod;          # capacity stock + builds (supersedes u_lockin)
+include modules/v_capacity.mod;          # capacity stock + builds
 include modules/r_cost.mod;
 include modules/s_emissions.mod;
 include modules/t_additional_constraints.mod;
-# u_lockin.mod retired: capacity stock + asset-life lock-in now handled in v_capacity.mod
+# Asset-life lock-in is handled economically by the capacity stock in v_capacity.mod
+# (sunk overnight capex + fixed opex), which replaced the former hard-floor u_lockin.
 
 param discount_factor{t in T} :=
     1 / (1 + real_discount_rate)^(ord(t) - 1);

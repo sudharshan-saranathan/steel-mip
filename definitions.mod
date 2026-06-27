@@ -200,14 +200,9 @@ param other_opex default 10;              # Other opex per tCS
 
 # OTHER PARAMETERS
 param real_discount_rate := 0.06;
-param eps := 1e-3;
-param eps2:= 1e-2;
-param emi_limit default 0.5;
 param n8_scrap_rate default 0.06;
 param n8_scrap_limit{t in T};
-param n5_ng_cap {T};   
-#param n6_h2_avail {t in T};  
-param N := 1e8;
+param n5_ng_cap {T};
 
 # ============================================================================
 # CAPACITY-EXPANSION PARAMETERS  (branch: capex-opex-framework)

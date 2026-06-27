@@ -72,7 +72,10 @@ s.t. cost_coaldri_def{t in T}:
   + ng_cost_ncoal     * coaldri_coal_in[t]
   - cost_coaldri[t] = 0;                             # eq97
 
-# NG DRI 
+# NG DRI
+# The literal 50 is the energy content of natural gas, ~50 MMBtu per tonne, so
+# n5_cost_NG ($/MMBtu) * 50 (MMBtu/t) gives $/t of NG. Consistent with the NG
+# emission factor in s_emissions.mod (0.055 tCO2/MMBtu * 50 = 2.75 tCO2/t NG).
 s.t. cost_ngdri_def{t in T}:
     ng_cost_power  * ngdri_power_in[t]
   + ng_cost_lumpore * ngdri_lumpore_in[t]

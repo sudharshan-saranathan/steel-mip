@@ -178,10 +178,14 @@ for {t in T} {
     printf "\n%4d %12.2f %15.2f %15.2f %15.2f %15.2f",
         t,
 
-        # BF-BOF  (levelized: annualized capex + fixed O&M on capacity, variable
-        # opex on production; capex_free cost_* vars; new stream-specific CCS)
+        # BF-BOF  (levelized $/t). Capital is annualized capex on BUILT capacity
+        # only -- acapex*(cap-legacy) -- so the free 2025 incumbent fleet is NOT
+        # billed, matching the objective (which charges overnight capex on builds,
+        # never on legacy); the CRF=annuity identity makes the two reconcile in
+        # present value. Fixed O&M on full capacity, variable opex on production;
+        # capex-free cost_* vars; stream-specific CCS.
         if steel_bof[t] > 0 then
-           ( acapex_bof*cap_bof[t] + fopex_bof*cap_bof[t]
+           ( acapex_bof*(cap_bof[t]-legacy_bof[t]) + fopex_bof*cap_bof[t]
            + cost_cokeov[t] + cost_sinter[t] + cost_pellet_bf[t] + cost_bf[t] + cost_bof[t]
            + other_opex*steel_bof[t]
            + carbon_tax*scope1_bf[t]
@@ -192,7 +196,7 @@ for {t in T} {
 
         # Coal DRI-EAF
         if steel_eaf[t]*f_cdri[t] > 0 then
-           ( acapex_cdri*cap_cdri[t] + fopex_cdri*cap_cdri[t]/(1-n7_phi_eaf)
+           ( acapex_cdri*(cap_cdri[t]-legacy_cdri[t]) + fopex_cdri*cap_cdri[t]/(1-n7_phi_eaf)
            + cost_coaldri[t] + f_cdri[t]*cost_eaf[t] + cost_pellet_coaldri[t]
            + other_opex*(steel_eaf[t]*f_cdri[t])
            + carbon_tax*scope1_cdri[t]
@@ -203,7 +207,7 @@ for {t in T} {
 
         # NG DRI-EAF
         if steel_eaf[t]*f_ngdri[t] > 0 then
-           ( acapex_ngdri*cap_ngdri[t] + fopex_ngdri*cap_ngdri[t]/(1-n7_phi_eaf)
+           ( acapex_ngdri*(cap_ngdri[t]-legacy_ngdri[t]) + fopex_ngdri*cap_ngdri[t]/(1-n7_phi_eaf)
            + cost_ngdri[t] + f_ngdri[t]*cost_eaf[t] + cost_pellet_ngdri[t]
            + other_opex*(steel_eaf[t]*f_ngdri[t])
            + carbon_tax*scope1_ngdri[t]
@@ -214,7 +218,7 @@ for {t in T} {
 
         # H2 DRI-EAF  (no CCS stream)
         if t >= ng_h2_start_year && steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]) > 0 then
-           ( acapex_h2dri[t]*cap_h2dri[t] + fopex_h2dri*cap_h2dri[t]/(1-n7_phi_eaf)
+           ( acapex_h2dri[t]*(cap_h2dri[t]-legacy_h2dri[t]) + fopex_h2dri*cap_h2dri[t]/(1-n7_phi_eaf)
            + cost_h2dri[t] + (1-f_cdri[t]-f_ngdri[t])*cost_eaf[t] + cost_pellet_h2dri[t]
            + other_opex*(steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]))
            + carbon_tax*scope1_h2dri[t]
@@ -224,7 +228,7 @@ for {t in T} {
 
         # Scrap-EAF  (no CCS stream)
         if steel_scrap_eaf[t] > 0 then
-           ( acapex_scrap*cap_scrap[t] + fopex_scrap*cap_scrap[t]
+           ( acapex_scrap*(cap_scrap[t]-legacy_scrap[t]) + fopex_scrap*cap_scrap[t]
            + cost_scrap_eaf[t]
            + other_opex*steel_scrap_eaf[t]
            + carbon_tax*scope1_scrapeaf[t]

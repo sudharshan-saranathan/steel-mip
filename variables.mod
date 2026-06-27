@@ -81,11 +81,8 @@ var ngdri_lumpore_in{T}         >= 0;  # X[49]
 var h2dri_output{T}             >= 0;  # X[50]
 var h2dri_pellets_in{T}          >= 0;  # X[51]
 var h2dri_h2_in{T}              >= 0;  # X[52]
-var n6_h2_avail{t in T}         >= 0;
-var max_growth_limit{t in T}         >= 0;
 var h2dri_power_in{T}           >= 0;  # X[53]
 var h2dri_lumpore_in{T}         >= 0;  # X[54]
-var z{t in T} binary;
 # EAF (DRI-based
 var steel_eaf{T}                >= 0;  # X[55]
 var dri_eaf_steel_out{T}        >= 0;  # X[56]

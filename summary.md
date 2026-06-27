@@ -11,20 +11,22 @@
 > the model. Equation tags (`eq1`…`eq112`) match the `# eqN` comments in the
 > `.mod` sources. Section headers are stable to keep diffs readable.
 >
-> **Last synced to code:** 2026-06-27, branch `mip-v2`, commit `3026a11`
-> (capex-opex-framework). Implementation: **AMPL** (GMPL-style `.mod`), solver
+> **Last synced to code:** 2026-06-27, branch `mip-v2` (capex-opex-framework, plus
+> the review fixes in this commit: CO₂ target relaxed to an upper-bound cap;
+> per-route reported capex now excludes the free legacy fleet; dead code removed;
+> `u_lockin.mod` deleted). Implementation: **AMPL** (GMPL-style `.mod`), solver
 > **Gurobi**.
 
 ---
 
 ## 1. Scope, purpose and modelling paradigm
 
-The model is a **deterministic, multi-period, mixed-integer linear program (MILP)**
-that computes the **least-cost transition pathway for a national crude-steel sector
-over 2025–2050** subject to a cumulative average CO₂-intensity target. In its
-current form the integrality is vestigial (the lone binary `z` and the former CCS
-phase-in binaries are unused/retired), so the solved instance is effectively a
-**large linear program**.
+The model computes the **least-cost transition pathway for a national crude-steel
+sector over 2025–2050** subject to a cumulative average CO₂-intensity cap. It is a
+**deterministic, multi-period linear program (LP)**. (Historically it carried
+binaries for CCS phase-in and an unused `z`; these have been removed during the move
+to the capacity-expansion framework, so the current model has **no integer
+variables**. The repository and filenames retain the "MIP" label for continuity.)
 
 It answers: *given exogenous, growing steel demand and a binding lifetime
 CO₂-intensity budget, how much of each steelmaking route's **capacity** should be
@@ -57,9 +59,7 @@ model:
 | MIP gap | `0.002` (0.2 %) | `main.mod` |
 | Threads | 10 (sweeps use 5) | `main.mod` / `template.mod` |
 | Time limit | none (sweeps: 600 s) | `template.mod` |
-| Real discount rate `r` | 0.06 | `parameters.mod` |
-| Numeric tolerances | `eps = 1e-3`, `eps2 = 1e-2` | `parameters.mod` |
-| Big-M | `N = 1e8` (legacy; mostly unused now) | `parameters.mod` |
+| Real discount rate `r` | 0.06 | `definitions.mod` |
 
 ---
 
@@ -378,7 +378,7 @@ levelized `n*_capex` figures; a **capital recovery factor** converts it to an
 crf_X    = r·(1+r)^L / ((1+r)^L − 1)          # L = life_X
 ocapex_X = acapex_X / crf_X                    # overnight $/(t-capacity/yr)
 ```
-Bundling (`parameters.mod`):
+Bundling (`definitions.mod`):
 ```
 acapex_bof   = n0_capex + n1_capex + ng_capex_pell + n2_capex + n3_capex = 40+30+10+80+40 = 200
 acapex_cdri  = (n4_capex_coal + ng_capex_pell + n7_capex)/0.9 = (110+10+70)/0.9 ≈ 211.1
@@ -411,21 +411,22 @@ down-floor `h2dri_output[t] ≥ 0.85·h2dri_output[t−1]` once active.
 
 ### 8.2 Hydrogen availability
 
-`definitions.mod`. H₂ input is zero before the start year, capped on entry, then
+`parameters.mod`. H₂ input is zero before the start year, capped on entry, then
 grows by an **additive slab** (not CAGR):
 ```
 h2dri_h2_in[t] = 0                                 for t < ng_h2_start_year   # No_H2_Before
 h2dri_h2_in[t] ≤ H2_cap                            at t = ng_h2_start_year    # H2_growth_cap
 h2dri_h2_in[t] − h2dri_h2_in[t−1] ≤ ramp_frac·H2_cap  for t > start year      # H2_growth_limit
-H2_cap = 1 500 000 t ;  ng_h2_start_year = 2030 (definitions; default 2040)
+H2_cap = 1 500 000 t ;  ng_h2_start_year = 2030 (parameters.mod; default 2040 in definitions.mod)
 ```
 
 ### 8.3 Natural-gas availability
 
 `ng_bound`: `ngdri_ng_in[t] ≤ n5_ng_cap[t]`, a year-by-year cap (≈10 % of national
 supply). Three profiles exist — **normal / BAU / shock** — selectable; the **shock**
-profile (with a 2035–2040 dip) is currently live in `definitions.mod`. Full tables
-in `definitions.mod` and `ng.mod`; scenario files override them.
+profile (with a 2035–2040 dip) is currently live in `parameters.mod` (the
+`param n5_ng_cap{T}` is declared in `definitions.mod`). Full tables in
+`parameters.mod` and `ng.mod`; scenario files override them.
 
 ### 8.4 Scrap availability
 
@@ -437,15 +438,19 @@ n8_scrap_rate = 0.04 (definitions; regime-overridable 0.04–0.06)
 
 ### 8.5 CO₂-intensity policy target
 
-The single policy driver — a **cumulative lifetime average** CO₂-intensity band
-(`avg_emis_lower_total` / `avg_emis_upper_total`), linearised by multiplying through
-by `Σ total_steel`:
+The single policy driver — a **cumulative lifetime average** CO₂-intensity **cap**
+(`avg_emis_cap_total`, an upper bound only), linearised by multiplying through by
+`Σ total_steel`:
 ```
-(avg_emi − eps)·Σ_t total_steel[t]  ≤  Σ_t total_emissions[t]  ≤  (avg_emi + eps)·Σ_t total_steel[t]
+Σ_t total_emissions[t]  ≤  avg_emi · Σ_t total_steel[t]
 avg_emi = 1.75 tCO₂/tCS (default; swept per run, e.g. 1.6)
 ```
-This binds the whole pathway: it forces the optimizer to retire/decarbonise enough
-to hit the lifetime intensity budget while meeting demand each year.
+This is a genuine carbon budget: the pathway must not *exceed* the lifetime intensity
+target, but the optimizer **may overachieve** (emit less) where that is cheaper. It
+binds the whole pathway, forcing enough retirement/decarbonisation to stay under
+budget while meeting demand each year. *(Earlier versions used a two-sided ±eps band
+that pinned emissions exactly at the target — an iso-emission device; this was
+deliberately relaxed to an inequality so cleaner pathways are not penalised.)*
 
 ---
 
@@ -528,7 +533,7 @@ n9_grid_ef[t] = 0.000886 → 0.0003 tCO₂/kWh (linear 2025→2050)   # decarbon
 
 **Net total** (eq112): `total_emissions = scope1 + scope2 − total_ccs`.
 
-This `total_emissions[t]` is exactly what the §8.5 lifetime-average intensity band
+This `total_emissions[t]` is exactly what the §8.5 lifetime-average intensity cap
 constrains.
 
 ---
@@ -548,13 +553,13 @@ capacity seeds `cap0_*` (§4) are calibrated to this mix on each route's output 
 
 ## 12. Parameter reference tables
 
-### 12.1 Technical coefficients (`parameters.mod`)
+### 12.1 Technical coefficients (`definitions.mod`)
 Listed inline by unit in §5. Time-interpolated coefficients (linear 2025→2050):
 sinter breeze `0.09→0.058`, sinter biochar `0→0.022`; BF PCI `0.15→0.16`, BF biomass
 `0→0.053`, BF coke `0.53→0.44`, BF H₂ `0→0.013`; DRI-EAF power `650→500`; scrap-EAF
 power `820→650`; WHR penetration `0.05→0.30`; grid EF `0.000886→0.0003`.
 
-### 12.2 Market prices and costs (`parameters.mod` / `definitions.mod`)
+### 12.2 Market prices and costs (`definitions.mod`; runtime `let` overrides in `parameters.mod`)
 
 | Parameter | Value | Unit |
 |---|---|---|
@@ -579,7 +584,7 @@ power `820→650`; WHR penetration `0.05→0.30`; grid EF `0.000886→0.0003`.
 | Levelized capex `n*_capex` | coke 40, sinter 30, pellet 10, BF 80, BOF 40, coal-DRI 110, NG-DRI 90, H₂-DRI 120→90, EAF 70, scrap-EAF 70 | $/tCS |
 | WHR capex / opex | 0.009 / 0.003 | $/kWh |
 
-### 12.3 Capacity-framework parameters (`parameters.mod`)
+### 12.3 Capacity-framework parameters (`definitions.mod`)
 
 | Parameter | Value |
 |---|---|
@@ -614,8 +619,9 @@ The model was deliberately reduced from a nonconvex MINLP to a (near-pure) LP:
 5. **Intensity target.** The variable-denominator ratio is cleared by multiplying
    through by `Σ total_steel ≥ 0` (§8.5).
 
-Consequently `nonconvex=2` is not required, and the former CCS phase-in binaries
-(`dec_switch_*`) and the integer `z` are retired/unused.
+Consequently `nonconvex=2` is not required. The former CCS phase-in binaries
+(`dec_switch_*`) and the unused integer `z` have been removed, so the model now
+contains **no integer variables** and solves as a pure linear program.
 
 ---
 
@@ -670,9 +676,16 @@ Post-solve console report: lifetime levelized average steel cost ($/t); 2050 cos
 emissions intensity; CO₂ captured per tonne steel; the 2050 route-share table;
 year-by-year route production with shares; CCS amounts and capture fractions per
 route/year; year-by-year average emissions (tCO₂/t) and cost ($/t); and per-route
-levelized cost and emissions trajectories (which re-expand the capacity capex/fixed
-opex onto a per-tonne basis for comparison, and apply the WHR power credit and any
-carbon tax).
+levelized cost and emissions trajectories. The per-route levelized capital charge is
+`acapex_X·(cap_X − legacy_X)` — annualised capex on **built** capacity only, so the
+free 2025 incumbent (legacy) fleet is not billed, matching the objective (which
+charges overnight capex on builds, never on legacy). Because the capital-recovery
+factor is the annuity factor, the annualised report and the objective's overnight
+charge **reconcile in present value** (exactly for vintages whose life fits within
+the horizon; late-horizon builds whose annuity tail extends past 2050 are charged
+slightly less in the report than the objective's full sunk overnight amount). Fixed
+O&M is on full capacity, variable opex on production; the WHR power credit and any
+carbon tax are also applied.
 
 ---
 
@@ -683,13 +696,24 @@ carbon tax).
   programming inside the optimisation.
 - **Demand is exogenous and price-inelastic** — the model is a cost-minimising supply
   planner, not a market-equilibrium model.
+- **The CO₂ target is an upper-bound cap, not a pin** — the optimizer may overachieve;
+  it is a carbon budget, not an iso-emission constraint (§8.5).
+- **Green hydrogen is assumed** — H₂ for H₂-DRI is a purchased commodity delivered at
+  the gate (priced via `ng_cost_h2`). It carries **no point-of-use Scope-1 emissions,
+  no electrolyser electricity load in the grid balance, and no upstream/Scope-3
+  emissions**. This is valid only under a zero-carbon (green) H₂ supply assumption;
+  the result is that H₂-DRI's full decarbonisation benefit is realised at its
+  commodity price, with no embedded power demand.
 - **Overnight, fully sunk capex; no salvage** — central thesis; isolate via `sunk=0`.
-- **Linearised** — route shares and capture fractions are recovered post-solve; the
-  solved problem carries no meaningful integrality.
+- **Linear** — route shares and capture fractions are recovered post-solve; the model
+  has no integer variables (§13).
 - **DRI capacities live on the 0.9×crude-steel-equivalent basis** — mind the
   `1/(1−n7_phi_eaf)` factors when reading capacity, fixed-opex, or emission terms.
-- **`u_lockin.mod` is dead code** — asset-life lock-in is now economic (sunk capex +
-  fixed opex), not a hard production floor.
+- **Incumbent (legacy) capacity phases out linearly to zero by 2050, independent of
+  asset age** — the real 2025 fleet's age distribution is unknown, so a uniform
+  ≈4 %/yr decline ceiling is used as a tractable proxy (the optimizer may retire
+  faster). A consequence is that still-young incumbent capacity can be retired and
+  rebuilt; this is an accepted simplification given the missing vintage data.
 - **CCS limited to BF-BOF / Coal-DRI / NG-DRI**, gated by a sector-wide deployment
   ramp (0→0.5 by 2050) that is usually the binding capture limit.
 - **Some coefficients are placeholders / tunable levers** (e.g. `ocapex_scrapchain`,
@@ -703,9 +727,11 @@ carbon tax).
 ```
 main.mod                 # driver: sets, include order, objective, solve, report
 template.mod             # token-substituted clone of main.mod for sweeps
-definitions.mod          # demand, technical params (with bounds), H2/NG/scrap caps, grid EF
+definitions.mod          # declarations: demand, ALL technical + cost params (with bounds),
+                         #   capacity-expansion (capex/opex) framework, grid EF
 variables.mod            # all decision variables (flows, capacity, cost, emissions)
-parameters.mod           # technical + cost params, capacity-expansion (capex/opex) framework
+parameters.mod           # runtime `let` overrides + scenario setup: base demand, avg_emi cap,
+                         #   H2 caps/constraints, NG-availability profiles, scrap limits
 yreport.mod              # post-solve console report
 ng.mod                   # NG-availability cap profiles (normal/BAU/shock)
 
@@ -719,8 +745,7 @@ modules/
   q_carbon_capture (84-88)
   v_capacity             # capacity stock, builds, legacy retirement, CCS capacity
   r_cost (89-104)        s_emissions (105-112)
-  t_additional_constraints  # init shares, demand, avg-emissions band, ramps, CCS phase-in
-  u_lockin.mod           # RETIRED (kept for reference; not included)
+  t_additional_constraints  # init shares, demand, avg-emissions CAP, ramps
 
 scenarios/   run_scripts/   *.py (monte_carlo, regret*, capex_sweep, plot_*, run_all_cells)
 ```

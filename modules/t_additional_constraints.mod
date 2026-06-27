@@ -26,24 +26,17 @@ s.t. scrap_bound{t in T}:
 
 s.t. ng_bound{t in T}:
    ngdri_ng_in[t] <= n5_ng_cap[t];
-               
-#s.t. No_H2_Before_startyear_bf{t in T: t < ng_h2_start_year}:
-    #n6_h2_avail[t] = 0;
-        
-#s.t. H2_Availability_Constraint{t in T: t >= ng_h2_start_year}:
-    #h2dri_h2_in[t] <= n6_h2_avail[t];
-    
-#s.t. H2_Ramp{t in T: t > ng_h2_start_year}:
-    #h2dri_h2_in[t] <= 1.15 * h2dri_h2_in[prev(t)] + n6_h2_avail[ng_h2_start_year];        
 
-# Policy inclined Constraints
-# Linearization: cleared the variable-denominator ratio by multiplying through by
-# sum total_steel[t] (>= 0). Equivalent feasible region, now linear.
-s.t. avg_emis_lower_total:
-    (sum {t in T} total_emissions[t]) >= (avg_emi - eps) * (sum {t in T} total_steel[t]);
+# (H2 availability is governed by No_H2_Before / H2_growth_cap / H2_growth_limit in
+#  parameters.mod -- the additive-slab mechanism that replaced the old CAGR limiter.)
 
-s.t. avg_emis_upper_total:
-    (sum {t in T} total_emissions[t]) <= (avg_emi + eps) * (sum {t in T} total_steel[t]);
+# Policy constraint: cumulative average CO2-intensity CAP (upper bound only).
+# The lifetime-average intensity must not EXCEED avg_emi (tCO2/tCS); the optimizer
+# MAY overachieve (emit less) if that is cheaper -- this is a genuine carbon budget,
+# not an iso-emission pin. Linearised by multiplying through by sum total_steel[t]
+# (>= 0), so the feasible region is equivalent and linear.
+s.t. avg_emis_cap_total:
+    (sum {t in T} total_emissions[t]) <= avg_emi * (sum {t in T} total_steel[t]);
 
 
 # Production ramp: +-15%/yr off the prior year, anchored to the pinned 2025 actual.
