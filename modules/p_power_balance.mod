@@ -1,4 +1,9 @@
-# Total Power Balance 
+# Total Power Balance
+# NOTE: the green-H2 electrolyser load is NOT included here. It is supplied by
+# dedicated renewables (cap_h2re, sized to cover it in v_capacity.mod), behind the
+# meter, so it draws no grid power and incurs no grid-EF Scope-2 -- this is what
+# keeps the hydrogen green. The electrolyser CAPITAL is explicit (sunk builds);
+# only its electricity is kept off the shared grid balance.
 
 s.t. total_power_balance{t in T}:
       coke_power_in[t]

@@ -33,7 +33,7 @@ s.t. cost_bf_def{t in T}:
   + ng_cost_biochar * bf_biopci_in[t]
   + ng_cost_power   * bf_power_in[t]
   + ng_cost_lime    * bf_lime_in[t]
-  + ng_cost_h2[t] * bf_h2_in[t]
+  + h2_opex[t] * bf_h2_in[t]     # green-H2 residual opex; capital now in electrolyser/renewable builds
   - ng_credit_power * bf_trt_out[t]
   - ng_credit_slag  * bf_slag_out[t]
   - cost_bf[t] = 0;                                  # eq92
@@ -82,11 +82,15 @@ s.t. cost_ngdri_def{t in T}:
   + n5_cost_NG[t] *50     * ngdri_ng_in[t]
   - cost_ngdri[t] = 0;                               # eq98
 
-# H2 DRI 
+# H2 DRI
+# Green-H2 capital (electrolysers + dedicated renewables) is now an explicit SUNK
+# build in v_capacity.mod; here only the residual H2 variable opex h2_opex (water +
+# stack O&M) is charged. (ng_cost_h2 is retained in definitions.mod for reference and
+# for backward compatibility of the sweep token H2ENDVAL, but no longer drives cost.)
 s.t. cost_h2dri_def{t in T}:
     ng_cost_power  * h2dri_power_in[t]
   + ng_cost_lumpore * h2dri_lumpore_in[t]
-  + ng_cost_h2[t]     * h2dri_h2_in[t]
+  + h2_opex[t]     * h2dri_h2_in[t]
   - cost_h2dri[t] = 0;                               # eq99
   
 # EAF-I (DRI-EAF)

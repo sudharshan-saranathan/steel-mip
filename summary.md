@@ -12,9 +12,10 @@
 > `.mod` sources. Section headers are stable to keep diffs readable.
 >
 > **Last synced to code:** 2026-06-27, branch `mip-v2` (capex-opex-framework, plus
-> the review fixes in this commit: CO₂ target relaxed to an upper-bound cap;
-> per-route reported capex now excludes the free legacy fleet; dead code removed;
-> `u_lockin.mod` deleted). Implementation: **AMPL** (GMPL-style `.mod`), solver
+> the review fixes: CO₂ target relaxed to an upper-bound cap; per-route reported capex
+> excludes the free legacy fleet; dead code removed; `u_lockin.mod` deleted; and the
+> **green-H₂ supply chain split out** into explicit sunk electrolyser + dedicated-
+> renewable capacity, §7.8). Implementation: **AMPL** (GMPL-style `.mod`), solver
 > **Gurobi**.
 
 ---
@@ -393,6 +394,59 @@ variable opex `ccs_vopex_solvent = 5` $/tCO₂. Stream multipliers
 `ccs_mult_bf=1.0`, `ccs_mult_cdri=1.2`, `ccs_mult_ngdri=0.5` scale both capex and
 fixed O&M.
 
+### 7.8 Green-hydrogen supply chain (electrolyser + dedicated renewable)
+
+The hydrogen consumed by H₂-DRI (and by BF H₂ injection) is produced on-site by
+electrolysers powered by dedicated renewables, and **both are sunk, vintaged capacity
+stocks** built like any production route (`v_capacity.mod`). This closes the one gap
+where the transition's most capital-intensive link used to escape the sunk-capital
+logic: previously the entire H₂ supply chain was dissolved into a smooth delivered
+price `ng_cost_h2` ($4500→$1000/t), letting the model scale hydrogen with **zero**
+capital commitment.
+
+Two stacked capacity stocks (no 2025 legacy — negligible green H₂ today):
+```
+total green-H₂ demand:  H2tot[t] = h2dri_h2_in[t] + bf_h2_in[t]
+electrolysers:  cap_h2elec[t] = Σ_{j: t−life_h2elec+1 ≤ j ≤ t} build_h2elec[j]
+                H2tot[t] ≤ cap_h2elec[t]                         # h2elec_cover  [t-H₂/yr]
+renewables:     cap_h2re[t]   = Σ_{j: t−life_re+1 ≤ j ≤ t} build_h2re[j]
+                h2_kwh_per_t · H2tot[t] ≤ cap_h2re[t] · 8760 · re_cf   # h2re_cover  [kW]
+```
+**Cost split.** The former all-in price is decomposed into (i) **sunk capital** —
+`ocapex_h2elec · build_h2elec + ocapex_h2re · build_h2re` added to `capex_cost`, and
+`fopex_h2elec · cap_h2elec + fopex_h2re · cap_h2re` added to `fixopex_cost`
+(`v_capacity.mod`); and (ii) a **residual variable opex** `h2_opex` (water + stack
+O&M) that replaces `ng_cost_h2` in `cost_h2dri` and `cost_bf` (`r_cost.mod`). The
+`sunk` toggle governs these exactly as for the routes.
+
+**Power treatment.** The electrolyser electricity is supplied **behind-the-meter by
+the dedicated renewables** (sized by `h2re_cover`), so it is *not* added to the grid
+power balance and carries no grid-EF Scope-2 — which is what keeps the hydrogen green.
+The renewable *capital* is explicit and sunk; only its (zero-carbon) energy is kept
+off the shared grid balance. *(A grid-coupled variant — renewables partially cover,
+grid backs up with emissions — is a documented future option, not the current model.)*
+
+**Why only green H₂ gets explicit supply-chain capital (deliberate asymmetry).** Coal
+and natural gas reach the plant through **mature, long-established supply networks**
+(mines, processing, pipelines, import terminals) whose capital was sunk decades ago
+and is fully embedded in the **delivered commodity prices** — coking/non-coking coal
+($184 / $98 /t), PCI coal ($110/t), natural gas ($/MMBtu), and likewise scrap ($350/t).
+There is no *new* fuel-supply capacity to build, so charging those routes a separate
+supply-chain capex would double-count. Green hydrogen is the opposite: its supply
+network (electrolysers + dedicated renewables) **does not yet exist at scale and must
+be built**, so its capital is the live investment decision — exactly the kind of sunk,
+irreversible buildout the model exists to study. Hence H₂ is the one fuel whose supply
+chain is modelled as explicit capacity expansion; all incumbent fuels keep their
+network capital absorbed in the price. (The downstream *steelmaking* plants — BF, BOF,
+DRI shafts, EAFs — are of course built explicitly for every route; the asymmetry is
+only about the **upstream fuel-supply** network.)
+
+**Parameters (placeholders in published 2024–25 ranges; see §12.4):** electrolyser
+capex `1000→400 $/kW`, life 15 yr, energy `55 000 kWh/t-H₂` (~55 kWh/kg incl. BoP);
+renewable capex `800→450 $/kW` (blended solar/wind), life 25 yr, `re_cf = 0.45`;
+residual `h2_opex = 300 $/t-H₂`. `ng_cost_h2` is retained only so the sweep token
+`H2ENDVAL` still resolves — **it no longer drives any cost** (see §16 follow-up).
+
 ---
 
 ## 8. Dynamics, ramps and resource-availability limits
@@ -463,11 +517,17 @@ deliberately relaxed to an inequality so cleaner pathways are not penalised.)*
 ```
 cost_cokeov  = 184·coking_coal + 0.07·coke_power − 55·breeze − 20·tar − 0.03·cdq_power
 cost_bf      = 70·lumpore + 110·pci_coal + 60·biopci + 0.07·power + 60·lime
-               + ng_cost_h2[t]·bf_h2 − 0.03·trt_power − 15·slag
+               + h2_opex[t]·bf_h2 − 0.03·trt_power − 15·slag
 cost_bof     = 350·scrap + 0.07·power + 60·lime − 15·slag
 cost_coaldri = 0.07·power + 70·lumpore + 98·coal
 cost_ngdri   = 0.07·power + 70·lumpore + (n5_cost_NG[t]·50)·ng
-cost_h2dri   = 0.07·power + 70·lumpore + ng_cost_h2[t]·h2
+cost_h2dri   = 0.07·power + 70·lumpore + h2_opex[t]·h2     # H2 CAPITAL is a sunk build (§7.8), not in the price
+```
+Hydrogen no longer carries an all-in delivered price: `cost_h2dri` (and the BF H₂
+term in `cost_bf`) charge only the residual variable opex `h2_opex`, while the
+electrolyser + dedicated-renewable **capital** enters `capex_cost` / `fixopex_cost`
+as a sunk, vintaged build (§7.8). Continuing the per-process list:
+```
 cost_eaf     = 350·scrap + 0.07·power + 60·lime + 98·coal + 600·electrode − 15·slag
 cost_scrap_eaf = 350·scrap + 0.07·power + 60·lime + 98·coal + 600·electrode − 15·slag
 ```
@@ -576,7 +636,7 @@ power `820→650`; WHR penetration `0.05→0.30`; grid EF `0.000886→0.0003`.
 | Slag credit `ng_credit_slag` | 15 | $/t |
 | Breeze / tar credit | 55 / 20 | $/t |
 | Natural gas `n5_cost_NG` | 10 | $/MMBtu (×50 in cost eq) |
-| Hydrogen `ng_cost_h2` | 4500 → 1000–1500 | $/t (declining) |
+| Hydrogen `ng_cost_h2` | 4500 → 1000–1500 | $/t (declining) — **deprecated as a cost driver, see §7.8/§12.4** |
 | H₂ start year `ng_h2_start_year` | 2030 | — |
 | CCS cost `n10_ccs_cost` | 125 → 75 | $/tCO₂ |
 | Carbon tax `carbon_tax` | 0 | $/tCO₂ (lever) |
@@ -598,6 +658,30 @@ power `820→650`; WHR penetration `0.05→0.30`; grid EF `0.000886→0.0003`.
 | CCS stream multipliers `ccs_mult_{bf,cdri,ngdri}` | 1.0 / 1.2 / 0.5 |
 | CCS capture energy `ccs_kwh_{bf,cdri,ngdri}` | 800 / 850 / 200 kWh/tCO₂ |
 | Capture eff. `n10_ccs_eta`, max rate `fc_max`, ceiling `phi_2050` | 0.85 / 0.9 / 0.50 |
+
+### 12.4 Green-H₂ supply-chain parameters (`definitions.mod`, §7.8)
+
+**Placeholders in published 2024–25 ranges — intended to be swept.** Provenance:
+electrolyser system capex ~$800–1200/kW (2024, alkaline/PEM) → few-hundred $/kW by
+2050 (IEA *Global Hydrogen Review 2024*; US DOE PEM cost report); electrolyser energy
+~50–55 kWh/kg incl. balance-of-plant; renewable installed cost from IRENA *Renewable
+Power Generation Costs in 2024* (solar PV $691/kW, onshore wind $1041/kW).
+
+| Parameter | Value | Unit |
+|---|---|---|
+| Electrolyser energy `h2_kwh_per_t` | 55 000 | kWh/t-H₂ (~55 kWh/kg) |
+| Renewable capacity factor `re_cf` | 0.45 | — (solar/wind hybrid) |
+| Residual H₂ opex `h2_opex` | 300 | $/t-H₂ (water + stack O&M) |
+| Electrolyser capex `h2elec_capex_kw` | 1000 → 400 | $/kW (overnight) |
+| Electrolyser life `life_h2elec` | 15 | yr |
+| Electrolyser fixed O&M `fopex_h2elec` | 400 | $/(t-H₂/yr)/yr |
+| Renewable capex `re_capex_kw` | 800 → 450 | $/kW (overnight, blended) |
+| Renewable life `life_re` | 25 | yr |
+| Renewable fixed O&M `fopex_h2re` | 15 | $/kW/yr |
+
+Derived: `ocapex_h2elec = h2elec_capex_kw / (8760·re_cf / h2_kwh_per_t)` (overnight
+$ per t-H₂/yr); `ocapex_h2re = re_capex_kw` (overnight $/kW); `acapex_* = ocapex_* ·
+CRF(life)` for the `sunk=0` branch.
 
 ---
 
@@ -698,12 +782,31 @@ carbon tax are also applied.
   planner, not a market-equilibrium model.
 - **The CO₂ target is an upper-bound cap, not a pin** — the optimizer may overachieve;
   it is a carbon budget, not an iso-emission constraint (§8.5).
-- **Green hydrogen is assumed** — H₂ for H₂-DRI is a purchased commodity delivered at
-  the gate (priced via `ng_cost_h2`). It carries **no point-of-use Scope-1 emissions,
-  no electrolyser electricity load in the grid balance, and no upstream/Scope-3
-  emissions**. This is valid only under a zero-carbon (green) H₂ supply assumption;
-  the result is that H₂-DRI's full decarbonisation benefit is realised at its
-  commodity price, with no embedded power demand.
+- **Green hydrogen, with explicit sunk supply-chain capital** — H₂ is produced on-site
+  by electrolysers powered by dedicated renewables, both modelled as sunk, vintaged
+  capacity (§7.8). It carries **no point-of-use Scope-1 emissions and no grid-EF
+  Scope-2** (electrolyser power is behind-the-meter renewable, kept off the grid
+  balance), and no upstream/Scope-3 emissions — valid only under a zero-carbon (green)
+  H₂ assumption. Unlike the earlier version, the H₂ supply chain is **no longer exempt
+  from the sunk-capital logic**: its capital is a real, irreversible build, and only a
+  small residual `h2_opex` remains in the price.
+- **Sweep follow-up (Python layer):** because the H₂ capital moved out of `ng_cost_h2`,
+  the Monte-Carlo / sweep "H₂ cost" axis (token `H2ENDVAL` → `ng_cost_h2_end`) now
+  drives nothing. To recover an H₂-cost uncertainty axis, repoint that token to the
+  new levers (`h2elec_capex_kw`, `re_capex_kw`, `re_cf`, `h2_opex`) in
+  `monte_carlo*.py` / `template.mod`. The `.mod` model is updated; the driver scripts
+  are not yet.
+- **Green-H₂ parameters are placeholders** (§12.4) in published 2024–25 ranges; pin
+  them to your chosen sources before publication. A grid-coupled electrolysis variant
+  (renewables partial, grid backup with emissions) is a possible extension, not the
+  current model.
+- **Fuel-supply capex is modelled asymmetrically — on purpose** (§7.8): only green H₂
+  carries explicit supply-chain capacity expansion (electrolysers + renewables),
+  because that network must still be built. Coal, NG, PCI and scrap arrive through
+  mature networks whose capital is already embedded in their delivered prices, so they
+  carry no separate supply-chain capex (adding one would double-count). The asymmetry
+  is confined to upstream fuel supply; all routes' steelmaking plants are built
+  explicitly.
 - **Overnight, fully sunk capex; no salvage** — central thesis; isolate via `sunk=0`.
 - **Linear** — route shares and capture fractions are recovered post-solve; the model
   has no integer variables (§13).

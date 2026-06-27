@@ -134,12 +134,16 @@ s.t. capex_cost_def{t in T}:
                + ocapex_ngdri    * build_ngdri[t]
                + ocapex_h2dri[t] * build_h2dri[t]
                + ocapex_scrap    * build_scrap[t]
-               + ocapex_scrapchain * build_scrapchain[t] )  # scrap collection+yard expansion
+               + ocapex_scrapchain * build_scrapchain[t]   # scrap collection+yard expansion
+               + ocapex_h2elec[t] * build_h2elec[t]        # green-H2: electrolyser builds
+               + ocapex_h2re[t]   * build_h2re[t] )        # green-H2: dedicated renewable builds
     + (1-sunk) * ( acapex_bof    * steel_bof[t]          # not sunk: annualized capex on production
                + acapex_cdri     * coaldri_output[t]
                + acapex_ngdri    * ngdri_output[t]
                + acapex_h2dri[t] * h2dri_output[t]
-               + acapex_scrap    * steel_scrap_eaf[t] );
+               + acapex_scrap    * steel_scrap_eaf[t]
+               + acapex_h2elec[t] * (h2dri_h2_in[t] + bf_h2_in[t])
+               + acapex_h2re[t]   * (h2dri_h2_in[t] + bf_h2_in[t]) * h2_kwh_per_t/(8760*re_cf) );
 
 # Fixed opex (labour + maintenance) on installed capacity, crude-steel basis.
 # DRI-route capacities are on the 0.9*steel_eaf basis, so divide by (1-n7_phi_eaf)
@@ -150,12 +154,16 @@ s.t. fixopex_cost_def{t in T}:
                + fopex_cdri  * cap_cdri[t]  / (1 - n7_phi_eaf)
                + fopex_ngdri * cap_ngdri[t] / (1 - n7_phi_eaf)
                + fopex_h2dri * cap_h2dri[t] / (1 - n7_phi_eaf)
-               + fopex_scrap * cap_scrap[t] )
+               + fopex_scrap * cap_scrap[t]
+               + fopex_h2elec * cap_h2elec[t]                      # green-H2: electrolyser fixed O&M
+               + fopex_h2re   * cap_h2re[t] )                      # green-H2: renewable fixed O&M
     + (1-sunk) * ( fopex_bof   * steel_bof[t]                      # not sunk: fixed opex on production
                + fopex_cdri  * coaldri_output[t]  / (1 - n7_phi_eaf)
                + fopex_ngdri * ngdri_output[t] / (1 - n7_phi_eaf)
                + fopex_h2dri * h2dri_output[t] / (1 - n7_phi_eaf)
-               + fopex_scrap * steel_scrap_eaf[t] );
+               + fopex_scrap * steel_scrap_eaf[t]
+               + fopex_h2elec * (h2dri_h2_in[t] + bf_h2_in[t])
+               + fopex_h2re   * (h2dri_h2_in[t] + bf_h2_in[t]) * h2_kwh_per_t/(8760*re_cf) );
 
 # ============================================================================
 # CCS retrofit capacity (sunk capex; legacy = 0, no CCS in 2025). Mirrors the
@@ -180,3 +188,33 @@ s.t. ccs_cap_def_ngdri{t in T}:
 s.t. ccs_caplim_bf{t in T}:    ccs_bf[t]    <= ccs_cap_bf[t];
 s.t. ccs_caplim_cdri{t in T}:  ccs_cdri[t]  <= ccs_cap_cdri[t];
 s.t. ccs_caplim_ngdri{t in T}: ccs_ngdri[t] <= ccs_cap_ngdri[t];
+
+# ============================================================================
+# Green-H2 supply chain (sunk capex; legacy = 0, negligible green H2 in 2025).
+# Two stacked capacity stocks, each built and vintaged like a route:
+#   - electrolysers   cap_h2elec [t-H2/yr]  must cover total H2 use (DRI + BF),
+#   - dedicated renewables cap_h2re [kW] must generate enough to power them.
+# Capex/opex parameters live in definitions.mod; the cost terms are folded into
+# capex_cost_def / fixopex_cost_def below. The H2 *price* term in r_cost.mod is
+# reduced to the residual variable opex h2_opex (the capital lives here now).
+# Renewable power is dedicated/behind-the-meter: it is sized to cover the
+# electrolyser load and is therefore NOT added to the grid power balance, which
+# keeps H2 green (no grid-EF Scope-2 on electrolysis).
+# ============================================================================
+var build_h2elec {T} >= 0;   # electrolyser capacity added (t-H2/yr)
+var cap_h2elec   {T} >= 0;   # installed electrolyser capacity (t-H2/yr)
+var build_h2re   {T} >= 0;   # dedicated renewable capacity added (kW)
+var cap_h2re     {T} >= 0;   # installed dedicated renewable capacity (kW)
+
+s.t. cap_def_h2elec{t in T}:
+    cap_h2elec[t] = sum{j in T: ord(j)<=ord(t) and ord(j)>=ord(t)-life_h2elec+1} build_h2elec[j];
+s.t. cap_def_h2re{t in T}:
+    cap_h2re[t]   = sum{j in T: ord(j)<=ord(t) and ord(j)>=ord(t)-life_re+1}     build_h2re[j];
+
+# Electrolyser capacity must cover total green-H2 throughput (DRI use + BF injection).
+s.t. h2elec_cover{t in T}:
+    h2dri_h2_in[t] + bf_h2_in[t] <= cap_h2elec[t];
+# Dedicated renewable generation (cap_h2re[kW] * 8760 h * CF) must cover the
+# electrolyser electricity demand (h2_kwh_per_t per tonne of H2 produced).
+s.t. h2re_cover{t in T}:
+    h2_kwh_per_t * (h2dri_h2_in[t] + bf_h2_in[t]) <= cap_h2re[t] * 8760 * re_cf;

@@ -216,9 +216,13 @@ for {t in T} {
            / (steel_eaf[t]*f_ngdri[t])
         else 0,
 
-        # H2 DRI-EAF  (no CCS stream)
+        # H2 DRI-EAF  (no CCS stream). Includes the green-H2 SUPPLY capital
+        # (electrolyser + dedicated renewable, annualized capex + fixed O&M) allocated
+        # to this route by its share of total H2 use (DRI vs BF injection).
         if t >= ng_h2_start_year && steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]) > 0 then
            ( acapex_h2dri[t]*(cap_h2dri[t]-legacy_h2dri[t]) + fopex_h2dri*cap_h2dri[t]/(1-n7_phi_eaf)
+           + ( (acapex_h2elec[t]+fopex_h2elec)*cap_h2elec[t] + (acapex_h2re[t]+fopex_h2re)*cap_h2re[t] )
+             * ( if h2dri_h2_in[t]+bf_h2_in[t] > 0 then h2dri_h2_in[t]/(h2dri_h2_in[t]+bf_h2_in[t]) else 0 )
            + cost_h2dri[t] + (1-f_cdri[t]-f_ngdri[t])*cost_eaf[t] + cost_pellet_h2dri[t]
            + other_opex*(steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]))
            + carbon_tax*scope1_h2dri[t]

@@ -171,6 +171,11 @@ param n5_cost_NG {t in T} default 10;     # Cost of natural gas per MMBtu
 param ng_cost_h2_start default 4500;
 param ng_cost_h2_end default 1500;   
 param ng_h2_start_year default 2040;
+# DEPRECATED as a cost driver: the all-in delivered H2 price below has been split
+# into explicit sunk electrolyser + renewable capital (see the green-H2 block at the
+# end of this file and v_capacity.mod) plus a residual variable opex (h2_opex). It is
+# retained only so the sweep token H2ENDVAL (-> ng_cost_h2_end) still resolves; it no
+# longer enters any cost equation.
 param ng_cost_h2{t in T} :=
     if t <= 2025
      then ng_cost_h2_start
@@ -306,4 +311,51 @@ param ccs_mult_ngdri default 0.5;    # near-pure CO2 already separated in proces
 param ccs_kwh_bf     default 800;
 param ccs_kwh_cdri   default 850;    # dilute -> more capture energy
 param ccs_kwh_ngdri  default 200;    # mostly compression of the separated stream
+
+# ============================================================================
+# GREEN-H2 SUPPLY CHAIN: electrolyser + dedicated renewable (sunk capacity)
+# ----------------------------------------------------------------------------
+# The former all-in delivered H2 price (ng_cost_h2) dissolved the entire hydrogen
+# supply chain into a smooth per-tonne cost, so the model could scale H2 up or down
+# with NO capital commitment -- the one part of the transition exempt from the
+# sunk-capital logic. This block splits it into:
+#   (i)  SUNK CAPITAL, built and vintaged like a production route:
+#          - electrolyser stacks         (cap_h2elec, t-H2/yr)
+#          - dedicated renewable supply   (cap_h2re,   kW) that powers them
+#        both charged on build_* with overnight capex in v_capacity.mod;
+#   (ii) a small residual VARIABLE opex h2_opex (water + stack O&M). The green
+#        electricity is now supplied by the dedicated renewables (sized to cover
+#        the electrolyser load), NOT purchased at a $/t price -- so H2 stays green
+#        and its power is behind-the-meter (excluded from the grid balance).
+# Total green-H2 demand = DRI use (h2dri_h2_in) + BF injection (bf_h2_in).
+# VALUES BELOW ARE PLACEHOLDERS in published 2024-25 ranges -- sweep them. Provenance:
+#   electrolyser system capex ~$800-1200/kW (2024, alkaline/PEM) falling to a few
+#     hundred $/kW by 2050 (IEA Global Hydrogen Review 2024; DOE PEM cost report);
+#   electrolyser electricity ~50-55 kWh/kg incl. balance-of-plant;
+#   solar PV $691/kW and onshore wind $1041/kW total installed cost (IRENA,
+#     Renewable Power Generation Costs in 2024) -> blended hybrid used here.
+# ============================================================================
+param h2_kwh_per_t default 55000;     # electrolyser electricity, kWh per t H2 (~55 kWh/kg incl BoP)
+param re_cf        default 0.45;      # dedicated renewable capacity factor (solar/wind hybrid)
+param h2_opex{t in T} default 300;    # residual H2 variable opex (water + stack O&M), $/t H2
+
+# --- Electrolyser: overnight capex $/kW (placeholder decline 2025->2050) ---
+param h2elec_capex_kw{t in T} := 1000 + (400 - 1000)*(t-2025)/25;
+param life_h2elec default 15;         # electrolyser plant life (incl stack replacement)
+param crf_h2elec := real_discount_rate*(1+real_discount_rate)^life_h2elec/((1+real_discount_rate)^life_h2elec-1);
+# Convert $/kW -> overnight $ per (t-H2/yr) of nameplate output at the renewable CF:
+#   1 kW over a year at re_cf -> 8760*re_cf kWh -> / h2_kwh_per_t  t-H2/yr.
+param ocapex_h2elec{t in T} := h2elec_capex_kw[t] / (8760*re_cf/h2_kwh_per_t);
+param acapex_h2elec{t in T} := ocapex_h2elec[t] * crf_h2elec;   # annualized (for the 1-sunk branch)
+param fopex_h2elec default 400;       # fixed O&M, $/(t-H2/yr)/yr (placeholder ~3% of capex)
+
+# --- Dedicated renewable generation: overnight capex $/kW (placeholder decline) ---
+# Blended solar/wind hybrid, between IRENA 2024 solar ($691/kW) and onshore wind
+# ($1041/kW) total installed costs, declining toward ~$450/kW by 2050.
+param re_capex_kw{t in T} := 800 + (450 - 800)*(t-2025)/25;
+param life_re default 25;             # renewable plant life
+param crf_re := real_discount_rate*(1+real_discount_rate)^life_re/((1+real_discount_rate)^life_re-1);
+param ocapex_h2re{t in T} := re_capex_kw[t];                    # overnight $/kW (charged on build, in kW)
+param acapex_h2re{t in T} := ocapex_h2re[t] * crf_re;           # annualized $/kW/yr (for the 1-sunk branch)
+param fopex_h2re default 15;          # fixed O&M, $/kW/yr (placeholder ~2% of capex)
 
