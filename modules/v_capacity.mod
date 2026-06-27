@@ -65,6 +65,15 @@ var build_coalchain  {T} >= 0;
 var ngchain_cap      {T} >= 0;   # natural-gas supply capacity (t NG/yr)
 var build_ngchain    {T} >= 0;
 
+# --- Green-H2 supply chain: electrolyser + dedicated renewable stocks (see the
+# detailed block further down). Declared here, BEFORE capex_cost_def/fixopex_cost_def
+# reference them, so there is no forward reference (AMPL's CLI tolerates one but
+# amplpy's parser does not). ---
+var build_h2elec {T} >= 0;   # electrolyser capacity added (t-H2/yr)
+var cap_h2elec   {T} >= 0;   # installed electrolyser capacity (t-H2/yr)
+var build_h2re   {T} >= 0;   # dedicated renewable capacity added (kW)
+var cap_h2re     {T} >= 0;   # installed dedicated renewable capacity (kW)
+
 # ----------------------------------------------------------------------------
 # Capacity stock:  cap = surviving legacy + builds still within their life L.
 # A build in year j contributes until year j+L-1, then retires automatically.
@@ -238,12 +247,9 @@ s.t. ccs_caplim_ngdri{t in T}: ccs_ngdri[t] <= ccs_cap_ngdri[t];
 # Renewable power is dedicated/behind-the-meter: it is sized to cover the
 # electrolyser load and is therefore NOT added to the grid power balance, which
 # keeps H2 green (no grid-EF Scope-2 on electrolysis).
+# (The build_*/cap_* variables are declared up top with the other supply-chain
+# stocks, so capex_cost_def/fixopex_cost_def can reference them without a forward ref.)
 # ============================================================================
-var build_h2elec {T} >= 0;   # electrolyser capacity added (t-H2/yr)
-var cap_h2elec   {T} >= 0;   # installed electrolyser capacity (t-H2/yr)
-var build_h2re   {T} >= 0;   # dedicated renewable capacity added (kW)
-var cap_h2re     {T} >= 0;   # installed dedicated renewable capacity (kW)
-
 s.t. cap_def_h2elec{t in T}:
     cap_h2elec[t] = sum{j in T: ord(j)<=ord(t) and ord(j)>=ord(t)-life_h2elec+1} build_h2elec[j];
 s.t. cap_def_h2re{t in T}:
