@@ -336,6 +336,21 @@ steel_scrap_eaf[t] ≤ cap_scrap[t]      # cap_lim_scrap
 Idle capacity (`cap_X > prod_X`) still pays fixed opex — the economic deterrent to
 overbuilding.
 
+**Minimum utilisation floor** (`min_util_X`, `v_capacity.mod`) — a hard cap on the
+idle gap, reflecting that the industry is privately operated and plants are not built
+to sit idle:
+```
+prod_X[t] ≥ util_min · cap_X[t]      # X ∈ {bof, cdri, ngdri, h2dri, scrap}, t > 2025
+util_min = 0.75
+```
+i.e. capacity utilisation must be ≥ 75% (idle gap ≤ 25%). Applied from **2026 on**;
+`first(T)` = 2025 is exempt because the inherited fleet is calibrated to observed
+shares and runs below this (e.g. BF-BOF ≈ 64%, NG-DRI ≈ 59%). The optimiser satisfies
+it by **shedding idle legacy faster** and by **not stranding built vintages** (a plant,
+once built, is run rather than mothballed) — a second, complementary irreversibility
+channel alongside the sunk-capital cost. It also forbids the transient full-idling of
+locked capacity that was previously possible (e.g. coal-DRI dropping to 0% in a pinch).
+
 ### 7.4 Cost pieces and the sunk-capital toggle
 
 ```

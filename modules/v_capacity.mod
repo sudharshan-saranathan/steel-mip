@@ -140,6 +140,21 @@ s.t. cap_add_ngdri{t in T: t > first(T)}: build_ngdri[t] <= cap_add_frac_ngdri *
 s.t. cap_add_scrap{t in T: t > first(T)}: build_scrap[t] <= cap_add_frac_scrap * cap0_scrap;
 
 # ----------------------------------------------------------------------------
+# Minimum capacity utilisation (private-player discipline): production >= util_min
+# * installed capacity, so the idle gap is capped at (1-util_min). The optimiser
+# satisfies it by shedding idle legacy faster and not stranding built vintages -- a
+# plant, once built, is run rather than mothballed. Exempt at first(T) (2025): the
+# inherited fleet is calibrated to observed shares and runs below 75% (e.g. BF-BOF
+# ~64%). H2-DRI is auto-0 before its start year (No_H2_Before forces output=0, so
+# cap_h2dri is held at 0 there too).
+# ----------------------------------------------------------------------------
+s.t. min_util_bof  {t in T: t > first(T)}: steel_bof[t]       >= util_min * cap_bof[t];
+s.t. min_util_cdri {t in T: t > first(T)}: coaldri_output[t]  >= util_min * cap_cdri[t];
+s.t. min_util_ngdri{t in T: t > first(T)}: ngdri_output[t]    >= util_min * cap_ngdri[t];
+s.t. min_util_h2dri{t in T: t > first(T)}: h2dri_output[t]    >= util_min * cap_h2dri[t];
+s.t. min_util_scrap{t in T: t > first(T)}: steel_scrap_eaf[t] >= util_min * cap_scrap[t];
+
+# ----------------------------------------------------------------------------
 # Cost pieces (consumed by total_cost_def in r_cost.mod).
 #   capex_cost   = overnight capex on this year's builds, charged in FULL in the
 #                  build year and fully sunk (no residual-life salvage credit; see
