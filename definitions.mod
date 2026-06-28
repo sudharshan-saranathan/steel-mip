@@ -224,6 +224,17 @@ param life_ngdri default 15;
 param life_h2dri default 15;
 param life_scrap default 10;
 
+# --- Per-route capacity-addition ceiling (max new build/yr as a fraction of the
+# 2025 fleet, cap0_*). Fixed slab; replaces the old production ramp. Tech-specific
+# supply-chain scale-up rates: BF-BOF slowest (imported coking coal + integrated
+# greenfield mills); coal-DRI fastest (indigenous thermal coal); NG-DRI and scrap-EAF
+# in between (and further bounded by NG / scrap availability curves). H2-DRI is not
+# listed -- its build rate is set by the electrolyser Gaussian envelope (v_capacity.mod).
+param cap_add_frac_bof   default 0.05;
+param cap_add_frac_cdri  default 0.20;
+param cap_add_frac_ngdri default 0.10;
+param cap_add_frac_scrap default 0.15;
+
 # --- Fixed opex per unit CRUDE-STEEL capacity per year (labour + maintenance).
 #     Incurred on installed capacity whether or not it runs. Route-indexed so
 #     per-route values can be supplied later; defaults to the global figure.
@@ -396,9 +407,9 @@ param h2elec_seed   default 1500000;    # initial electrolyser hub size at start
 param H2_BIGM       := 1e10;            # deactivates whichever limiter is off (~300x max cap)
 param h2_ref_cap    := 10000000;        # fixed reference scale for mode-2 add-rates (t-H2/yr)
 param h2_peak_rate  := 0.25;            # mode 1 flat compounding rate; ALSO the pinned mode-2 peak
-param h2_base_start := 0.05;            # mode 2 baseline coeff at 2025 (x h2_ref_cap, per yr)
-param h2_base_end   := 0.10;            # mode 2 baseline coeff at 2050 (rising -> capital efficiency)
-param h2_gauss_sigma := 5;              # Gaussian width (years)
+param h2_base_start := 0.00;            # mode 2 baseline coeff at 2025 (x h2_ref_cap, per yr)
+param h2_base_end   := 0.05;            # mode 2 baseline coeff at 2050 (rising -> capital efficiency)
+param h2_gauss_sigma := 2;              # Gaussian width (years); narrower -> sharper ramp, surge concentrated at peak
 param h2_base{t in T} := h2_base_start + (h2_base_end - h2_base_start)*(t-2025)/25;  # rising baseline rate
 # Scenario knob: year the buildout window crests. parameters.mod couples it to the H2
 # debut (h2_peak_year := ng_h2_start_year + 5) once the start year is concrete; a driver

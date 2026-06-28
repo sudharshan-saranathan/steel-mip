@@ -39,38 +39,13 @@ s.t. avg_emis_cap_total:
     (sum {t in T} total_emissions[t]) <= avg_emi * (sum {t in T} total_steel[t]);
 
 
-# Production ramp: +-15%/yr off the prior year, anchored to the pinned 2025 actual.
-# Applied to the four incumbent routes (BF-BOF, Coal-DRI, NG-DRI, Scrap). H2-DRI is
-# a future entrant with no 2025 stock, so its growth stays governed by the H2
-# availability mechanism (parameters.mod); only its down-ramp is aligned to 0.85.
-# Fixed annual slab: max YoY change = ramp_frac * the pinned 2025 production of
-# the route (additive, not compounding). steel_*[first(T)] is fixed by the init_f
-# constraints above, so the RHS is effectively constant.
-s.t. bof_prod_up {t in T: t != first(T)}:
-    steel_bof[t] - steel_bof[prev(t)] <= ramp_frac * steel_bof[first(T)];
-s.t. bof_prod_down {t in T: t != first(T)}:
-    steel_bof[prev(t)] - steel_bof[t] <= ramp_frac * steel_bof[first(T)];
-
-s.t. cdri_prod_up {t in T: t != first(T)}:
-    coaldri_output[t] - coaldri_output[prev(t)] <= ramp_frac * coaldri_output[first(T)];
-s.t. cdri_prod_down {t in T: t != first(T)}:
-    coaldri_output[prev(t)] - coaldri_output[t] <= ramp_frac * coaldri_output[first(T)];
-
-# NG-DRI: fixed-slab ramp in addition to the n5_ng_cap[t] availability curve.
-s.t. ngdri_prod_up {t in T: t != first(T)}:
-    ngdri_output[t] - ngdri_output[prev(t)] <= ramp_frac * ngdri_output[first(T)];
-s.t. ngdri_prod_down {t in T: t != first(T)}:
-    ngdri_output[prev(t)] - ngdri_output[t] <= ramp_frac * ngdri_output[first(T)];
-
-s.t. scrap_prod_up {t in T: t != first(T)}:
-    steel_scrap_eaf[t] - steel_scrap_eaf[prev(t)] <= ramp_frac * steel_scrap_eaf[first(T)];
-s.t. scrap_prod_down {t in T: t != first(T)}:
-    steel_scrap_eaf[prev(t)] - steel_scrap_eaf[t] <= ramp_frac * steel_scrap_eaf[first(T)];
-
-# H2-DRI: future entrant, governed by the H2 availability mechanism; keep only a
-# modest multiplicative down-floor once it is active.
-s.t. h2dri_prod_down{t in T: t > ng_h2_start_year}:
-    h2dri_output[t] >= 0.85 * h2dri_output[prev(t)];
+# Production-side ramp constraints REMOVED. Deployment speed is now limited at the
+# PHYSICAL build rate instead: per-route capacity-addition ceilings in v_capacity.mod
+# (cap_add_* = fixed slab, a tech-specific fraction of 2025 capacity per year),
+# mirroring the H2 electrolyser envelope. Dispatch within the installed fleet is left
+# free -- the sunk-capital mechanism (overnight capex + fixed O&M on capacity) already
+# discourages production fluctuation, so an explicit production ramp was redundant.
+# (The old +-ramp_frac*prod[2025] slabs and the 0.85 H2-DRI down-floor are gone.)
 
 # Carbon-capture deployment pace is now governed by the sector-wide
 # ccs_avail[t] ceiling in q_carbon_capture.mod (infrastructure/logistics ramp),

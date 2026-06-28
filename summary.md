@@ -470,17 +470,26 @@ residual `h2_opex = 300 $/t-H₂`. The H₂ cost-uncertainty sweep axis is the m
 
 ## 8. Dynamics, ramps and resource-availability limits
 
-### 8.1 Production ramp (fixed additive slab)
+### 8.1 Capacity-addition ceiling (per-route build-rate limit)
 
-`t_additional_constraints` (`*_prod_up/down`). The max year-on-year change is a
-**fixed slab** = `ramp_frac` × the route's **pinned 2025 production** (additive, not
-compounding), reflecting roughly constant annual capital availability:
+`v_capacity.mod` (`cap_add_*`). Deployment speed is limited at the **physical build
+rate** of each route, not on dispatch. The maximum new capacity built per year is a
+**fixed slab** = a tech-specific fraction of the route's **2025 fleet** `cap0_X`:
 ```
-|prod_X[t] − prod_X[t−1]| ≤ ramp_frac · prod_X[2025]      # X ∈ {bof, cdri, ngdri, scrap}
-ramp_frac = 0.15 (default; tuned 0.15–0.20)
+build_X[t] ≤ cap_add_frac_X · cap0_X        # X ∈ {bof, cdri, ngdri, scrap}, t > 2025
+cap_add_frac:  bof 0.05 | cdri 0.20 | ngdri 0.10 | scrap 0.15
 ```
-H₂-DRI is exempt (future entrant, no 2025 stock) except for a multiplicative
-down-floor `h2dri_output[t] ≥ 0.85·h2dri_output[t−1]` once active.
+The rates encode supply-chain scale-up speed: **BF-BOF slowest** (imported coking coal
++ integrated greenfield mills), **coal-DRI fastest** (indigenous thermal coal), NG-DRI
+and scrap-EAF in between (and further bounded by the NG / scrap availability curves,
+§8.3–8.4). **H₂-DRI** is governed instead by the electrolyser Gaussian envelope (§7.8).
+
+*Dispatch within the installed fleet is unconstrained:* the **sunk-capital mechanism**
+(overnight capex + fixed O&M charged on capacity, §7.4) already penalises build-then-idle,
+so production does not fluctuate artificially and an explicit production ramp is redundant.
+This **replaced** the former two-sided production ramp `|prod_X[t]−prod_X[t−1]| ≤
+ramp_frac·prod_X[2025]` and the H₂-DRI `0.85·prev` down-floor (both removed). `ramp_frac`
+is retained only for the mode-0 H₂ flow slab (§8.2).
 
 ### 8.2 Hydrogen availability
 

@@ -9,6 +9,14 @@ travel between machines — this file does, via git). Branch: **`mip-v2`**._
 - Green-H2 = explicit sunk capacity: electrolysers (`cap_h2elec`) + dedicated behind-the-meter
   renewables (`cap_h2re`); H2 price reduced to residual `h2_opex`. H2 cost axis = `h2_capex_mult`
   (token `H2CAPXVAL`).
+- **Deployment speed = build-rate limit, not production ramp** (changed this session): the
+  old two-sided production ramps (`{bof,cdri,ngdri,scrap}_prod_up/down`) and the H2-DRI
+  `0.85·prev` down-floor are REMOVED. Replaced by per-route capacity-addition ceilings in
+  `v_capacity.mod` (`cap_add_X`): `build_X[t] ≤ cap_add_frac_X · cap0_X` (fixed slab, % of
+  2025 fleet). Rates: BF-BOF 0.05 (imported coking coal), coal-DRI 0.20 (indigenous thermal
+  coal), NG-DRI 0.10, scrap 0.15; H2-DRI via the electrolyser envelope. Rationale: sunk
+  capital already smooths dispatch, so limit the *physical* build rate instead. All four
+  ceilings bind at ET 1.6 (central prices). `ramp_frac` kept only for the mode-0 H2 flow slab.
 - `summary.md` is the methodology-grade reference (keep in sync with model changes).
 - **Prior MC / frontier / regret CSVs are STALE** (emissions cap + green-H2 restructure + axis
   repoint) — re-run before using numbers.
@@ -27,13 +35,22 @@ Selected via `let` (template tokens NOT wired yet — see TODO).
   **not** compounding:
   ```
   build[t]  ≤  h2_ref_cap · ( base(t) + surge_amp · kernel(t) )
-  base(t)   = 0.05 + (0.10-0.05)·(t-2025)/25        # 5%→10%, capital efficiency
-  kernel(t) = exp( -(t - h2_peak_year)² / (2·σ²) ), σ=5
+  base(t)   = 0.00 + (0.05-0.00)·(t-2025)/25        # 0%→5%, capital efficiency
+  kernel(t) = exp( -(t - h2_peak_year)² / (2·σ²) ), σ=2
   surge_amp = h2_peak_rate - base(h2_peak_year)     # pins TOTAL peak rate to 25%
   h2_peak_year = ng_h2_start_year + 5 (coupled in parameters.mod; overridable)
   ```
+  **No start-year plateau (mode 2):** the ceiling ramps continuously from ~0 at 2025 over the
+  whole horizon — the seed-cap plateau is enforced for mode 1 only (it needs a compounding
+  base); for mode 2 the green-H2 start-year gate is left to the H2-flow constraint
+  (`No_H2_Before`), not the capacity ceiling. This removes the old flat-then-jump kink at the
+  start year. (`v_capacity.mod`: `h2elec_seed_cap` relaxed for modes 0/2; `h2elec_growth`
+  indexed over the full horizon with the mode-1 gate applied in-body.)
   Integrates to a smooth **S-step** in installed capacity. Constants fixed by design
-  (peak 0.25, σ=5, ref 10 MT, base 0.05→0.10); only `h2_ramp_mode` / `h2_peak_year` settable.
+  (peak 0.25, σ=2, ref 10 MT, base 0.00→0.05); only `h2_ramp_mode` / `h2_peak_year` settable.
+  (σ narrowed 5→4: a wide σ lifts the kernel years before the peak, setting too high a
+  starting ramp-rate right after 2025; σ=2 makes the ramp sharp, with the surge tightly
+  concentrated in the ±2-3 yr window around the peak.)
   Inactive limiters relaxed by `H2_BIGM`=1e10 (robust to warm-process `let`).
 
 **Terminology (use consistently):** *allowed expansion* = the ceiling (constraint RHS);
