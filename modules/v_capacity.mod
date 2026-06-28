@@ -139,6 +139,16 @@ s.t. cap_add_cdri {t in T: t > first(T)}: build_cdri[t]  <= cap_add_frac_cdri  *
 s.t. cap_add_ngdri{t in T: t > first(T)}: build_ngdri[t] <= cap_add_frac_ngdri * cap0_ngdri;
 s.t. cap_add_scrap{t in T: t > first(T)}: build_scrap[t] <= cap_add_frac_scrap * cap0_scrap;
 
+# 2025 is the calibrated base year: capacity = the observed seed (legacy = cap0), so there
+# are no NEW route builds in 2025. The cap_add ceilings above start at t>first(T), which
+# otherwise leaves build_X[2025] unconstrained -- the optimiser then pre-builds idle capacity
+# in the base year to dodge the per-route addition ceiling (visible as NG-DRI sitting above
+# its envelope before ~2040). Pin the first-year builds to zero; new capacity begins in 2026.
+s.t. cap_add_bof0:   build_bof[first(T)]   = 0;
+s.t. cap_add_cdri0:  build_cdri[first(T)]  = 0;
+s.t. cap_add_ngdri0: build_ngdri[first(T)] = 0;
+s.t. cap_add_scrap0: build_scrap[first(T)] = 0;
+
 # ----------------------------------------------------------------------------
 # Minimum capacity utilisation (private-player discipline): production >= util_min
 # * installed capacity, so the idle gap is capped at (1-util_min). The optimiser
@@ -334,3 +344,20 @@ s.t. h2elec_growth{t in T: t > first(T)}:
          else 0)
       + H2_BIGM * (if h2_ramp_mode = 0 then 1 else 0)
       + H2_BIGM * (if h2_ramp_mode = 1 and t <= ng_h2_start_year then 1 else 0);
+
+# Close the 2025 edge: h2elec_growth is indexed t>first(T), so without this the first
+# year is uncapped in mode 2 and the optimiser pre-builds idle electrolysers in 2025 to
+# dodge the gaussian ramp. Bound 2025 too, anchored at a zero 2024 base, so
+# cap_h2elec[2025] <= allowed_add(2025) ~ 0. Relaxed (big-M) for modes 0/1, which leave
+# 2025 to the flow slab / seed plateau respectively.
+s.t. h2elec_first{t in T: t = first(T)}:
+    cap_h2elec[t] <=
+        (if h2_ramp_mode = 2
+         then h2_ref_cap * ( h2_base[t]
+                             + (h2_peak_rate
+                                - (h2_base_start + (h2_base_end - h2_base_start)
+                                                   *(h2_peak_year-2025)/25))
+                               * exp( -((t - h2_peak_year)^2)
+                                      / (2*h2_gauss_sigma^2) ) )
+         else 0)
+      + H2_BIGM * (if h2_ramp_mode <> 2 then 1 else 0);
