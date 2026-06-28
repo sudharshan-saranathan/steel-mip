@@ -343,9 +343,18 @@ to sit idle:
 prod_X[t] ≥ util_min_X · cap_X[t]      # X ∈ {bof, cdri, ngdri, h2dri, scrap}, t > 2025
 util_min:  bof 0.85 | cdri 0.75 | ngdri 0.70 | h2dri 0.70 | scrap 0.60
 ```
-The floor is **tech-specific by operational flexibility**: BF-BOF highest (0.85 — the
-blast furnace runs baseload and cannot be turned down without damage), scrap-EAF lowest
-(0.60 — batch/modular, easily idled), DRI shafts in between. Applied from **2026 on**;
+The rationale is **economic first, technical second**:
+- **Economic (primary):** below a break-even utilisation, the fixed costs charged on
+  capacity (capital service + labour + maintenance, via `fixopex_cost`) are spread over
+  too few tonnes, unit cost rises sharply, and a private operator runs at a loss — so it
+  **shuts rather than limps along**. The model already *prices* idling through fixed opex;
+  the floor adds the *discrete* "operate above break-even or exit" behaviour that pricing
+  alone would smooth over. The **exit** side is real: incumbents satisfy it by shedding
+  legacy faster (below), and new builds are committed for their life (sunk-capital
+  irreversibility), so for them it reads "run above break-even or don't build it."
+- **Technical (reinforcing):** the same ranking falls out of operational flexibility —
+  BF-BOF highest (0.85 — the blast furnace runs baseload and cannot be turned down without
+  damage), scrap-EAF lowest (0.60 — batch/modular, easily idled), DRI shafts in between. Applied from **2026 on**;
 `first(T)` = 2025 is exempt because the inherited fleet is calibrated to observed
 shares and runs below these (e.g. BF-BOF ≈ 64%, NG-DRI ≈ 59%). The optimiser satisfies
 it by **shedding idle legacy faster** and by **not stranding built vintages** (a plant,

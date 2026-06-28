@@ -237,10 +237,21 @@ param cap_add_frac_scrap default 0.15;
 
 # --- Minimum capacity utilisation (private-player discipline): production must be at
 # least util_min_X of installed capacity, i.e. the idle capacity-production gap is capped
-# at 1-util_min_X. Tech-specific by operational flexibility: BF-BOF highest (blast furnace
-# runs baseload, cannot be turned down without damage); scrap-EAF lowest (batch/modular,
-# easily idled); DRI shafts in between. Applied from 2026 on (the 2025 fleet is calibrated
-# to observed shares and inherits real low utilisation, e.g. BF-BOF ~64%, so first(T) exempt).
+# at 1-util_min_X. The rationale is ECONOMIC first, technical second:
+#   - ECONOMIC: below a break-even utilisation, fixed costs (capital service + labour +
+#     maintenance, all charged on capacity via fixopex_cost) spread over too few tonnes,
+#     unit cost blows up, and a private operator runs at a loss -> they SHUT rather than
+#     limp along. The floor encodes that discrete "operate above break-even or exit"
+#     reality (the model already PRICES idling via fixed opex; the floor forbids the
+#     loss-making low-utilisation branch a real owner would never choose). The "exit"
+#     side is available to incumbents via faster legacy retirement; new builds are
+#     committed for their life (the sunk-capital irreversibility), so for them it reads
+#     "run above break-even or don't build it".
+#   - TECHNICAL: this reinforces the ranking. BF-BOF highest (blast furnace runs baseload,
+#     cannot be turned down without damage -> high break-even); scrap-EAF lowest
+#     (batch/modular, cheaply idled -> low break-even); DRI shafts in between.
+# Applied from 2026 on (the 2025 fleet is calibrated to observed shares and inherits real
+# low utilisation, e.g. BF-BOF ~64%, so first(T) exempt).
 param util_min_bof   default 0.85;
 param util_min_cdri  default 0.75;
 param util_min_ngdri default 0.70;
