@@ -19,6 +19,11 @@
 > growth-capex levers defaulting to 0, §7.6; and the **sweep/MC H₂ axis repointed** to
 > the green-H₂ capex multiplier `h2_capex_mult`, §16). Implementation: **AMPL**
 > (GMPL-style `.mod`), solver **Gurobi**.
+>
+> **Update 2026-06-28:** deployment speed reworked from production ramps to per-route
+> **capacity-addition ceilings** + a tech-specific **minimum-utilisation floor** (§8.1, §8);
+> H₂ electrolyser **ramp modes** documented (§7.9); and the **2025 base-year build loophole
+> closed** (`cap_add_X0` + `h2elec_first`, §8.1/§7.9). Prior MC/frontier/regret CSVs stale.
 
 ---
 
@@ -492,6 +497,47 @@ renewable capex `800→450 $/kW` (blended solar/wind), life 25 yr, `re_cf = 0.45
 residual `h2_opex = 300 $/t-H₂`. The H₂ cost-uncertainty sweep axis is the multiplier
 `h2_capex_mult` (token `H2CAPXVAL`); the old delivered-price `ng_cost_h2` was removed.
 
+### 7.9 H₂ electrolyser ramp modes (`h2_ramp_mode`)
+
+How fast electrolyser **capacity** may expand is selected by `h2_ramp_mode`; the model
+stays a **pure LP** in every mode and **mode 0 is the default** (original behaviour).
+Only electrolysers are bound — dedicated renewables follow via `h2re_cover` (§7.8).
+Inactive limiters are relaxed by a big-M (`H2_BIGM = 1e10`), so the constraints are
+robust to a warm-process `let` of the mode.
+
+- **mode 0 (default):** fixed **additive slab** on the H₂ *flow* (`H2_growth_limit`,
+  `parameters.mod`); `ramp_frac` retained only for this.
+- **mode 1:** **constant-compound** ceiling — `cap_h2elec[t] ≤ (1+h2_peak_rate)·cap_h2elec[t−1]`
+  (25 %/yr off last year's capacity), active after the start year off a seed plateau.
+- **mode 2 (the designed one):** **rising-baseline + Gaussian-transition** ceiling on the
+  annual *addition* (the allowed expansion), off a **fixed reference** `h2_ref_cap = 10 Mt`
+  — it does **not** compound off installed capacity:
+  ```
+  cap_h2elec[t] − cap_h2elec[t−1] ≤ h2_ref_cap · ( base(t) + surge_amp · kernel(t) )
+  base(t)   = h2_base_start + (h2_base_end−h2_base_start)·(t−2025)/25     # 0% → 5%
+  kernel(t) = exp( −(t − h2_peak_year)² / (2·h2_gauss_sigma²) ),  σ = 2
+  surge_amp = h2_peak_rate − base(h2_peak_year)        # pins TOTAL peak rate to 25%
+  h2_peak_year = ng_h2_start_year + 5                  # coupled in parameters.mod, overridable
+  ```
+  The rising baseline encodes capital-efficiency (a fixed reference buys more capacity as
+  logistics mature, mirroring the declining `h2elec_capex_kw`); the Gaussian is the rapid
+  build-out wave, its amplitude pinned so the total peak rate is 25 %. Integrated, installed
+  capacity is a tilted ramp with an S-step. No start-year plateau (mode 2 ramps from ~0 over
+  the whole horizon; the start gate is left to `No_H2_Before` on the flow). Constants are
+  fixed by design (peak 0.25, σ 2, ref 10 Mt, base 0→0.05); only `h2_ramp_mode` /
+  `h2_peak_year` are settable.
+
+**Base-year bound** (`h2elec_first`): the growth ceiling is indexed `t > 2025`, so without
+this the base year is uncapped and (mode 2) the optimiser pre-builds idle electrolysers in
+2025 to dodge the ramp. It bounds `cap_h2elec[2025]` to the mode-2 allowed addition from a
+zero 2024 base (≈ 0); relaxed for modes 0/1. The route analogue is `cap_add_X0` (§8.1).
+
+*Distinction (use consistently):* **allowed expansion** = the ceiling (RHS); **chosen build**
+= `build_h2elec` (≤ allowed); **installed capacity** = `cap_h2elec`. The optimiser builds
+inside the ceiling — utilisation < 100 % wherever building is not yet economic; the ramp
+shape only changes the *solution* near the feasibility frontier (under loose targets all
+three modes converge to ~the same economically-chosen path).
+
 ---
 
 ## 8. Dynamics, ramps and resource-availability limits
@@ -503,12 +549,21 @@ rate** of each route, not on dispatch. The maximum new capacity built per year i
 **fixed slab** = a tech-specific fraction of the route's **2025 fleet** `cap0_X`:
 ```
 build_X[t] ≤ cap_add_frac_X · cap0_X        # X ∈ {bof, cdri, ngdri, scrap}, t > 2025
+build_X[2025] = 0                            # cap_add_X0: base year is the calibrated seed
 cap_add_frac:  bof 0.12 | cdri 0.20 | ngdri 0.10 | scrap 0.15
 ```
 The rates encode supply-chain scale-up speed: **BF-BOF slowest** (imported coking coal
 + integrated greenfield mills), **coal-DRI fastest** (indigenous thermal coal), NG-DRI
 and scrap-EAF in between (and further bounded by the NG / scrap availability curves,
 §8.3–8.4). **H₂-DRI** is governed instead by the electrolyser Gaussian envelope (§7.8).
+
+**Base-year pinning** (`cap_add_X0`): the ceiling is indexed `t > 2025`, which would
+otherwise leave `build_X[2025]` unconstrained. Since 2025 is the calibrated base year
+(installed capacity = the observed seed `cap0_X` = legacy), `build_X[2025]` is pinned to
+**zero**; new capacity begins in 2026 under the slab. Without this the optimiser pre-builds
+idle capacity in the (uncapped) base year to dodge the annual slab — e.g. NG-DRI building
+~2.7× its yearly ceiling in 2025 and sitting above its envelope until ~2040. The mode-2
+electrolyser ceiling has the analogous base-year bound (`h2elec_first`, §7.8).
 
 *Dispatch within the installed fleet is unconstrained:* the **sunk-capital mechanism**
 (overnight capex + fixed O&M charged on capacity, §7.4) already penalises build-then-idle,

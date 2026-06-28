@@ -86,14 +86,44 @@ Selected via `let` (template tokens NOT wired yet — see TODO).
 - `94bc63c` — the ramp-mode feature (`definitions.mod` params, `v_capacity.mod` ceiling,
   `parameters.mod` flow-slab toggle + peak-year coupling).
 - `661433f` — `summary.md` consistency fix (u_lockin.mod deleted, not retained).
+- `c0cfa1a` — **2025 base-year build loophole closed (routes + electrolyser).** The
+  `cap_add_X` ceilings and the mode-2 electrolyser growth ceiling are indexed `t > 2025`,
+  leaving the base year uncapped; the optimiser pre-built idle capacity in 2025 to dodge the
+  build-rate limit (NG-DRI ~2.7× its slab, sitting above its envelope to ~2040; electrolyser
+  pre-loading ~2.4 Mt-H2 before the H2-DRI start). Fix: pin `build_X[2025]=0` (`cap_add_X0`;
+  2025 capacity = calibrated seed) and bound `cap_h2elec[2025]` to its mode-2 allowed
+  addition from a zero base (`h2elec_first`). Mode-2 H2 shifts down; prior mode-2 runs stale.
+- (docs) `summary.md` §7.9 (ramp modes) + §8.1 base-year pinning, and HANDOFF — this commit.
+
+## ⭐ Findings from the 2400-draw regime sweeps (2026-06-28, all ET 1.6, mode 2)
+Runs use a **parallel slice runner** (scratchpad `run_regime.py` + `merge.py`): 6 independent
+OS processes each solve a draw-slice, then merge — ~2.4 min/regime for 2400 draws.
+(`multiprocessing.Pool` DEADLOCKS with amplpy on Windows; use independent processes.)
+- **Envelope plots terminology:** *allowed expansion* (ceiling) ≥ *installed* (`cap_X`) ≥
+  *production*. Bottom gap = the utilisation floor; top gap = unused build allowance. The
+  meaningful "allowed" line is the **per-step ceiling** `cap[t−1] + slab` (hugs the actual
+  capacity), NOT the cumulative-max-from-2025 envelope (overstates the constraint).
+- **NG-DRI is build-rate-bound and regime-invariant.** It rides its `cap_add` ceiling (10 %/yr)
+  in every regime — cheaper than H2, cleaner than coal/BF, so the optimiser always maxes it.
+  Gas supply has headroom (~6 vs ~11 Mt-NG at 2050), so `cap_add_frac_ngdri` (0.10) + `life_ngdri`
+  (15) are load-bearing: loosen them and NG-DRI crowds out H2/CCS, denting the "H2 essential"
+  thesis. **→ open: run the NG-DRI build-rate sweep.**
+- **⚠️ Cumulative-budget late-rise (terminal-cap candidate).** Emissions intensity is U-shaped:
+  over-abates early (intensity dips), then **rises into 2050** as cheap coal-DRI revives to fill
+  the banked headroom. WORST in the *easy* regime (optimistic scrap / aggressive RE): it
+  over-complies hardest early (~1.27) so it dumps the most late coal-DRI (118 Mt vs 55 in the
+  low-scrap/bau corner). A 2050-framed paper will get flagged for rising-to-2050 intensity.
 
 ## TODO (next session)
-1. **Decide mode 1 (constant-compound) keep or drop** — the user reframed the ramp as
-   linear+transition; compound was an earlier exploratory idea and may be an unwanted foil.
-2. **Wire drivers:** add template tokens (e.g. `H2RAMPVAL`, `H2PEAKVAL`) in `template.mod` and
-   `monte_carlo*.py` / `regret*.py` / sweep scripts so modes + peak-year run at scale.
-3. **Document:** `summary.md` §8.2 still describes only the old additive flow ramp — add modes 1/2.
-4. **Confirm** the mode-2 "late starts feasible" physics is intended before wiring it into regret.
+1. **Terminal-year emissions cap** (recommended) — add `emissions[2050]/steel[2050] ≤ target_2050`
+   on top of the cumulative budget to forbid the late coal-DRI dump. Or a full glidepath. Changes
+   all results → re-run. **(Top open decision.)**
+2. **NG-DRI build-rate sweep** — sweep `cap_add_frac_ngdri`, watch H2/CCS displacement.
+3. **Decide mode 1 (constant-compound) keep or drop** — user reframed the ramp as
+   linear+transition; compound may be an unwanted foil.
+4. **Wire drivers:** template tokens (`H2RAMPVAL`/`H2PEAKVAL`, and the regime is already
+   env-parameterized in `run_regime.py`) so modes + peak-year run at scale via monte_carlo/regret.
+5. **Confirm** the mode-2 "late starts feasible" physics is intended before wiring into regret.
 
 ## How to test (amplpy harness — scratchpad scripts did not persist)
 ```python
