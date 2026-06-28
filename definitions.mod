@@ -236,10 +236,16 @@ param cap_add_frac_ngdri default 0.10;
 param cap_add_frac_scrap default 0.15;
 
 # --- Minimum capacity utilisation (private-player discipline): production must be at
-# least util_min of installed capacity, i.e. the idle capacity-production gap is capped
-# at 1-util_min. Applied from 2026 on (the 2025 fleet is calibrated to observed shares
-# and inherits real <75% utilisation, e.g. BF-BOF ~64%, so first(T) is exempt).
-param util_min default 0.75;
+# least util_min_X of installed capacity, i.e. the idle capacity-production gap is capped
+# at 1-util_min_X. Tech-specific by operational flexibility: BF-BOF highest (blast furnace
+# runs baseload, cannot be turned down without damage); scrap-EAF lowest (batch/modular,
+# easily idled); DRI shafts in between. Applied from 2026 on (the 2025 fleet is calibrated
+# to observed shares and inherits real low utilisation, e.g. BF-BOF ~64%, so first(T) exempt).
+param util_min_bof   default 0.85;
+param util_min_cdri  default 0.75;
+param util_min_ngdri default 0.70;
+param util_min_h2dri default 0.70;
+param util_min_scrap default 0.60;
 
 # --- Fixed opex per unit CRUDE-STEEL capacity per year (labour + maintenance).
 #     Incurred on installed capacity whether or not it runs. Route-indexed so

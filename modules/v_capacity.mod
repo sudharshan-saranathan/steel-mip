@@ -148,11 +148,11 @@ s.t. cap_add_scrap{t in T: t > first(T)}: build_scrap[t] <= cap_add_frac_scrap *
 # ~64%). H2-DRI is auto-0 before its start year (No_H2_Before forces output=0, so
 # cap_h2dri is held at 0 there too).
 # ----------------------------------------------------------------------------
-s.t. min_util_bof  {t in T: t > first(T)}: steel_bof[t]       >= util_min * cap_bof[t];
-s.t. min_util_cdri {t in T: t > first(T)}: coaldri_output[t]  >= util_min * cap_cdri[t];
-s.t. min_util_ngdri{t in T: t > first(T)}: ngdri_output[t]    >= util_min * cap_ngdri[t];
-s.t. min_util_h2dri{t in T: t > first(T)}: h2dri_output[t]    >= util_min * cap_h2dri[t];
-s.t. min_util_scrap{t in T: t > first(T)}: steel_scrap_eaf[t] >= util_min * cap_scrap[t];
+s.t. min_util_bof  {t in T: t > first(T)}: steel_bof[t]       >= util_min_bof   * cap_bof[t];
+s.t. min_util_cdri {t in T: t > first(T)}: coaldri_output[t]  >= util_min_cdri  * cap_cdri[t];
+s.t. min_util_ngdri{t in T: t > first(T)}: ngdri_output[t]    >= util_min_ngdri * cap_ngdri[t];
+s.t. min_util_h2dri{t in T: t > first(T)}: h2dri_output[t]    >= util_min_h2dri * cap_h2dri[t];
+s.t. min_util_scrap{t in T: t > first(T)}: steel_scrap_eaf[t] >= util_min_scrap * cap_scrap[t];
 
 # ----------------------------------------------------------------------------
 # Cost pieces (consumed by total_cost_def in r_cost.mod).

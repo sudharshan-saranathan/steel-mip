@@ -340,12 +340,14 @@ overbuilding.
 idle gap, reflecting that the industry is privately operated and plants are not built
 to sit idle:
 ```
-prod_X[t] ≥ util_min · cap_X[t]      # X ∈ {bof, cdri, ngdri, h2dri, scrap}, t > 2025
-util_min = 0.75
+prod_X[t] ≥ util_min_X · cap_X[t]      # X ∈ {bof, cdri, ngdri, h2dri, scrap}, t > 2025
+util_min:  bof 0.85 | cdri 0.75 | ngdri 0.70 | h2dri 0.70 | scrap 0.60
 ```
-i.e. capacity utilisation must be ≥ 75% (idle gap ≤ 25%). Applied from **2026 on**;
+The floor is **tech-specific by operational flexibility**: BF-BOF highest (0.85 — the
+blast furnace runs baseload and cannot be turned down without damage), scrap-EAF lowest
+(0.60 — batch/modular, easily idled), DRI shafts in between. Applied from **2026 on**;
 `first(T)` = 2025 is exempt because the inherited fleet is calibrated to observed
-shares and runs below this (e.g. BF-BOF ≈ 64%, NG-DRI ≈ 59%). The optimiser satisfies
+shares and runs below these (e.g. BF-BOF ≈ 64%, NG-DRI ≈ 59%). The optimiser satisfies
 it by **shedding idle legacy faster** and by **not stranding built vintages** (a plant,
 once built, is run rather than mothballed) — a second, complementary irreversibility
 channel alongside the sunk-capital cost. It also forbids the transient full-idling of

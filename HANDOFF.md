@@ -18,12 +18,13 @@ travel between machines — this file does, via git). Branch: **`mip-v2`**._
   (BF-BOF raised 0.05->0.12: 5% was too restrictive.) Rationale: sunk
   capital already smooths dispatch, so limit the *physical* build rate instead. All four
   ceilings bind at ET 1.6 (central prices). `ramp_frac` kept only for the mode-0 H2 flow slab.
-- **Minimum utilisation floor** (added this session): `prod_X[t] ≥ util_min·cap_X[t]`
-  (`util_min=0.75`) for all 5 routes, t > 2025 (`min_util_*` in `v_capacity.mod`). Caps
-  the idle capacity-production gap at 25% — private-industry discipline. 2025 exempt (the
-  inherited fleet runs <75%: BF-BOF ~64%, NG-DRI ~59%). Satisfied by faster legacy
-  retirement + not stranding built vintages; all price corners feasible at ET 1.6 (coal-DRI
-  & NG-DRI bind at exactly 75%).
+- **Minimum utilisation floor** (added this session): `prod_X[t] ≥ util_min_X·cap_X[t]`
+  for all 5 routes, t > 2025 (`min_util_*` in `v_capacity.mod`). Tech-specific by
+  operational flexibility: BF-BOF 0.85 (blast furnace baseload), coal-DRI 0.75, NG-DRI 0.70,
+  H2-DRI 0.70, scrap-EAF 0.60 (batch/modular). Caps the idle gap — private-industry
+  discipline. 2025 exempt (inherited fleet runs lower: BF-BOF ~64%, NG-DRI ~59%). Satisfied
+  by faster legacy retirement + not stranding built vintages; all price corners feasible at
+  ET 1.6 (coal-DRI binds at 75%, NG-DRI at 70%, BF-BOF ~99%).
 - `summary.md` is the methodology-grade reference (keep in sync with model changes).
 - **Prior MC / frontier / regret CSVs are STALE** (emissions cap + green-H2 restructure + axis
   repoint) — re-run before using numbers.
