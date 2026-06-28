@@ -230,7 +230,7 @@ param life_scrap default 10;
 # greenfield mills); coal-DRI fastest (indigenous thermal coal); NG-DRI and scrap-EAF
 # in between (and further bounded by NG / scrap availability curves). H2-DRI is not
 # listed -- its build rate is set by the electrolyser Gaussian envelope (v_capacity.mod).
-param cap_add_frac_bof   default 0.05;
+param cap_add_frac_bof   default 0.12;
 param cap_add_frac_cdri  default 0.20;
 param cap_add_frac_ngdri default 0.10;
 param cap_add_frac_scrap default 0.15;

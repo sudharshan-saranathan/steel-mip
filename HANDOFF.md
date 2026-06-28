@@ -13,8 +13,9 @@ travel between machines — this file does, via git). Branch: **`mip-v2`**._
   old two-sided production ramps (`{bof,cdri,ngdri,scrap}_prod_up/down`) and the H2-DRI
   `0.85·prev` down-floor are REMOVED. Replaced by per-route capacity-addition ceilings in
   `v_capacity.mod` (`cap_add_X`): `build_X[t] ≤ cap_add_frac_X · cap0_X` (fixed slab, % of
-  2025 fleet). Rates: BF-BOF 0.05 (imported coking coal), coal-DRI 0.20 (indigenous thermal
-  coal), NG-DRI 0.10, scrap 0.15; H2-DRI via the electrolyser envelope. Rationale: sunk
+  2025 fleet). Rates: BF-BOF 0.12 (imported coking coal), coal-DRI 0.20 (indigenous thermal
+  coal), NG-DRI 0.10, scrap 0.15; H2-DRI via the electrolyser envelope.
+  (BF-BOF raised 0.05->0.12: 5% was too restrictive.) Rationale: sunk
   capital already smooths dispatch, so limit the *physical* build rate instead. All four
   ceilings bind at ET 1.6 (central prices). `ramp_frac` kept only for the mode-0 H2 flow slab.
 - `summary.md` is the methodology-grade reference (keep in sync with model changes).

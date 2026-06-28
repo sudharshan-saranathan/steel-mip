@@ -477,7 +477,7 @@ rate** of each route, not on dispatch. The maximum new capacity built per year i
 **fixed slab** = a tech-specific fraction of the route's **2025 fleet** `cap0_X`:
 ```
 build_X[t] ≤ cap_add_frac_X · cap0_X        # X ∈ {bof, cdri, ngdri, scrap}, t > 2025
-cap_add_frac:  bof 0.05 | cdri 0.20 | ngdri 0.10 | scrap 0.15
+cap_add_frac:  bof 0.12 | cdri 0.20 | ngdri 0.10 | scrap 0.15
 ```
 The rates encode supply-chain scale-up speed: **BF-BOF slowest** (imported coking coal
 + integrated greenfield mills), **coal-DRI fastest** (indigenous thermal coal), NG-DRI
