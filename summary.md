@@ -24,6 +24,20 @@
 > **capacity-addition ceilings** + a tech-specific **minimum-utilisation floor** (§8.1, §8);
 > H₂ electrolyser **ramp modes** documented (§7.9); and the **2025 base-year build loophole
 > closed** (`cap_add_X0` + `h2elec_first`, §8.1/§7.9). Prior MC/frontier/regret CSVs stale.
+>
+> **Update 2026-06-29 (see HANDOFF.md for the full state):** the H₂ ramp modes were
+> **re-architected** to a single value-switch — **mode 0 = no limits** (∞ ceilings + utilisation
+> floor off; the counterfactual), **mode 1 = linear**, **mode 2 = gaussian (default)**; the four
+> `cap_add_X` slabs and the utilisation floor are now mode-gated. **BF-BOF H₂ co-injection was
+> removed** (`n2_h2_hm_50`→0, coke `n2_coke_hm_50` 0.44→0.48), so **H₂-DRI is the sole hydrogen
+> consumer**; an **electrolyser debut gate** (`cap_h2elec=0` before `ng_h2_start_year`) and a
+> **`h2_peak_year` re-coupling** in `template.mod` remove the idle pre-build / start-year jump.
+> **Scrap build ramp 0.15→0.448 (~15 Mt/yr)**; new **coking-coal availability lever** (`ccoal_cap`,
+> scenarios `ccoal_{scarce,normal,abundant}`, NG `{scarce,abundant}`). `h2_ref_cap` (the mode-2
+> reference scale) is the **H₂-led ↔ CCS-led dial** — 10 Mt → H₂ dominant (~115 Mt, EF floor ~1.3
+> favourable); 4 Mt → balanced (~55 Mt, floor ~1.48/1.64); 1.5 Mt → CCS-on-BF (~20 Mt). Committed
+> at 10 Mt, value undecided. Dead formalisms pruned (old compound mode, scope2_*, Mccs_*/cap_ub_*,
+> H₂ flow slab, etc.). **The §7.9/§8 prose below predates this and is partly stale.** CSVs stale.
 
 ---
 
