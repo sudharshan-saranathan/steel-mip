@@ -42,8 +42,9 @@ SCRAP_REGIME = os.environ.get("MC_SCRAP_REGIME", "modest")      # starved|low|mo
 H2YEAR       = int(os.environ.get("MC_H2YEAR", "2030"))         # H2-DRI start year (discrete axis)
 AVG_EMI      = float(os.environ.get("MC_AVG_EMI", "1.6"))       # cumulative avg-emissions target (tCO2/tCS)
 RAMP         = float(os.environ.get("MC_RAMP", "0.15"))         # additive production ramp slab (frac of 2025 level/yr)
-RAMP_MODE    = int(os.environ.get("MC_RAMP_MODE", "0"))         # H2 capacity ramp: 0 additive | 1 compound | 2 gaussian envelope
+RAMP_MODE    = int(os.environ.get("MC_RAMP_MODE", "2"))         # ramp ceiling: 0 none(inf) | 1 linear | 2 gaussian (default)
 H2PEAK       = int(os.environ.get("MC_H2PEAK", "0"))            # mode-2 surge peak year; 0 -> leave model default (start+5 coupling)
+LET_EXTRA    = os.environ.get("MC_LET", "")                     # arbitrary scenario `let` overrides, injected pre-solve (e.g. liberal ceilings)
 GRID_EF      = os.environ.get("MC_GRID_EF", "moderate_re")      # bau|moderate_re|aggressive_re
 GRID         = os.environ.get("MC_GRID", "")   # "nH2,nCCS,nNG" -> deterministic price grid; "" -> LHS
 OUT_CSV      = os.path.join(PROJECT, os.environ.get("MC_OUT", "mc_results.csv"))
@@ -52,7 +53,8 @@ TRAJ_OUT     = os.environ.get("MC_TRAJ_OUT", "")   # if set, also write a year-b
 # year-indexed entities archived for the full-trajectory store (one batched
 # get_data call per solve -> a 26-year x len rows DataFrame).
 TRAJ_ENTS = ["total_steel", "steel_bof", "steel_scrap_eaf", "coaldri_output",
-             "ngdri_output", "h2dri_output", "total_cost", "total_emissions", "total_ccs"]
+             "ngdri_output", "h2dri_output", "total_cost", "total_emissions", "total_ccs",
+             "cap_bof", "cap_cdri", "cap_ngdri", "cap_h2dri", "cap_scrap"]
 
 SCEN_FILE    = "scenarios/ng_avail_normal.mod"
 GRID_EF_FILE = {"bau":           "scenarios/grid_ef_bau.mod",
@@ -93,11 +95,12 @@ def model_for(ng, h2end, ccs, h2year):
         s = s.replace(tok, str(val))
     # H2 capacity ramp-mode selection (re-evaluated at solve via the in-body big-M
     # switches in v_capacity.mod); injected before solve. Default mode 0 = unchanged.
-    if RAMP_MODE:
-        inj = f"let h2_ramp_mode := {RAMP_MODE};\n"
-        if H2PEAK:
-            inj += f"let h2_peak_year := {H2PEAK};\n"
-        s = s.replace("solve;", inj + "solve;", 1)
+    inj = f"let h2_ramp_mode := {RAMP_MODE};\n"   # always inject (mode 0 is falsy but valid)
+    if H2PEAK:
+        inj += f"let h2_peak_year := {H2PEAK};\n"
+    if LET_EXTRA:                       # scenario overrides
+        inj += LET_EXTRA.rstrip(";") + ";\n"
+    s = s.replace("solve;", inj + "solve;", 1)
     return s
 
 # raw AMPL expressions to pull after a solved draw (derived ratios computed in Python)

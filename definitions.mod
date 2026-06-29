@@ -123,7 +123,6 @@ param n8_eafg default 3;                 # EAF Gas (GJ) per tCS
    
 
 # Waste Heat Recovery
-param n9_u default 7884;                               # Utilization hours            
 param n9_eta default 0.15;                              # WHRS efficiency including losses                        
 param n9_whr {t in T} :=
     0.05 +(0.3 - 0.05) * (t - 2025) / 25;               # WHRS penetration level from 30% in 2025 to 70% by 2050 
@@ -312,11 +311,10 @@ param ocapex_ngchain   default 0;     # $/(t-NG/yr)
 # (Fixed opex is the labour+maintenance figure declared above as fopex_*,
 #  charged on installed capacity in v_capacity.mod; no %-of-capex term.)
 
-# --- Production ramp as a FIXED annual slab (NOT a compounding %): the max YoY
-#     change is ramp_frac * the route's pinned 2025 production. Reflects that
-#     capacity additions are limited by ~constant annual capital availability,
-#     not by current fleet size. Tunable lever (typically 0.15-0.20). H2-DRI is
-#     exempt (future entrant; governed by the H2 availability mechanism).
+# --- Mode-1 (linear) electrolyser-capacity ramp coefficient: the additive ceiling on
+#     cap_h2elec additions is ramp_frac * H2_cap per year (a fixed annual slab, NOT a
+#     compounding %). Reflects ~constant annual capital availability. Sweep token RAMPVAL.
+#     Typically 0.15. (Used only in mode 1; modes 0/2 set the ceiling value differently.)
 param ramp_frac default 0.15;
 
 # Ablation toggle for the sunk-capital effect:
@@ -401,12 +399,14 @@ param ocapex_h2re{t in T} := h2_capex_mult * re_capex_kw[t];    # overnight $/kW
 param acapex_h2re{t in T} := ocapex_h2re[t] * crf_re;           # annualized $/kW/yr (for the 1-sunk branch)
 param fopex_h2re default 15;          # fixed O&M, $/kW/yr (placeholder ~2% of capex)
 
-# --- H2 ramp mode: how fast green H2 may scale (three mutually-exclusive limiters) ---
-# Selected by h2_ramp_mode; the model stays a pure LP in every mode. Only the
-# electrolyser stock is bound; dedicated renewables follow via h2re_cover.
-#   0 (default): FIXED ADDITIVE slab on H2 *adoption* (the flow ramp in parameters.mod).
-#   1: CONSTANT compounding ceiling on electrolyser *capacity* -- flat h2_peak_rate %/yr.
-#   2: RISING-BASELINE + GAUSSIAN-TRANSITION ceiling on the annual capacity ADDITION
+# --- H2 ramp mode: how fast green H2 may scale. SAME formalism in every mode -- the
+# electrolyser-capacity ceiling (and the four route cap_add ceilings) are always present;
+# only the ceiling VALUE switches by mode. The model stays a pure LP throughout.
+#   0: NO LIMITS -- every ceiling value = H2_BIGM (inf), on electrolysers AND the four
+#      conventional routes. Unphysical counterfactual baseline (constraints' total effect).
+#   1: LINEAR -- electrolyser-capacity ceiling = ramp_frac * H2_cap per year (fixed
+#      additive slab); the four routes keep their cap_add slabs.
+#   2 (default): RISING-BASELINE + GAUSSIAN-TRANSITION ceiling on the annual capacity ADDITION
 #      (the ALLOWED EXPANSION). The yearly build is bounded by a fixed reference scale
 #      times a (rising baseline + Gaussian surge) rate -- it does NOT compound off last
 #      year's installed capacity:
@@ -425,11 +425,10 @@ param fopex_h2re default 15;          # fixed O&M, $/kW/yr (placeholder ~2% of c
 #      Because the baseline rises, the post-transition right tail sits permanently above the
 #      pre-transition left tail (the visible "step" = the capital-efficiency gain). The peak
 #      YEAR shifts per scenario; reference scale, baseline endpoints, peak rate and width fixed.
-param h2_ramp_mode  default 0;          # 0 additive | 1 constant-compound | 2 rising+gaussian
-param h2elec_seed   default 1500000;    # initial electrolyser hub size at start year (t-H2/yr)
+param h2_ramp_mode  default 2;          # 0 none (inf ceiling) | 1 linear | 2 gaussian (default, realistic)
 param H2_BIGM       := 1e10;            # deactivates whichever limiter is off (~300x max cap)
 param h2_ref_cap    := 10000000;        # fixed reference scale for mode-2 add-rates (t-H2/yr)
-param h2_peak_rate  := 0.25;            # mode 1 flat compounding rate; ALSO the pinned mode-2 peak
+param h2_peak_rate  := 0.25;            # the pinned mode-2 peak rate (base(peak)+surge = 25%)
 param h2_base_start := 0.00;            # mode 2 baseline coeff at 2025 (x h2_ref_cap, per yr)
 param h2_base_end   := 0.05;            # mode 2 baseline coeff at 2050 (rising -> capital efficiency)
 param h2_gauss_sigma := 2;              # Gaussian width (years); narrower -> sharper ramp, surge concentrated at peak

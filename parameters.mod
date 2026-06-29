@@ -44,27 +44,20 @@ let n10_ccs_cost_start := 125;   # Carbon capture cost per ton in 2025
 let n10_ccs_cost_end := 75;      # Projected carbon capture cost in 2050
 
 
-#Hydrogen availability cap
+# Reference scale for the mode-1 (linear) electrolyser-capacity slab (ramp_frac * H2_cap
+# per year, v_capacity.mod). No longer a flow cap -- the H2 deployment ceiling now lives
+# entirely on electrolyser capacity in every mode.
 param H2_cap := 1500000;
+
+# Green-H2 availability gate: zero H2-DRI hydrogen before the debut year (a tech-
+# availability date, NOT a build-rate cap -- the ramp ceiling is in v_capacity.mod).
 s.t. No_H2_Before{t in T: t < ng_h2_start_year}:
     h2dri_h2_in[t] = 0;
-    
-s.t. H2_growth_cap{t in T: t = ng_h2_start_year}:
-    h2dri_h2_in[t] <= H2_cap;
 
 # Couple the Gaussian buildout peak to the H2 debut now that the start year is concrete
 # (mode 2 only uses it; harmless otherwise). A driver may re-let h2_peak_year afterwards
 # to treat the peak as an independent axis.
 let h2_peak_year := ng_h2_start_year + 5;
-
-# H2 availability is a FIXED additive slab (NOT CAGR): hydrogen input starts at the
-# initial availability (H2_cap, via H2_growth_cap) and grows by at most ramp_frac *
-# H2_cap per year. Replaces the old max(1.15*prev, H2_cap) compounding limiter.
-# This flow slab governs only in mode 0; in modes 1/2 the big-M term relaxes it and the
-# electrolyser-capacity ceiling (v_capacity.mod) governs the H2 scale-up instead.
-s.t. H2_growth_limit{t in T: t > ng_h2_start_year}:
-    h2dri_h2_in[t] - h2dri_h2_in[prev(t)]
-        <= ramp_frac * H2_cap + H2_BIGM * (if h2_ramp_mode >= 1 then 1 else 0);
 
 
 #Natural gas cap (10% of availability of national scale)

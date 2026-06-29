@@ -133,11 +133,13 @@ s.t. cap_lim_scrap{t in T}: steel_scrap_eaf[t] <= cap_scrap[t];
 # of the 2025 fleet). Limits the PHYSICAL build rate of each industry's supply chain
 # (e.g. BF-BOF slow = imported coking coal; coal-DRI fast = indigenous thermal coal),
 # NOT dispatch. H2-DRI is governed instead by the electrolyser envelope below.
+# Same constraint in every mode; only the ceiling VALUE switches: mode 0 = H2_BIGM
+# (no limit), modes 1 & 2 = the slab. H2-DRI's mode-dependent ceiling is below.
 # ----------------------------------------------------------------------------
-s.t. cap_add_bof  {t in T: t > first(T)}: build_bof[t]   <= cap_add_frac_bof   * cap0_bof;
-s.t. cap_add_cdri {t in T: t > first(T)}: build_cdri[t]  <= cap_add_frac_cdri  * cap0_cdri;
-s.t. cap_add_ngdri{t in T: t > first(T)}: build_ngdri[t] <= cap_add_frac_ngdri * cap0_ngdri;
-s.t. cap_add_scrap{t in T: t > first(T)}: build_scrap[t] <= cap_add_frac_scrap * cap0_scrap;
+s.t. cap_add_bof  {t in T: t > first(T)}: build_bof[t]   <= (if h2_ramp_mode = 0 then H2_BIGM else cap_add_frac_bof   * cap0_bof);
+s.t. cap_add_cdri {t in T: t > first(T)}: build_cdri[t]  <= (if h2_ramp_mode = 0 then H2_BIGM else cap_add_frac_cdri  * cap0_cdri);
+s.t. cap_add_ngdri{t in T: t > first(T)}: build_ngdri[t] <= (if h2_ramp_mode = 0 then H2_BIGM else cap_add_frac_ngdri * cap0_ngdri);
+s.t. cap_add_scrap{t in T: t > first(T)}: build_scrap[t] <= (if h2_ramp_mode = 0 then H2_BIGM else cap_add_frac_scrap * cap0_scrap);
 
 # 2025 is the calibrated base year: capacity = the observed seed (legacy = cap0), so there
 # are no NEW route builds in 2025. The cap_add ceilings above start at t>first(T), which
@@ -301,63 +303,40 @@ s.t. h2re_cover{t in T}:
     h2_kwh_per_t * (h2dri_h2_in[t] + bf_h2_in[t]) <= cap_h2re[t] * 8760 * re_cf;
 
 # ----------------------------------------------------------------------------
-# ACCELERATING (compounding) ceiling on ELECTROLYSER capacity buildout.
-# Active only when h2_cap_compound = 1; otherwise the big-M term relaxes these so
-# the additive flow ramp (parameters.mod) governs instead. All linear -> pure LP.
-# Only electrolysers are bound; dedicated renewables follow via h2re_cover above.
-# ----------------------------------------------------------------------------
-# The capacity ceiling is active in modes 1 (constant-compound) and 2 (gaussian); in
-# mode 0 (additive flow slab) the big-M term relaxes both so parameters.mod governs.
+# Ceiling on ELECTROLYSER capacity additions. ONE constraint, present in every mode;
+# only the ceiling VALUE switches (same formalism, different numbers):
+#   mode 0: H2_BIGM  -- no limit (counterfactual baseline).
+#   mode 1: ramp_frac * H2_cap -- LINEAR additive slab (fixed t-H2/yr each year).
+#   mode 2: h2_ref_cap * (rising baseline + Gaussian surge) -- the realistic envelope;
+#           does NOT compound off current capacity; amplitude pinned so base(peak)+surge
+#           = h2_peak_rate (total peak rate 25%); installed capacity = tilted ramp + S-step.
+# All linear -> pure LP. Only electrolysers are bound; renewables follow via h2re_cover.
 # The rate is inlined (not a precomputed param) so it re-evaluates on every solve when a
 # driver changes h2_ramp_mode / h2_peak_year / ng_h2_start_year on a warm AMPL process.
-
-# MODE 1 ONLY: up to and including the start year, electrolyser capacity is capped at the
-# initial hub size -- the fixed base the compounding then grows from. Relaxed (big-M) for
-# modes 0 and 2: mode 0 uses the additive flow slab; mode 2 has NO plateau and ramps
-# continuously over the whole horizon. The start-year gate for green H2 is enforced by the
-# H2-flow constraint (No_H2_Before, parameters.mod), so the capacity ceiling need not also
-# impose it -- the optimiser builds only the small electrolyser stock the BF H2-injection
-# baseline needs before the DRI start year, and zero where there is no H2 demand.
-s.t. h2elec_seed_cap{t in T: t <= ng_h2_start_year}:
-    cap_h2elec[t] <= h2elec_seed + H2_BIGM * (if h2_ramp_mode <> 1 then 1 else 0);
-# This bounds ALLOWED EXPANSION (the optimiser's CHOSEN build, build_h2elec, may sit below):
-#   mode 1: COMPOUNDING ceiling, ACTIVE ONLY AFTER the start year -- allowed add is
-#           h2_peak_rate x last year's capacity (grows off the seed plateau above).
-#   mode 2: RISING-BASELINE + GAUSSIAN-TRANSITION, active over the WHOLE horizon (no
-#           start-year plateau) -- allowed add is a fixed reference (h2_ref_cap) times a
-#           baseline that rises 2025->2050 (capital efficiency) plus a Gaussian surge whose
-#           amplitude is pinned so base(peak)+surge = h2_peak_rate (total peak rate = 25%).
-#           It does NOT scale with current capacity; installed capacity is a tilted ramp
-#           with an S-step (right tail above left = efficiency).
-# Indexed over the full horizon (t > first(T)); the mode-1 start-year gate is applied
-# in-body so a warm-process `let` of ng_h2_start_year still re-evaluates correctly.
+# Bounds ALLOWED EXPANSION; the optimiser's CHOSEN build (build_h2elec) may sit below.
+# Indexed over the full horizon (t > first(T)); no start-year plateau.
 s.t. h2elec_growth{t in T: t > first(T)}:
     cap_h2elec[t] - cap_h2elec[prev(t)] <=
-        (if h2_ramp_mode = 1 and t > ng_h2_start_year then h2_peak_rate * cap_h2elec[prev(t)] else 0)
-      + (if h2_ramp_mode = 2
-         then h2_ref_cap * ( h2_base[t]
+        ( if   h2_ramp_mode = 0 then H2_BIGM
+          else if h2_ramp_mode = 1 then ramp_frac * H2_cap
+          else h2_ref_cap * ( h2_base[t]
                              + (h2_peak_rate
                                 - (h2_base_start + (h2_base_end - h2_base_start)
                                                    *(h2_peak_year-2025)/25))
                                * exp( -((t - h2_peak_year)^2)
-                                      / (2*h2_gauss_sigma^2) ) )
-         else 0)
-      + H2_BIGM * (if h2_ramp_mode = 0 then 1 else 0)
-      + H2_BIGM * (if h2_ramp_mode = 1 and t <= ng_h2_start_year then 1 else 0);
+                                      / (2*h2_gauss_sigma^2) ) ) );
 
 # Close the 2025 edge: h2elec_growth is indexed t>first(T), so without this the first
-# year is uncapped in mode 2 and the optimiser pre-builds idle electrolysers in 2025 to
-# dodge the gaussian ramp. Bound 2025 too, anchored at a zero 2024 base, so
-# cap_h2elec[2025] <= allowed_add(2025) ~ 0. Relaxed (big-M) for modes 0/1, which leave
-# 2025 to the flow slab / seed plateau respectively.
+# year is uncapped and the optimiser pre-builds idle electrolysers in 2025 to dodge the
+# ramp. Same value switch as h2elec_growth, anchored at a zero 2024 base, so in modes 1/2
+# cap_h2elec[2025] <= allowed_add(2025); mode 0 = H2_BIGM (no limit).
 s.t. h2elec_first{t in T: t = first(T)}:
     cap_h2elec[t] <=
-        (if h2_ramp_mode = 2
-         then h2_ref_cap * ( h2_base[t]
+        ( if   h2_ramp_mode = 0 then H2_BIGM
+          else if h2_ramp_mode = 1 then ramp_frac * H2_cap
+          else h2_ref_cap * ( h2_base[t]
                              + (h2_peak_rate
                                 - (h2_base_start + (h2_base_end - h2_base_start)
                                                    *(h2_peak_year-2025)/25))
                                * exp( -((t - h2_peak_year)^2)
-                                      / (2*h2_gauss_sigma^2) ) )
-         else 0)
-      + H2_BIGM * (if h2_ramp_mode <> 2 then 1 else 0);
+                                      / (2*h2_gauss_sigma^2) ) ) );

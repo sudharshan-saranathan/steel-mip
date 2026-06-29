@@ -57,23 +57,6 @@ s.t. ccs_sector_ceiling{t in T}:
     ccs_bf[t] + ccs_cdri[t] + ccs_ngdri[t]
       <= ccs_avail[t] * (co2_capturable_bf[t] + co2_capturable_cdri[t] + co2_capturable_ngdri[t]);
 
-# Valid big-M for the capture phase-in switches (t_additional_constraints.mod):
-# |ccs_X[t]-ccs_X[t-1]| <= max ccs_X = n10_ccs_eta*fc_max*cap_ub_X[t].
-param cap_ub_bf{t in T} :=
-    1.00*dem[t]*0.1116*25 + 0.25*dem[t]*0.106*26 + 3*(0.10*dem[t])*0.44;   # H3/L2 fix: PCI 0.106 (was 0.113)
-param cap_ub_cdri{t in T} :=
-    (1-n7_phi_eaf)*dem[t]*0.110*24
-  + (n7_cs/(1-n7_phi_eaf))*((1-n7_phi_eaf)*dem[t])*0.110*24
-  + (n7_ls/(1-n7_phi_eaf))*((1-n7_phi_eaf)*dem[t])*0.44;
-param cap_ub_ngdri{t in T} :=
-    (n5_ng_dri*(1-n7_phi_eaf)*dem[t])*0.055*50
-  + (n7_cs/(1-n7_phi_eaf))*((1-n7_phi_eaf)*dem[t])*0.110*24
-  + (n7_ls/(1-n7_phi_eaf))*((1-n7_phi_eaf)*dem[t])*0.44;
-
-param Mccs_bf{t in T}    := n10_ccs_eta*fc_max*cap_ub_bf[t];
-param Mccs_cdri{t in T}  := n10_ccs_eta*fc_max*cap_ub_cdri[t];
-param Mccs_ngdri{t in T} := n10_ccs_eta*fc_max*cap_ub_ngdri[t];
-
 # Total captured CO2
 s.t. total_captured_co2{t in T}:
    ccs_bf[t] +ccs_cdri[t] +ccs_ngdri[t]  - total_ccs[t] = 0;           # eq87

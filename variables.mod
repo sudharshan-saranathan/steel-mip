@@ -140,7 +140,6 @@ var cost_eaf{T}                 >= 0;  # X[94]- Total cost in DRI based EAF plan
 var cost_scrap_eaf{T}           >= 0;  # X[95]- Total cost in Scrap based EAF plant
 var whr_cost{T}               >= 0;  # X[96]- Cost of Waste heat recovery plant
 var cost_ccs{T}                 >= 0;  # X[97]- Total cost in carbon capture plant
-var cost_carbontax{T}           >= 0;
 var total_cost{T}               >= 0;  # X[98]- Total cost
 
 # Emissions
@@ -149,11 +148,6 @@ var scope1_cdri{T}              >= 0;  # X[100]- Scope 1 CO2 from Coal DRI-EAF
 var scope1_ngdri{T}             >= 0;  # X[101]- Scope 1 CO2 from NG DRI-EAF
 var scope1_h2dri{T}             >= 0;
 var scope1_scrapeaf{T}          >= 0;
-var scope2_bf{T}                >= 0;  
-var scope2_cdri{T}              >= 0;  
-var scope2_ngdri{T}             >= 0;  
-var scope2_h2dri{T}             >= 0;
-var scope2_scrapeaf{T}          >= 0;
 var scope1_emissions{T}         >= 0;  # X[102]- Total Scope 1 CO2
 var scope2_emissions{T}         >= 0;  # X[103]- Total Scope 2 CO2
 var total_emissions{T}          >= 0;  # X[104]- Total CO2 emitted
