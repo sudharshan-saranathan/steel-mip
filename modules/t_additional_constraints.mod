@@ -27,8 +27,13 @@ s.t. scrap_bound{t in T}:
 s.t. ng_bound{t in T}:
    ngdri_ng_in[t] <= n5_ng_cap[t];
 
-# (H2 availability is governed by No_H2_Before / H2_growth_cap / H2_growth_limit in
-#  parameters.mod -- the additive-slab mechanism that replaced the old CAGR limiter.)
+# Coking-coal availability: imported coke-making coal for BF is capped (ccoal_cap, set by
+# scenarios/ccoal_*). PCI (bf_coalpci_in) and indigenous thermal DRI coal stay uncapped.
+s.t. coking_coal_bound{t in T: t > first(T)}:
+   coking_coal_in[t] <= ccoal_cap[t];
+
+# (H2 deployment is governed by No_H2_Before (parameters.mod) + the electrolyser-capacity
+#  ceiling in v_capacity.mod -- a value-switch by h2_ramp_mode: 0 none / 1 linear / 2 gaussian.)
 
 # Policy constraint: cumulative average CO2-intensity CAP (upper bound only).
 # The lifetime-average intensity must not EXCEED avg_emi (tCO2/tCS); the optimizer

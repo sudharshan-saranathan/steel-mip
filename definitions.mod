@@ -200,6 +200,10 @@ param real_discount_rate := 0.06;
 param n8_scrap_rate default 0.06;
 param n8_scrap_limit{t in T};
 param n5_ng_cap {T};
+# Coking-coal availability ceiling (imported coke-making coal for BF; PCI and indigenous
+# thermal DRI coal are NOT capped). Default 1e12 = effectively no limit, so runs without a
+# coking scenario file behave as before; scarce/normal/abundant set via scenarios/ccoal_*.
+param ccoal_cap {T} default 1e12;
 
 # ============================================================================
 # CAPACITY-EXPANSION PARAMETERS  (branch: capex-opex-framework)
