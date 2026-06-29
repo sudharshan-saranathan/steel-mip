@@ -16,3 +16,4 @@ plot_edge.py
 
 # transient parallel-runner stderr
 mc_grid_err_*.txt
+figs/

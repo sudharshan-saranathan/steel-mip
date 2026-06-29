@@ -158,13 +158,15 @@ s.t. cap_add_scrap0: build_scrap[first(T)] = 0;
 # plant, once built, is run rather than mothballed. Exempt at first(T) (2025): the
 # inherited fleet is calibrated to observed shares and runs below 75% (e.g. BF-BOF
 # ~64%). H2-DRI is auto-0 before its start year (No_H2_Before forces output=0, so
-# cap_h2dri is held at 0 there too).
+# cap_h2dri is held at 0 there too). Mode 0 (no limits) is the no-discipline
+# counterfactual: the floor coefficient switches to 0, so the constraint is present
+# in every mode but inert in mode 0 (same value-switch idiom as the ramp ceilings).
 # ----------------------------------------------------------------------------
-s.t. min_util_bof  {t in T: t > first(T)}: steel_bof[t]       >= util_min_bof   * cap_bof[t];
-s.t. min_util_cdri {t in T: t > first(T)}: coaldri_output[t]  >= util_min_cdri  * cap_cdri[t];
-s.t. min_util_ngdri{t in T: t > first(T)}: ngdri_output[t]    >= util_min_ngdri * cap_ngdri[t];
-s.t. min_util_h2dri{t in T: t > first(T)}: h2dri_output[t]    >= util_min_h2dri * cap_h2dri[t];
-s.t. min_util_scrap{t in T: t > first(T)}: steel_scrap_eaf[t] >= util_min_scrap * cap_scrap[t];
+s.t. min_util_bof  {t in T: t > first(T)}: steel_bof[t]       >= (if h2_ramp_mode = 0 then 0 else util_min_bof)   * cap_bof[t];
+s.t. min_util_cdri {t in T: t > first(T)}: coaldri_output[t]  >= (if h2_ramp_mode = 0 then 0 else util_min_cdri)  * cap_cdri[t];
+s.t. min_util_ngdri{t in T: t > first(T)}: ngdri_output[t]    >= (if h2_ramp_mode = 0 then 0 else util_min_ngdri) * cap_ngdri[t];
+s.t. min_util_h2dri{t in T: t > first(T)}: h2dri_output[t]    >= (if h2_ramp_mode = 0 then 0 else util_min_h2dri) * cap_h2dri[t];
+s.t. min_util_scrap{t in T: t > first(T)}: steel_scrap_eaf[t] >= (if h2_ramp_mode = 0 then 0 else util_min_scrap) * cap_scrap[t];
 
 # ----------------------------------------------------------------------------
 # Cost pieces (consumed by total_cost_def in r_cost.mod).
