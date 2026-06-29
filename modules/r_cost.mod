@@ -33,7 +33,6 @@ s.t. cost_bf_def{t in T}:
   + ng_cost_biochar * bf_biopci_in[t]
   + ng_cost_power   * bf_power_in[t]
   + ng_cost_lime    * bf_lime_in[t]
-  + h2_opex[t] * bf_h2_in[t]     # green-H2 residual opex; capital now in electrolyser/renewable builds
   - ng_credit_power * bf_trt_out[t]
   - ng_credit_slag  * bf_slag_out[t]
   - cost_bf[t] = 0;                                  # eq92

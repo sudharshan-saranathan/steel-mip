@@ -22,6 +22,11 @@ include parameters.mod;
 let {t in T} n5_cost_NG[t] := NGVAL;
 let h2_capex_mult := H2CAPXVAL;
 let ng_h2_start_year := H2YEARVAL;
+# Re-couple the mode-2 Gaussian peak to the (now-final) H2 debut: peak = start + 5.
+# parameters.mod set this earlier from the default start year, before this override; without
+# re-coupling, a delayed H2 start strands the electrolyser peak before the flow gate, so
+# electrolysers build up idle and switch on at once. A driver (MC H2PEAK) may re-let it after.
+let h2_peak_year := ng_h2_start_year + 5;
 let n10_ccs_cost_end := CCSVAL;
 let avg_emi := AVGEMIVAL;
 let ramp_frac := RAMPVAL;

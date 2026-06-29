@@ -62,9 +62,9 @@ param n2_biopci_hm_25 default 0;     # Biomass injection (ton) per thm in 2025
 param n2_coalpci_hm_50 default 0.16; # PCI (ton) per thm by 2050
 param n2_biopci_hm_50 default 0.053; # Biomass injection (ton) per thm by 2050
 param n2_coke_hm_25 default 0.53;    # Coke (ton) per thm in 2025 
-param n2_coke_hm_50 default 0.44;    # Coke (ton) per thm by 2050
+param n2_coke_hm_50 default 0.48;    # Coke (ton) per thm by 2050 (+0.04 vs 0.44: makes up the removed BF H2 co-injection, ~3 t coke / t H2 reduction-equivalent)
 param n2_h2_hm_25 default 0;         # Hydrogen in blast furnace in 2025 (t/thm)
-param n2_h2_hm_50 default 0.013;     # Hydrogen in blast furnace by 2050 (t/thm)
+param n2_h2_hm_50 default 0;         # Hydrogen in blast furnace by 2050 (t/thm) -- BF H2 co-injection removed; H2-DRI is the only H2 consumer
 #Biochar replacement is limited to 20%
 #Remaining BFG goes to power plant              
 
@@ -236,7 +236,7 @@ param life_scrap default 10;
 param cap_add_frac_bof   default 0.12;
 param cap_add_frac_cdri  default 0.20;
 param cap_add_frac_ngdri default 0.10;
-param cap_add_frac_scrap default 0.15;
+param cap_add_frac_scrap default 0.448;   # ~15 Mt/yr (0.448 * 33.5 Mt 2025 fleet)
 
 # --- Minimum capacity utilisation (private-player discipline): production must be at
 # least util_min_X of installed capacity, i.e. the idle capacity-production gap is capped
@@ -431,7 +431,7 @@ param fopex_h2re default 15;          # fixed O&M, $/kW/yr (placeholder ~2% of c
 #      YEAR shifts per scenario; reference scale, baseline endpoints, peak rate and width fixed.
 param h2_ramp_mode  default 2;          # 0 none (inf ceiling) | 1 linear | 2 gaussian (default, realistic)
 param H2_BIGM       := 1e10;            # deactivates whichever limiter is off (~300x max cap)
-param h2_ref_cap    := 10000000;        # fixed reference scale for mode-2 add-rates (t-H2/yr)
+param h2_ref_cap    := 10000000;        # fixed reference scale for mode-2 add-rates (t-H2/yr); peak add = 0.25*10 = 2.5 Mt-H2/yr
 param h2_peak_rate  := 0.25;            # the pinned mode-2 peak rate (base(peak)+surge = 25%)
 param h2_base_start := 0.00;            # mode 2 baseline coeff at 2025 (x h2_ref_cap, per yr)
 param h2_base_end   := 0.05;            # mode 2 baseline coeff at 2050 (rising -> capital efficiency)

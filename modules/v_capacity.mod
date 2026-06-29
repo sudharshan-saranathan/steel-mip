@@ -230,8 +230,8 @@ s.t. capex_cost_def{t in T}:
                + acapex_ngdri    * ngdri_output[t]
                + acapex_h2dri[t] * h2dri_output[t]
                + acapex_scrap    * steel_scrap_eaf[t]
-               + acapex_h2elec[t] * (h2dri_h2_in[t] + bf_h2_in[t])
-               + acapex_h2re[t]   * (h2dri_h2_in[t] + bf_h2_in[t]) * h2_kwh_per_t/(8760*re_cf) );
+               + acapex_h2elec[t] * h2dri_h2_in[t]
+               + acapex_h2re[t]   * h2dri_h2_in[t] * h2_kwh_per_t/(8760*re_cf) );
 
 # Fixed opex (labour + maintenance) on installed capacity, crude-steel basis.
 # DRI-route capacities are on the 0.9*steel_eaf basis, so divide by (1-n7_phi_eaf)
@@ -250,8 +250,8 @@ s.t. fixopex_cost_def{t in T}:
                + fopex_ngdri * ngdri_output[t] / (1 - n7_phi_eaf)
                + fopex_h2dri * h2dri_output[t] / (1 - n7_phi_eaf)
                + fopex_scrap * steel_scrap_eaf[t]
-               + fopex_h2elec * (h2dri_h2_in[t] + bf_h2_in[t])
-               + fopex_h2re   * (h2dri_h2_in[t] + bf_h2_in[t]) * h2_kwh_per_t/(8760*re_cf) );
+               + fopex_h2elec * h2dri_h2_in[t]
+               + fopex_h2re   * h2dri_h2_in[t] * h2_kwh_per_t/(8760*re_cf) );
 
 # ============================================================================
 # CCS retrofit capacity (sunk capex; legacy = 0, no CCS in 2025). Mirrors the
@@ -296,13 +296,22 @@ s.t. cap_def_h2elec{t in T}:
 s.t. cap_def_h2re{t in T}:
     cap_h2re[t]   = sum{j in T: ord(j)<=ord(t) and ord(j)>=ord(t)-life_re+1}     build_h2re[j];
 
-# Electrolyser capacity must cover total green-H2 throughput (DRI use + BF injection).
+# No electrolyser (or dedicated renewable) before green H2 has a consumer. H2-DRI is the
+# sole H2 user and is gated to ng_h2_start_year (No_H2_Before), so building electrolysers
+# earlier would make hydrogen nothing can use -- the optimiser only does it to pre-position
+# around the Gaussian ramp cap (idle capacity dodging the speed limit). Forbid it: supply
+# starts when demand does, so the ramp begins cleanly at the H2 debut.
+s.t. h2elec_predebut{t in T: t < ng_h2_start_year}: cap_h2elec[t] = 0;
+s.t. h2re_predebut  {t in T: t < ng_h2_start_year}: cap_h2re[t]   = 0;
+
+# Electrolyser capacity must cover green-H2 throughput for H2-DRI ONLY -- the sole H2
+# consumer in the model (BF-BOF H2 co-injection removed; n2_h2_hm = 0 -> bf_h2_in = 0).
 s.t. h2elec_cover{t in T}:
-    h2dri_h2_in[t] + bf_h2_in[t] <= cap_h2elec[t];
+    h2dri_h2_in[t] <= cap_h2elec[t];
 # Dedicated renewable generation (cap_h2re[kW] * 8760 h * CF) must cover the
 # electrolyser electricity demand (h2_kwh_per_t per tonne of H2 produced).
 s.t. h2re_cover{t in T}:
-    h2_kwh_per_t * (h2dri_h2_in[t] + bf_h2_in[t]) <= cap_h2re[t] * 8760 * re_cf;
+    h2_kwh_per_t * h2dri_h2_in[t] <= cap_h2re[t] * 8760 * re_cf;
 
 # ----------------------------------------------------------------------------
 # Ceiling on ELECTROLYSER capacity additions. ONE constraint, present in every mode;
