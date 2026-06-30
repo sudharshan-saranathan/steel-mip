@@ -82,7 +82,7 @@ param n3_rec_cog default 65;        # Recovered COG as fuel (Nm3/tCS)
 #reduce specific energy consumption
 
 #Coal DRI
-param n4_e_dri default 100;         # Electricity (kWh) per ton DRI 
+param n4_e_dri default 217;         # Electricity (kWh) per ton DRI (100 base + 117 for coal-DRI's IF-heavy secondary: 129 kWh/tCS / 1.1 t-DRI)
 param n4_pel_dri default 1.5;       # Pellets (tons) per ton DRI 
 param n4_ore_dri default 0.1;       # Ore (tons) per ton DRI 
 param n4_c_dri default 1;           # Coal (tons) per ton DRI                 
@@ -98,11 +98,11 @@ param n5_ng_dri default 0.35;       # Natural gas (tons) per ton DRI
 param n6_e_dri default 110;         # Electricity (kWh) per ton DRI 
 param n6_pel_dri default 1.5;       # Pellets (tons) per ton DRI 
 param n6_ore_dri default 0.1;       # Ore (tons) per ton DRI     
-param n6_h2_dri default 0.13;       # Hydrogen (tons) per ton DRI 
+param n6_h2_dri default 0.07;       # Hydrogen (tons) per ton DRI (conservative incl. energy efficiency / shaft losses)
 
 # EAF (DRI-Based)    
 param n7_e_eaf {t in T} :=
-    650 + (500 - 650) * (t - 2025) /25;    # Electricity (kWh) per tCS (650 in 2025 to 500 by 2050)  
+    664;    # Electricity (kWh) per tCS: DRI-EAF/IF weighted on the gas-DRI all-EAF basis (coal-DRI's extra IF power is carried in n4_e_dri)  
 param n7_phi_eaf default 0.1;              # Scrap (ton) per tCS 
 param n7_eltrd default 0.003;              # Electrode (ton) per tCS  
 param n7_ls default 0.06;                  # Limestone (ton) per tCS 
@@ -113,7 +113,7 @@ param n7_eafg default 3;                   # EAF Gas (GJ) per tCS
 
 # EAF (Scrap-Based)
 param n8_e_eaf {t in T} :=
-    820 + (650 - 820) * (t - 2025) / 25; # Electricity (kWh) per tCS (820 in 2025 to 650 by 2050)   
+    785; # Electricity (kWh) per tCS: scrap secondary, 75% IF @825 + 25% EAF @664 weighted (India IF-heavy secondary route)
 param n8_phi_eaf default 1.1;            # Scrap (ton) per tCS
 param n8_eltrd default 0.003;            # Electrode (ton) per tCS  
 param n8_ls default 0.06;                # Limestone (ton) per tCS 
@@ -223,9 +223,9 @@ param cap0_scrap default 33.50e6;             # steel_scrap_eaf (mip-v1 baseline
 # --- Asset lifetimes (yr) = build lock-in horizon (from former u_lockin horizons).
 param life_bof   default 25;
 param life_cdri  default 20;
-param life_ngdri default 15;
-param life_h2dri default 15;
-param life_scrap default 10;
+param life_ngdri default 20;
+param life_h2dri default 25;
+param life_scrap default 15;
 
 # --- Per-route capacity-addition ceiling (max new build/yr as a fraction of the
 # 2025 fleet, cap0_*). Fixed slab; replaces the old production ramp. Tech-specific

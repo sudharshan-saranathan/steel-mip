@@ -14,7 +14,7 @@ s.t. coke_tar_balance{t in T}:
     n0_tar_c * bf_coke_in[t] - tar_out[t] = 0;            # eq4
 
 s.t. coke_cog_out_balance{t in T}:
-    n0_cog_c * bf_coke_in[t] - cog_out[t] = 0;             # eq5
+    n0_cog_c * ng_cog_cv * bf_coke_in[t] - cog_out[t] = 0;             # eq5 (COG in energy units, x CV, to match recovered-COG streams)
 
 s.t. coke_dry_quenching{t in T}:
     n0_cdq_whr * bf_coke_in[t] - cdq_power_out[t] = 0;       # eq6

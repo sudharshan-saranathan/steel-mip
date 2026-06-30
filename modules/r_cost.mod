@@ -7,7 +7,7 @@ s.t. cost_cokeov_def{t in T}:
   + ng_cost_power  * coke_power_in[t]
   - n0_credit_breeze * coke_breeze_out[t]
   - n0_credit_tar    * tar_out[t]
-  - ng_credit_power * cdq_power_out[t]
+  - ng_cost_power * cdq_power_out[t]      # on-site power offsets grid draw at avoided cost (not sell-back)
   - cost_cokeov[t] = 0;                              # eq89
 
 # Sinter
@@ -17,7 +17,7 @@ s.t. cost_sinter_def{t in T}:
   + ng_cost_power   * sinter_power_in[t]
   + ng_cost_lime    * sinter_lime_in[t]
   + ng_cost_biochar * sinter_biochar_in[t]
-  - ng_credit_power * sinterwaste_power_out[t]
+  - ng_cost_power * sinterwaste_power_out[t]   # offsets grid draw at avoided cost
   - cost_sinter[t] = 0;                              # eq90
 
 # Pellets BF
@@ -33,7 +33,7 @@ s.t. cost_bf_def{t in T}:
   + ng_cost_biochar * bf_biopci_in[t]
   + ng_cost_power   * bf_power_in[t]
   + ng_cost_lime    * bf_lime_in[t]
-  - ng_credit_power * bf_trt_out[t]
+  - ng_cost_power * bf_trt_out[t]         # TRT power offsets grid draw at avoided cost
   - ng_credit_slag  * bf_slag_out[t]
   - cost_bf[t] = 0;                                  # eq92
 
@@ -115,7 +115,7 @@ s.t. cost_scrap_eaf_def{t in T}:
 # WHR System
 s.t. cost_wasteheat{t in T}:
    n9_whr_capex * whr_power_generated[t]
-   + n9_whr_opex *  whr_power_generated[t] 
+   + n9_whr_opex *  whr_power_generated[t]
    - whr_cost[t] = 0;                              #eq102
    
 # Carbon capture
@@ -150,6 +150,7 @@ s.t. total_cost_def{t in T}:
     + capex_cost[t]                                                  # overnight capex on builds (v_capacity.mod)
     + fixopex_cost[t]                                                # fixed opex (labour+maintenance) on capacity
     + whr_cost[t]
+    - ng_cost_power * whr_power_generated[t]    # WHR power offsets grid draw at avoided cost (credit here; whr_cost is >=0)
     - total_cost[t] = 0;                            # eq104
 
 
