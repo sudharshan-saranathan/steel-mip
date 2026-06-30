@@ -3,7 +3,7 @@
 # ==================================================
 let base_demand := 152200000;
 let growth_rate := 0.05;
-param avg_emi   default 1.75;  # cumulative average CO2-intensity CAP, tCO2/tCS (overridable via MC_AVG_EMI)
+param avg_emi   default 1.6;  # cumulative average CO2-intensity CAP, tCO2/tCS (overridable via MC_AVG_EMI)
 
 # ==================================================
 # NG DRI
@@ -20,11 +20,12 @@ let {t in T} n5_cost_NG[t] := 10;
 # ==================================================
 # (H2 cost is now the explicit electrolyser + renewable build capex, swept via
 #  h2_capex_mult; the old delivered-price ng_cost_h2 was removed.)
+let h2_capex_mult := 4.5;
 let ng_h2_start_year := 2030;
 # ==================================================
 # EAF (Scrap-Based)
 # ==================================================
-let n8_scrap_rate := 0.04;      # Assumed annual growth rate of scrap
+let n8_scrap_rate := 0.06;      # Assumed annual growth rate of scrap
 let ng_cost_scrap :=350;        #Assumed scrap cost
 let n8_scrap_limit[first(T)] := 35000000;
 
@@ -41,7 +42,7 @@ let n9_grid_ef_end := 0.0003;      # Projected Grid emission factor by 2050
 # Carbon Capture
 # ==================================================
 let n10_ccs_cost_start := 125;   # Carbon capture cost per ton in 2025
-let n10_ccs_cost_end := 75;      # Projected carbon capture cost in 2050
+let n10_ccs_cost_end := 25;      # Projected carbon capture cost in 2050
 
 
 # Reference scale for the mode-1 (linear) electrolyser-capacity slab (ramp_frac * H2_cap

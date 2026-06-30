@@ -2,20 +2,20 @@
 
 # 2025 actual production split (pinned): BF-BOF 0.38, DRI-EAF 0.43 (coal:NG = 0.884:0.116
 # -> coal 0.38, NG 0.05 of total steel), scrap-EAF 0.19. BF-BOF ~ Coal-DRI by design.
-s.t. init_f_bof: f_bof[first(T)] = 0.38;
-s.t. init_f_eaf: f_eaf[first(T)] = 0.43;
+s.t. init_f_bof: f_bof[first(T)] = 0.51;
+s.t. init_f_eaf: f_eaf[first(T)] = 0.30;
 # Linearization: init coal-route share expressed on the route output (linear).
-s.t. init_f_cdri: coaldri_output[first(T)] = 0.884 * dri_eaf_steel_out[first(T)];
+s.t. init_f_cdri: coaldri_output[first(T)] = 0.84 * dri_eaf_steel_out[first(T)];
 
 # Linearization: no capture before 2027 expressed directly on the captured amount.
-s.t. no_ccs_bf {t in T: t < 2027}:
-    ccs_bf[t] = 0;
+#s.t. no_ccs_bf {t in T: t < 2027}:
+    #ccs_bf[t] = 0;
 
-s.t. no_ccs_cdri {t in T: t < 2027}:
-    ccs_cdri[t] = 0;
+#s.t. no_ccs_cdri {t in T: t < 2027}:
+ #   ccs_cdri[t] = 0;
 
-s.t. no_ccs_ngdri {t in T: t < 2027}:
-    ccs_ngdri[t] = 0;
+#s.t. no_ccs_ngdri {t in T: t < 2027}:
+ #   ccs_ngdri[t] = 0;
     
 # Demand and availability Constraints
 s.t. meet_demand{t in T}:
@@ -27,6 +27,11 @@ s.t. scrap_bound{t in T}:
 s.t. ng_bound{t in T}:
    ngdri_ng_in[t] <= n5_ng_cap[t];
 
+
+s.t. avg_cost_growth{t in T: ord(t) > 1}:
+   total_cost[t] / total_steel[t]<=
+    1.05 * total_cost[prev(t)] / total_steel[prev(t)];
+    
 # Coking-coal availability: imported coke-making coal for BF is capped (ccoal_cap, set by
 # scenarios/ccoal_*). PCI (bf_coalpci_in) and indigenous thermal DRI coal stay uncapped.
 s.t. coking_coal_bound{t in T: t > first(T)}:

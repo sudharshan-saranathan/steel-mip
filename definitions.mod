@@ -82,7 +82,7 @@ param n3_rec_cog default 65;        # Recovered COG as fuel (Nm3/tCS)
 #reduce specific energy consumption
 
 #Coal DRI
-param n4_e_dri default 100;         # Electricity (kWh) per ton DRI 
+param n4_e_dri default 217;         # Electricity (kWh) per ton DRI (117 extra from coal DRI-IF)
 param n4_pel_dri default 1.5;       # Pellets (tons) per ton DRI 
 param n4_ore_dri default 0.1;       # Ore (tons) per ton DRI 
 param n4_c_dri default 1;           # Coal (tons) per ton DRI                 
@@ -93,16 +93,15 @@ param n5_pel_dri default 1.5;       # Pellets (tons) per ton DRI
 param n5_ore_dri default 0.1;       # Ore (tons) per ton DRI 
 param n5_ng_dri default 0.35;       # Natural gas (tons) per ton DRI      
 
-
 #H2 DRI
 param n6_e_dri default 110;         # Electricity (kWh) per ton DRI 
 param n6_pel_dri default 1.5;       # Pellets (tons) per ton DRI 
 param n6_ore_dri default 0.1;       # Ore (tons) per ton DRI     
-param n6_h2_dri default 0.13;       # Hydrogen (tons) per ton DRI 
+param n6_h2_dri default 0.07;       # Hydrogen (tons) per ton DRI 
 
 # EAF (DRI-Based)    
 param n7_e_eaf {t in T} :=
-    650 + (500 - 650) * (t - 2025) /25;    # Electricity (kWh) per tCS (650 in 2025 to 500 by 2050)  
+    664 + (500 - 664) * (t - 2025) /25;    # Electricity (kWh) per tCS (650 in 2025 to 500 by 2050)  
 param n7_phi_eaf default 0.1;              # Scrap (ton) per tCS 
 param n7_eltrd default 0.003;              # Electrode (ton) per tCS  
 param n7_ls default 0.06;                  # Limestone (ton) per tCS 
@@ -113,7 +112,7 @@ param n7_eafg default 3;                   # EAF Gas (GJ) per tCS
 
 # EAF (Scrap-Based)
 param n8_e_eaf {t in T} :=
-    820 + (650 - 820) * (t - 2025) / 25; # Electricity (kWh) per tCS (820 in 2025 to 650 by 2050)   
+    785 + (650 - 785) * (t - 2025) / 25; # Electricity (kWh) per tCS (785 in 2025 to 650 by 2050)   
 param n8_phi_eaf default 1.1;            # Scrap (ton) per tCS
 param n8_eltrd default 0.003;            # Electrode (ton) per tCS  
 param n8_ls default 0.06;                # Limestone (ton) per tCS 
@@ -121,11 +120,10 @@ param n8_cs default 0.01;                # Coal (ton) per tCS
 param n8_ss default 0.15;                # Slag (ton) per tCS 
 param n8_eafg default 3;                 # EAF Gas (GJ) per tCS                          
    
-
 # Waste Heat Recovery
 param n9_eta default 0.15;                              # WHRS efficiency including losses                        
 param n9_whr {t in T} :=
-    0.05 +(0.3 - 0.05) * (t - 2025) / 25;               # WHRS penetration level from 30% in 2025 to 70% by 2050 
+    0.05 +(0.3 - 0.05) * (t - 2025) / 25;               # WHRS penetration level from 5% in 2025 to 30% by 2050 
 param n9_grid_ef_start default 0.000886; #0.000757 from grid having 36% share and 0.00096 from CPP having 64% share
 param n9_grid_ef_end default 0.0003; 
 param n9_grid_ef{t in T} :=
@@ -133,7 +131,6 @@ param n9_grid_ef{t in T} :=
 
 # Carbon capture
 param n10_ccs_eta default 0.85;                        # Carbon capture efficiency                      
-
 
 # COST PARAMETERS 
 #Global parameters (all costs are in $)
@@ -149,7 +146,6 @@ param ng_cost_pcoal default 110;          # Cost per ton of PCI coal
 param ng_credit_slag default 15;          # Selling cost per ton of slag
 param ng_cost_scrap default 350;          # Cost per ton of scrap
 param ng_cost_ncoal default 98;          # Cost per ton of non coking coal
-
 
 param n0_credit_breeze default 55;        # Selling cost per ton of breeze
 param n0_credit_tar default 20;           # Selling cost per ton of tar
@@ -223,9 +219,9 @@ param cap0_scrap default 33.50e6;             # steel_scrap_eaf (mip-v1 baseline
 # --- Asset lifetimes (yr) = build lock-in horizon (from former u_lockin horizons).
 param life_bof   default 25;
 param life_cdri  default 20;
-param life_ngdri default 15;
-param life_h2dri default 15;
-param life_scrap default 10;
+param life_ngdri default 20;
+param life_h2dri default 25;
+param life_scrap default 15;
 
 # --- Per-route capacity-addition ceiling (max new build/yr as a fraction of the
 # 2025 fleet, cap0_*). Fixed slab; replaces the old production ramp. Tech-specific
