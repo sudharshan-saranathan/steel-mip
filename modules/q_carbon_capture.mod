@@ -52,14 +52,14 @@ param ccs_avail{t in T} :=
     if t < 2027 then 0
     else phi_2050 * (t - 2027) / (2050 - 2027);   # 0 at 2027 -> 0.50 at 2050 (linear)
 
-# --- sector-wide deployment ceiling (the binding CCS limit) ---
-s.t. ccs_sector_ceiling{t in T}:
-    ccs_bf[t] + ccs_cdri[t] + ccs_ngdri[t]
-      <= ccs_avail[t] * (co2_capturable_bf[t] + co2_capturable_cdri[t] + co2_capturable_ngdri[t]);
-
 # Total captured CO2
 s.t. total_captured_co2{t in T}:
    ccs_bf[t] +ccs_cdri[t] +ccs_ngdri[t]  - total_ccs[t] = 0;           # eq87
+ 
+# --- sector-wide deployment ceiling (the binding CCS limit) ---
+s.t. ccs_sector_ceiling{t in T}:
+    total_ccs[t]
+      <= ccs_avail[t] * (co2_capturable_bf[t] + co2_capturable_cdri[t] + co2_capturable_ngdri[t]);
  
 #Power used in capture (kWh/tCO2), stream-specific (depends on CO2 concentration)
 s.t. power_capture{t in T}:
