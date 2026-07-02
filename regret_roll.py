@@ -38,21 +38,25 @@ BUILDS = ["build_bof", "build_cdri", "build_ngdri", "build_h2dri", "build_scrap"
           "build_ccs_bf", "build_ccs_cdri", "build_ccs_ngdri"]
 
 RAMP    = os.environ.get("MC_RAMP", "0.20")
-AVG_EMI = float(os.environ.get("MC_AVG_EMI", "1.8"))
+AVG_EMI = float(os.environ.get("MC_AVG_EMI", "2.0"))
 
-# published central forecast (the consensus bundle the planner commits to)
+# published central forecast (the consensus bundle the planner commits to) --
+# matches Subsection A's central scenario (h2_year=2030, h2_capex_mult=1.05):
+# mode-2 floor there is 1.84, so AVG_EMI=2.0 clears it with margin.
 # ccoal = coking-coal price ($/t, imported, BF-only); 184 == definitions.mod default.
 # h2_end is the green-H2 supply-chain capex MULTIPLIER (was a $/t delivered price);
-# 1.0 = central placeholder trajectory, >1 dearer, <1 cheaper.
-CENTRAL = dict(scrap="modest", h2_year=2035, h2_end=1.0, grid="moderate_re",
+# 1.05 = Subsection A's central multiplier.
+CENTRAL = dict(scrap="modest", h2_year=2030, h2_end=1.05, grid="moderate_re",
                ng=15, ccs=75, ccoal=184)
 
-# axis -> {below(worse), central, above(better)} deviation levels (trifurcation)
+# axis -> {below(worse), central, above(better)} deviation levels (trifurcation).
+# h2_year: central is now the earliest modelled start (2030), so there is no
+# "better" (earlier) option -- the axis is on-time vs two delay levels instead.
 AXES = {
-    "h2_year": {"worse": 2045, "central": 2035, "better": 2030},
+    "h2_year": {"on_time": 2030, "delay_5y": 2035, "delay_15y": 2045},
     "grid":    {"worse": "bau", "central": "moderate_re", "better": "aggressive_re"},
     "scrap":   {"worse": "starved", "central": "modest", "better": "optimistic"},
-    "h2_end":  {"worse": 1.5, "central": 1.0, "better": 0.6},   # capex multiplier
+    "h2_end":  {"worse": 1.5, "central": 1.05, "better": 0.6},   # capex multiplier
 }
 
 _base = open("template.mod").read()
@@ -128,13 +132,18 @@ def solve(world, fix_builds=None, fix_years=None, avg_emi=AVG_EMI):
                 builds={(v, y): g(f"{v}[{y}]") for v in BUILDS for y in YRS})
 
 def belief_world(central, true, axis, tk):
-    """Naive-persistence belief of the world held at node tk."""
+    """Naive-persistence belief of the world held at node tk, with ONE grace node
+    on h2_year: the first missed debut is read as "just late, try next node" rather
+    than an instant jump to "never coming" -- only a SECOND missed node triggers
+    cancellation. Without grace, an early central h2_year (e.g. 2030) makes every
+    delay realisation snap to "cancelled" at the very first re-plan node."""
     w = dict(central)
     if axis == "h2_year":
-        ty = true["h2_year"]
+        ty, exp = true["h2_year"], central["h2_year"]
         if tk >= ty:            w["h2_year"] = ty          # H2 has appeared -> known
-        elif tk < central["h2_year"]: w["h2_year"] = central["h2_year"]  # not yet due -> still expect forecast
-        else:                   w["h2_year"] = 2055        # due but absent -> assume not coming
+        elif tk < exp:          w["h2_year"] = exp          # not yet due -> still expect forecast
+        elif tk < exp + 5:      w["h2_year"] = exp + 5       # one grace node: "just late"
+        else:                   w["h2_year"] = 2055        # grace exhausted -> assume not coming
     else:
         w[axis] = central[axis] if tk == 2025 else true[axis]   # observed from 2030 on
     return w
@@ -175,7 +184,7 @@ if __name__ == "__main__":
         true = dict(CENTRAL); true[axis] = val
         pf = solve(true)
         roll = rolling(true, axis)
-        tag = "  (central, expect ~0)" if level == "central" else ""
+        tag = "  (central, expect ~0)" if val == CENTRAL[axis] else ""
         if pf is None:
             # the realised world has no solution at all -> not a regret story (target
             # infeasible there); regret undefined.

@@ -34,10 +34,11 @@ H2_YEARS = [2030, 2035, 2040, 2045]
 def sample_world(rng):
     w = dict(rr.CENTRAL)
     w["ng"]     = float(np.clip(rng.normal(15,   4),    5, 25))     # 2nd-order
-    w["h2_end"] = float(np.clip(rng.normal(1.0, 0.25), 0.5, 1.6))  # green-H2 capex mult (was $/t price)
+    w["h2_end"] = float(np.clip(rng.normal(1.05, 0.25), 0.5, 1.6))  # green-H2 capex mult (was $/t price)
     w["ccs"]    = float(np.clip(rng.normal(75,   20),   25, 125))   # moderate
     w["ccoal"]  = float(np.clip(rng.normal(190,  60),  120, 450))   # DOMINANT, right-skew via clip
-    w["h2_year"]= int(rng.choice(H2_YEARS, p=[0.20, 0.40, 0.25, 0.15]))
+    # central (2030, on-time) most likely; probability decays with delay length
+    w["h2_year"]= int(rng.choice(H2_YEARS, p=[0.40, 0.30, 0.20, 0.10]))
     return w
 
 # ---- multi-param belief + rolling (mirrors regret_roll, but ALL params may deviate) ----
@@ -45,10 +46,11 @@ def belief_multi(central, true, tk):
     w = dict(central)
     for ax in ("ng", "h2_end", "ccs", "ccoal", "h2_year", "scrap", "grid"):
         if ax == "h2_year":
-            ty = true["h2_year"]
-            if tk >= ty:                    w["h2_year"] = ty
-            elif tk < central["h2_year"]:   w["h2_year"] = central["h2_year"]
-            else:                           w["h2_year"] = 2055
+            ty, exp = true["h2_year"], central["h2_year"]
+            if tk >= ty:            w["h2_year"] = ty            # observed
+            elif tk < exp:          w["h2_year"] = exp            # not yet due
+            elif tk < exp + 5:      w["h2_year"] = exp + 5         # one grace node: "just late"
+            else:                   w["h2_year"] = 2055           # grace exhausted -> cancelled
         else:
             w[ax] = central[ax] if tk == 2025 else true[ax]   # observed from 2030 on
     return w
@@ -91,6 +93,16 @@ def evaluate(world):
     elif roll.get("status") in ("catastrophic", "belief_infeasible"):
         row.update(status=roll["status"], pf_cost_t=round(pf["cost"]/pf["D"],1),
                    realised_cost_t="", regret_t="", ef_miss="")
+    elif roll["status"] == "target_miss":
+        # roll["cost"] here is priced under a RELAXED target (avg_emi=99) -- not
+        # comparable to pf["cost"], which is priced under the real, met target.
+        # Reporting (roll-pf)/D as "regret" would read a compliance FAILURE as a
+        # cost SAVING (skipping abatement looks cheap). Report the realised cost
+        # for reference but leave regret_t blank; the outcome is the ef_miss, not
+        # a $/t number -- a compliance-failure category, like catastrophic.
+        row.update(status="target_miss", pf_cost_t=round(pf["cost"]/pf["D"],1),
+                   realised_cost_t=round(roll["cost"]/pf["D"],1),
+                   regret_t="", ef_miss=round(roll["miss"],4))
     else:
         reg = (roll["cost"] - pf["cost"]) / pf["D"]
         row.update(status=roll["status"], pf_cost_t=round(pf["cost"]/pf["D"],1),
@@ -115,7 +127,7 @@ def main():
         os.environ["MC_THREADS"] = str(max(1, ((os.cpu_count() or 4) - 2) // procs))
     print(f"Stochastic regret prototype | N={N} seed={SEED} procs={procs} "
           f"threads/worker={os.environ.get('MC_THREADS','8')} | central A | ET={AVG_EMI} ramp={rr.RAMP}")
-    print(f"sampled: ng~N(15,4) h2_capexmult~N(1.0,0.25) ccs~N(75,20) ccoal~N(190,60) h2_year~cat\n")
+    print(f"sampled: ng~N(15,4) h2_capexmult~N(1.05,0.25) ccs~N(75,20) ccoal~N(190,60) h2_year~cat\n")
     if procs <= 1:
         rows = [evaluate(w) for w in worlds]
     else:
@@ -138,7 +150,7 @@ def main():
     for s, c in status_ct.most_common():
         print(f"  {s:18s} {c:4d}  ({100*c/len(rows):.0f}%)")
     if len(regs):
-        print(f"\n--- regret (USD/t), {len(regs)} non-catastrophic draws ---")
+        print(f"\n--- regret (USD/t), {len(regs)}'ok' (target-compliant) draws ---")
         print(f"  mean {regs.mean():.1f}  median {np.median(regs):.1f}  "
               f"p90 {np.percentile(regs,90):.1f}  max {regs.max():.1f}")
         print(f"\n--- attribution (corr of param with regret) ---")
@@ -146,6 +158,13 @@ def main():
             x = np.array([r[p] for r in reg_rows], float)
             c = np.corrcoef(x, regs)[0,1] if x.std() > 0 else 0.0
             print(f"  {p:8s} corr {c:+.2f}")
+    # target_miss is a COMPLIANCE FAILURE, not a $/t regret number (see evaluate()) --
+    # report its ef_miss separately rather than folding it into the regret distribution.
+    miss_rows = [r for r in rows if r["status"] == "target_miss"]
+    if miss_rows:
+        misses = np.array([r["ef_miss"] for r in miss_rows], float)
+        print(f"\n--- target_miss (compliance failure), {len(miss_rows)} draws ---")
+        print(f"  EF overshoot: mean +{misses.mean():.3f}  max +{misses.max():.3f} tCO2/t")
     print(f"\n-> regret_stoch.csv")
 
 if __name__ == "__main__":
