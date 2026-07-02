@@ -55,7 +55,8 @@ def model_for(scrap):
                      ("AVGEMIVAL", AVG_EMI), ("RAMPVAL", RAMP),
                      ("SCRAPREGIMEFILE", f"scenarios/scrap_{scrap}.mod"),
                      ("NGAVAILFILE", "scenarios/ng_avail_normal.mod"),
-                     ("GRIDEFFILE", f"scenarios/grid_ef_{GRID_EF}.mod")):
+                     ("GRIDEFFILE", f"scenarios/grid_ef_{GRID_EF}.mod"),
+                     ("CCOALFILE", "scenarios/ccoal_normal.mod")):
         s = s.replace(tok, str(val))
     return s
 

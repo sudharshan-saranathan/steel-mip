@@ -61,6 +61,9 @@ GRID_EF_FILE = {"bau":           "scenarios/grid_ef_bau.mod",
                 "moderate_re":   "scenarios/grid_ef_moderate_re.mod",
                 "aggressive_re": "scenarios/grid_ef_aggressive_re.mod"}[GRID_EF]
 
+CCOAL_AVAIL  = os.environ.get("MC_CCOAL_AVAIL", "normal")       # scarce|normal|abundant
+CCOAL_FILE   = f"scenarios/ccoal_{CCOAL_AVAIL}.mod"
+
 # Scrap-availability regime: discrete structural axis (see scrap_*.mod). Common
 # 35 Mt 2025 base; regimes differ
 # by growth: starved 0%, low 2%, modest 4%, optimistic 6% per year.
@@ -91,7 +94,8 @@ def model_for(ng, h2end, ccs, h2year):
     for tok, val in (("NGVAL", ng), ("H2CAPXVAL", h2end), ("H2YEARVAL", h2year),
                      ("CCSVAL", ccs), ("AVGEMIVAL", AVG_EMI), ("RAMPVAL", RAMP),
                      ("SCRAPREGIMEFILE", SCRAP_FILE),
-                     ("NGAVAILFILE", SCEN_FILE), ("GRIDEFFILE", GRID_EF_FILE)):
+                     ("NGAVAILFILE", SCEN_FILE), ("GRIDEFFILE", GRID_EF_FILE),
+                     ("CCOALFILE", CCOAL_FILE)):
         s = s.replace(tok, str(val))
     # H2 capacity ramp-mode selection (re-evaluated at solve via the in-body big-M
     # switches in v_capacity.mod); injected before solve. Default mode 0 = unchanged.

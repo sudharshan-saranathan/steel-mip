@@ -32,16 +32,16 @@ cap_h2elec[t] − cap_h2elec[t−1] ≤
 - The four conventional `cap_add_X` slabs are now mode-aware (free in mode 0, slab in 1/2).
   Rates: BF 0.12, coal-DRI 0.20, NG-DRI 0.10, **scrap 0.448 (~15 Mt/yr, raised from 0.15)**.
 
-### `h2_ref_cap` — the H2-led ↔ CCS-led DIAL (currently **10 Mt**, undecided)
+### `h2_ref_cap` — the H2-led ↔ CCS-led DIAL (**DECIDED: 4 Mt**, 2026-07-01)
 Peak electrolyser addition = `h2_peak_rate · h2_ref_cap`. This one number sets the story:
 
 | `h2_ref_cap` | peak add | H2-DRI[2050] | dominant route | EF floor (fav / mod) |
 |---|---|---|---|---|
-| 10 Mt | 2.5 Mt-H2/yr (~35 GW/yr) | ~115–128 Mt | **hydrogen** | ~1.30 / — |
-| 4 Mt  | 1.0 Mt-H2/yr (~14 GW/yr) | ~55 Mt | balanced | ~1.48 / ~1.64 |
-| 1.5 Mt| 0.375 Mt-H2/yr (~5 GW/yr)| ~20 Mt | **CCS-on-BF** | ~1.64 / — |
-> **OPEN DECISION:** final `h2_ref_cap`. 10 Mt is implausibly fast for one country's steel;
-> 4 Mt is the defensible middle; 1.5 Mt makes H2 a bit-player. (committed at 10.)
+| 10 Mt | 2.5 Mt-H2/yr (~35 GW/yr) | ~115–128 Mt | hydrogen | ~1.30 / — |
+| **4 Mt**  | **1.0 Mt-H2/yr (~14 GW/yr)** | **~55 Mt** | **balanced** | **~1.48 / ~1.64** |
+| 1.5 Mt| 0.375 Mt-H2/yr (~5 GW/yr)| ~20 Mt | CCS-on-BF | ~1.64 / — |
+> **Committed to 4 Mt** — "the defensible middle" (10 Mt judged implausibly fast for one
+> country's steel sector). Set in `definitions.mod:434`. All Subsection A runs use this value.
 
 ### Other model changes this session
 - **BF-BOF H2 co-injection REMOVED** (`n2_h2_hm_50` 0.013→0 → `bf_h2_in`≡0); lost reduction made
@@ -81,7 +81,35 @@ Peak electrolyser addition = `h2_peak_rate · h2_ref_cap`. This one number sets 
   the optimal trajectory (builds sunk) → evaluate the frozen plan forward under sampled
   price/capex/scenario paths → Δcost / Δemissions. `regret_roll.py` / `regret_stoch.py`.
 
-## ⭐ Key findings (this session)
+## ⭐ Key findings (this session, 2026-07-01)
+- **`CCOALFILE` was never wired into `template.mod`** — every prior run (incl. the `h2_ref_cap`
+  floor table below) had `ccoal_cap` at its uncapped default (`1e12`), so coking-coal
+  availability was silently inert. Fixed: `template.mod` now includes `CCOALFILE`
+  (mirrors `NGAVAILFILE`), defaulted to `scenarios/ccoal_normal.mod` in every driver script
+  that already covered `GRIDEFFILE`/`AVGEMIVAL` (`monte_carlo.py`, `mc_frontier.py`,
+  `capex_sweep.py`, `regret.py`, `regret_roll.py`). `plot_pathways_time.py` and
+  `monte_carlo_2d.py` were already stale before this (missing `GRIDEFFILE`/`AVGEMIVAL` too) —
+  left as-is, out of scope.
+- **`h2_ref_cap` committed to 4 Mt** (`definitions.mod:434`) — "the defensible middle" per the
+  prior session's own note (10 Mt judged implausibly fast for one country's steel). Mode 1
+  dropped from Subsection A (2-mode contrast: 0 vs 2) rather than re-referenced.
+- **Subsection A feasibility-floor sweep** (`subsection_a_sweep.py` -> `subsection_a_floors.csv`,
+  central: NG=15, h2_capex_mult=1.05, CCS=75, scrap=modest, NG avail=normal, coking=normal,
+  grid=moderate_re, H2 start=2030; bisected ET floor per axis-value × mode 0/2):
+  - **Mode 0 floor pins to ~1.0** (bracket edge, not yet the true floor — user confirmed 1.0 is
+    an adequate proxy since the paper won't go below ET 1.4) for every axis EXCEPT H2 start
+    year, which alone pushes the mode-0 floor from 1.0 (2030 debut) to 1.75 (2045 debut) even
+    with UNLIMITED build rate.
+  - **Mode 2 floors range 1.71–2.21**, and **H2 start year is the single dominant lever**
+    (2030->1.84, 2035->1.98, 2040->2.11, 2045->2.21; a 0.37 EF-unit swing) — wider than scrap
+    regime (0.29), grid-EF (0.25), or coking availability (0.14, now real post-CCOALFILE-fix).
+    NG availability barely moves it (1.84 vs 1.88) — not binding.
+  - This is a strong early confirmation of the paper's thesis (timing/irreversibility, not
+    cost/resource-availability, is the dominant structural driver).
+  - **Not yet done**: full cost-vs-EF curves above the floor (only the floor was bisected) and
+    the mode×ET feasibility-map figure itself.
+
+## ⭐ Key findings (prior sessions)
 - **Mode 0 vs 2 = "cost of the deployment constraints".** Unconstrained the optimiser reaches
   EF ≈ 1.0 by 2050; the realistic ramp holds it at ≈ 1.4. The caps — not economics — bound 2050
   intensity.
@@ -102,12 +130,14 @@ Peak electrolyser addition = `h2_peak_rate · h2_ref_cap`. This one number sets 
   transient idle electrolysers in 2035, output flattens then jumps. Real inter-temporal feature.
 
 ## TODO / open decisions
-1. **Pick final `h2_ref_cap`** (10 / 4 / 1.5) — the H2-led-vs-CCS-led dial. Top decision.
+1. ~~Pick final `h2_ref_cap`~~ — **DONE, set to 4 Mt** (2026-07-01).
 2. **`ccs_avail`** is 50%-of-capturable by 2050 → with H2 capped, the other binding ceiling.
    Decide whether to bump it (reach EF 1.6 in the moderate regime) or report the floor.
-3. **Build subsection A** in full (deterministic sweep over all structural axes × EF, both modes).
+3. **Build subsection A** — feasibility-floor sweep DONE (`subsection_a_sweep.py` ->
+   `subsection_a_floors.csv`, 2026-07-01). Still open: cost-vs-EF curves above the floor
+   (only the floor itself was bisected, not the full curve), and the mode×ET figure.
 4. **Build subsection B** (regret: fix trajectory, MC forward).
-5. **Mode 1 (linear)**: re-reference its slab to `h2_ref_cap` so it's feasible, or drop it.
+5. ~~Mode 1 (linear)~~ — **DECIDED: dropped.** Subsection A is a 2-mode contrast (0 vs 2).
 6. Optional: electrolyser utilisation floor to remove the transient idle (the 2035 kink).
 7. `paper_results_design.md` (pulled from remote, **not yet read** — reconcile with A/B above).
 8. Prior MC/frontier/regret CSVs are **STALE** (H2 supply rework). Re-run before using numbers.

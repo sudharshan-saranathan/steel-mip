@@ -38,6 +38,9 @@ include SCRAPREGIMEFILE;
 # NG-availability scenario profile (overrides n5_ng_cap set in parameters.mod)
 include NGAVAILFILE;
 
+# Coking-coal availability scenario profile (overrides ccoal_cap set in definitions.mod)
+include CCOALFILE;
+
 # Grid emission-factor scenario (overrides n9_grid_ef defined in definitions.mod)
 include GRIDEFFILE;
 

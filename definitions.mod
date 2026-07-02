@@ -431,7 +431,7 @@ param fopex_h2re default 15;          # fixed O&M, $/kW/yr (placeholder ~2% of c
 #      YEAR shifts per scenario; reference scale, baseline endpoints, peak rate and width fixed.
 param h2_ramp_mode  default 2;          # 0 none (inf ceiling) | 1 linear | 2 gaussian (default, realistic)
 param H2_BIGM       := 1e10;            # deactivates whichever limiter is off (~300x max cap)
-param h2_ref_cap    := 10000000;        # fixed reference scale for mode-2 add-rates (t-H2/yr); peak add = 0.25*10 = 2.5 Mt-H2/yr
+param h2_ref_cap    := 4000000;         # fixed reference scale for mode-2 add-rates (t-H2/yr); peak add = 0.25*4 = 1.0 Mt-H2/yr
 param h2_peak_rate  := 0.25;            # the pinned mode-2 peak rate (base(peak)+surge = 25%)
 param h2_base_start := 0.00;            # mode 2 baseline coeff at 2025 (x h2_ref_cap, per yr)
 param h2_base_end   := 0.05;            # mode 2 baseline coeff at 2050 (rising -> capital efficiency)

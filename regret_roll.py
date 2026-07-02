@@ -72,7 +72,8 @@ def model_text(world, avg_emi=AVG_EMI):
                      ("AVGEMIVAL", avg_emi), ("RAMPVAL", RAMP),
                      ("SCRAPREGIMEFILE", f"scenarios/scrap_{world['scrap']}.mod"),
                      ("NGAVAILFILE", "scenarios/ng_avail_normal.mod"),
-                     ("GRIDEFFILE", f"scenarios/grid_ef_{world['grid']}.mod")):
+                     ("GRIDEFFILE", f"scenarios/grid_ef_{world['grid']}.mod"),
+                     ("CCOALFILE", "scenarios/ccoal_normal.mod")):
         s = s.replace(tok, str(val))
     # coking-coal price: plain settable param (default 184). Appended after all includes
     # (ng_cost_ccoal is declared in definitions.mod); solve() drives the solve afterwards.

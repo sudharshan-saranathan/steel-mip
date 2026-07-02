@@ -24,7 +24,8 @@ def model(scrap,h2y,grid):
     s=base
     for tok,val in (("NGVAL",15),("H2CAPXVAL",1.0),("H2YEARVAL",h2y),("CCSVAL",75),
                     ("AVGEMIVAL",ET),("RAMPVAL",RAMP),("SCRAPREGIMEFILE",f"scenarios/scrap_{scrap}.mod"),
-                    ("NGAVAILFILE","scenarios/ng_avail_normal.mod"),("GRIDEFFILE",f"scenarios/grid_ef_{grid}.mod")):
+                    ("NGAVAILFILE","scenarios/ng_avail_normal.mod"),("GRIDEFFILE",f"scenarios/grid_ef_{grid}.mod"),
+                    ("CCOALFILE","scenarios/ccoal_normal.mod")):
         s=s.replace(tok,str(val))
     return s
 res={}

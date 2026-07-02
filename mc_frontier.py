@@ -31,6 +31,7 @@ H2_YEARS      = [2030, 2035, 2040, 2045]
 GRID_EFS      = ["bau", "moderate_re", "aggressive_re"]
 
 SCEN_FILE     = "scenarios/ng_avail_normal.mod"
+CCOAL_FILE    = "scenarios/ccoal_normal.mod"
 SCRAP_FILE    = {r: f"scenarios/scrap_{r}.mod"   for r in SCRAP_REGIMES}
 GRID_EF_FILE  = {g: f"scenarios/grid_ef_{g}.mod" for g in GRID_EFS}
 
@@ -58,7 +59,8 @@ def model_for(scrap, h2year, grid_ef):
                      ("AVGEMIVAL", AVG_EMI), ("RAMPVAL", RAMP),
                      ("SCRAPREGIMEFILE", SCRAP_FILE[scrap]),
                      ("NGAVAILFILE", SCEN_FILE),
-                     ("GRIDEFFILE", GRID_EF_FILE[grid_ef])):
+                     ("GRIDEFFILE", GRID_EF_FILE[grid_ef]),
+                     ("CCOALFILE", CCOAL_FILE)):
         s = s.replace(tok, str(val))
     return s
 
