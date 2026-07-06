@@ -185,10 +185,11 @@ param n8_cost_electrode default 600;      # Cost per ton of electrode
 param n9_whr_capex default 0.009;         # CAPEX of WHR system per kWh of power generated
 param n9_whr_opex default 0.003;          # OPEX of WHR system per kWh of power generated
 
+# ALL-IN market capture price ($/tCO2, capex+energy+solvent included). The
+# non-energy residual n10_ccs_cost{t} is derived in the CCS block below (after
+# ccs_kwh_* are declared) by netting out reference-stream energy + solvent.
 param n10_ccs_cost_start default 125;
-param n10_ccs_cost_end default 75;                                
-param n10_ccs_cost{t in T} :=
-    n10_ccs_cost_start + (n10_ccs_cost_end - n10_ccs_cost_start) * (t - 2025) / 25;   # Cost per ton of CO2 captured
+param n10_ccs_cost_end default 75;
 
 param carbon_tax default 0; 
 param labor_cost default 20;              # Labor cost per tCS
@@ -329,27 +330,41 @@ param ramp_frac default 0.15;
 param sunk default 1;
 
 # --- CCS retrofit: same overnight-capex + fixed/variable-opex structure as routes.
-#     n10_ccs_cost ($/tCO2) is the NON-ENERGY capital+O&M figure; energy is charged
-#     separately as power_ccs*ng_cost_power (so CCS cost AND emissions both respond
-#     to the grid-EF scenario, and the old uncosted-CCS-power gap is closed).
+#     n10_ccs_cost_start/end are ALL-IN market prices ($/tCO2: capex+energy+solvent).
+#     The costed figure n10_ccs_cost{t} is the NON-ENERGY residual: all-in minus
+#     reference-stream (BF) electricity minus solvent. Energy is charged separately
+#     as power_ccs*ng_cost_power (so CCS cost AND emissions both respond to the
+#     grid-EF scenario) -- netting it out here avoids double-counting it.
+#     Regen steam is assumed all-electric-equivalent (conservative: steam from
+#     waste heat would be cheaper, but carries the WHR power credit as its
+#     opportunity cost; not modelled).
 param life_ccs default 15;                       # retrofit asset life (yr)
 param crf_ccs := real_discount_rate*(1+real_discount_rate)^life_ccs/((1+real_discount_rate)^life_ccs-1);
 param ccs_capex_share default 0.80;              # capex fraction of n10_ccs_cost (rest = fixed O&M)
-param ocapex_ccs {t in T} := ccs_capex_share * n10_ccs_cost[t] / crf_ccs;   # overnight $/tCO2-capacity
-param fom_ccs    {t in T} := (1 - ccs_capex_share) * n10_ccs_cost[t];       # fixed O&M $/tCO2-cap/yr
 param ccs_vopex_solvent default 5;               # non-energy variable opex $/tCO2 (solvent makeup; placeholder)
 
 # --- Stream-specific CCS adjustment: capture cost & energy depend on the stream's
 #     CO2 concentration. Multiplier scales the base ocapex_ccs/fom_ccs; ccs_kwh_* is
-#     per-stream capture energy (kWh/tCO2, feeds both cost and Scope-2 consistently).
+#     per-stream capture energy (kWh-e/tCO2 incl. compression, electric-equivalent;
+#     feeds both cost and Scope-2 consistently).
 #     NG-DRI typically cheapest (concentrated, already-separated process CO2);
 #     coal-DRI dearest (dilute kiln gas); BF-BOF mid (concentrated BFG).
 param ccs_mult_bf    default 1.0;    # baseline (concentrated BFG ~20-25% CO2)
 param ccs_mult_cdri  default 1.2;    # dilute rotary-kiln off-gas -> dearer
 param ccs_mult_ngdri default 0.5;    # near-pure CO2 already separated in process gas -> cheap
-param ccs_kwh_bf     default 800;
-param ccs_kwh_cdri   default 850;    # dilute -> more capture energy
-param ccs_kwh_ngdri  default 200;    # mostly compression of the separated stream
+param ccs_kwh_bf     default 400;
+param ccs_kwh_cdri   default 450;    # dilute -> more capture energy
+param ccs_kwh_ngdri  default 150;    # mostly compression of the separated stream
+
+# Non-energy residual of the all-in price, netted at the reference (BF) stream.
+# Floored at 5 $/tCO2: an all-in price below energy+solvent (~33 $/t) would give
+# negative capex (model gets PAID to build capture) -- keep sampled/swept all-in
+# values >= ~50 (MC bounds of 25 in monte_carlo*.py predate this and need raising).
+param n10_ccs_cost{t in T} :=
+    max(n10_ccs_cost_start + (n10_ccs_cost_end - n10_ccs_cost_start) * (t - 2025) / 25
+        - ccs_kwh_bf * ng_cost_power - ccs_vopex_solvent, 5);
+param ocapex_ccs {t in T} := ccs_capex_share * n10_ccs_cost[t] / crf_ccs;   # overnight $/tCO2-capacity
+param fom_ccs    {t in T} := (1 - ccs_capex_share) * n10_ccs_cost[t];       # fixed O&M $/tCO2-cap/yr
 
 # ============================================================================
 # GREEN-H2 SUPPLY CHAIN: electrolyser + dedicated renewable (sunk capacity)

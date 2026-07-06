@@ -40,8 +40,8 @@ let n9_grid_ef_end := 0.0003;      # Projected Grid emission factor by 2050
 # ==================================================
 # Carbon Capture
 # ==================================================
-let n10_ccs_cost_start := 125;   # Carbon capture cost per ton in 2025
-let n10_ccs_cost_end := 75;      # Projected carbon capture cost in 2050
+let n10_ccs_cost_start := 125;   # ALL-IN market capture price 2025 (capex+energy+solvent)
+let n10_ccs_cost_end := 75;      # ALL-IN projected 2050 price; non-energy residual derived in definitions.mod
 
 
 # Reference scale for the mode-1 (linear) electrolyser-capacity slab (ramp_frac * H2_cap
