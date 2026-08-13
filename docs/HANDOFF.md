@@ -2,9 +2,15 @@
 
 ## Start here
 
-**Done:** `core/` is complete and verified; 1 of 8 studies migrated to `scenarios/`.
+**Done:** `core/` is complete and verified; Gurobi installed; the repo is under
+git and pushed; 1 of 8 studies migrated to `scenarios/`.
 **Next:** migrate `hydrogen-delay`, copying the shape of
 `scenarios/import-dependence/` (see "Step 5" below), then the remaining 6.
+Source material for three of them is already worked out under "Per-study sweep
+definitions" — start there rather than re-reading the templates.
+
+**Agreed plan:** finish porting all 7 remaining studies first, *then* run every
+sweep together. Do not stop to reproduce individual sweeps along the way.
 
 Nothing has been deleted. Every original study directory (`HydrogenDelay/`,
 `ImportDependency/`, `MonteCarlo/`, `RegretAnalysis/`,
@@ -18,7 +24,8 @@ should be removed until its `scenarios/` replacement is validated against it.
    axes and the CSV column order; the template defines the backdrop.
 2. Patch `include modules/` → `include ../core/modules/` before running the old
    template as a baseline (see the broken-template note below).
-3. Capture the old objective for one representative scenario with `--solver highs`.
+3. Capture the old objective for one representative scenario (Gurobi is now
+   installed, so the old template runs as originally configured).
 4. Write `study.mod` (backdrop, pure `let`), `axes/*.mod` (one per axis level),
    `report.mod` (post-solve + CSV printf), `run.py` (cross-product driver).
 5. Delete the study's `let h2_peak_year` / `let n8_scrap_limit` lines — AMPL
@@ -137,14 +144,64 @@ Gotchas that shaped it:
   verification only and will not reproduce published MIP numbers.
 
 Validated: `HiCoal-HiNG_h2-2030` via the new driver gives
-`1972188578542.099609` vs the old `impdep_template.mod` mechanism's
-`1972188578542.098877` — 3.7e-16 relative, i.e. solver noise.
+`1972188578542.099609` under HiGHS vs the old `impdep_template.mod`
+mechanism's `1972188578542.098877` — 3.7e-16 relative, i.e. solver noise.
+Under Gurobi the new driver reproduces `1972188578542.098877` exactly.
 
 Also found: `ImportDependency/impdep_template.mod` still says
 `include modules/...`, but that directory was removed by last session's dedup —
 so the old template has been broken since then and must be patched to
 `../core/modules/` to run at all. Same class of breakage may affect the other
 templates; check before trusting any "old" baseline.
+
+### Per-study sweep definitions (already extracted — do not re-derive)
+
+Read from the templates/`.bat`s in the session that ended here. **Not yet
+written into `scenarios/`.** The remaining four studies (MonteCarlo,
+RegretAnalysis, Abatement, WHR) still need their sources read.
+
+**Ramp levels** are shared vocabulary across studies. `h2_ref_cap` is the
+envelope scale and the electrolyser peak is `0.25 x h2_ref_cap`:
+
+| Level | `cap_add_common` | `h2_ref_cap` | peak H2 |
+|---|---|---|---|
+| Low | 10000000 | 4000000 | 1.0 Mt/yr |
+| Medium | 15000000 | 6000000 | 1.5 Mt/yr |
+| High | 20000000 | 8000000 | 2.0 Mt/yr |
+
+**`hydrogen-delay`** — 36 runs = 4 x 3 x 3. No `.bat`; driven by tokens in
+`h2delay_template.mod` (`RAMPVAL`, `H2REFVAL`, `EFVAL`, `H2YRVAL`,
+`RAMPLABEL`). Axes: `ng_h2_start_year` in {2030, 2035, 2040, 2045};
+`avg_emi` in {1.6, 1.8, 2.0}; ramp in {Low, Medium, High}. The template sets
+*no* `theta_*` and no `n5_cost_NG`, so the backdrop is core defaults — its
+`study.mod` is nearly empty. CSV columns:
+`avg_emi, ramp_label, cap_add_common, h2_ref_cap, ng_h2_start_year,
+solve_result, cap_h2dri_2050, total_ccs_2050, lcop, red_h2_2050`.
+Note the old output path `Plots/H2_Delay/results/h2delay_summary.csv` does not
+exist in this repo; write to `scenarios/hydrogen-delay/results/` instead.
+
+**`structural-sensitivity/grid`** — 864 runs = 6 x 8 x 18. Axes:
+`ng_h2_start_year` in {2030, 2033, 2036, 2039, 2042, 2045}; `n8_scrap_rate` in
+0.01..0.08 step 0.01; `n9_grid_ef_end` in 0.0000..0.00085 step 0.00005.
+The grid axis is applied *indirectly* — the template sets
+`theta_grid := (GRIDVAL - grid_ef_end_slow)/(grid_ef_end_fast - grid_ef_end_slow)`,
+i.e. it back-solves the interpolation weight from a target end-EF. Keep that
+form. CSV columns: `h2_start, scrap_rate, grid_ef_end, theta_grid, tariff_2050,
+solve_result, avg_emis, pv_avg_cost, h2_share_2050, ccs_frac_2050,
+scrapeaf_share_2050`. It also includes a `Plots/Grid/gridresult.mod` that is
+**not in this repo** — those columns must be reconstructed in `report.mod`.
+864 Gurobi runs at `TimeLimit=300` is the largest sweep here; budget for it.
+
+**`structural-sensitivity/scrap`** — 33 runs = 3 x 11. Axes: `avg_emi` in
+{1.6, 1.8, 2.0}; `n8_scrap_rate` in 0.00..0.10 step 0.01. Backdrop:
+`theta_tech/grid/ccs := 0.5`, `ng_h2_start_year := 2030`,
+`n9_grid_ef_end := 0.0005`, Medium ramp, `n5_cost_NG := 10`. CSV columns:
+`avg_emi, scrap_rate, solve_result, h2dri_cap_2050, ccs_2050, red_h2_2050,
+lcop, scrap_use_2050, scrap_limit_2050, scrapeaf_share_2050`.
+
+The `red_h2_2050` / `e_h2_2050` accounting block is **identical** in
+import-dependence, hydrogen-delay and scrap. Consider hoisting it to a shared
+`scenarios/_common/red_h2.mod` rather than copying it a fourth time.
 
 ### Remaining 7 studies
 
