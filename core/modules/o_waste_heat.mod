@@ -29,6 +29,14 @@ s.t. available_waste_stream{t in T}:
 s.t. whr_pool_alloc{t in T}:
     whr_gas_to_power[t] + whr_gas_to_steam[t] <= whr_available_gas[t] * n9_whr[t];  #eq81b
 
+# WHR-study toggle. 1 = CCS regen steam may draw on the waste-heat pool
+# (the integrated system, and the default -- at 1 this constraint is implied
+# by whr_pool_alloc above and therefore inert). 0 = BOILER-ONLY: CCS regen
+# steam must be raised by a dedicated boiler instead.
+param whr_ccs_integration default 1;
+s.t. whr_integration_switch{t in T}:
+    whr_gas_to_steam[t] <= whr_ccs_integration * whr_available_gas[t] * n9_whr[t];
+
 # WHR power from the pool share routed to power (was: the whole accessible pool)
 s.t. whr_power_balance{t in T}:
     whr_gas_to_power[t] * 277.78 * n9_eta - whr_power_generated[t] = 0; #eq82

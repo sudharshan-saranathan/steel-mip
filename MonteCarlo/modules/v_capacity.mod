@@ -68,7 +68,7 @@ s.t. legacy_noninc_cdri {t in T: ord(t)>1}: legacy_cdri[t]  <= legacy_cdri[prev(
 s.t. legacy_noninc_ngdri{t in T: ord(t)>1}: legacy_ngdri[t] <= legacy_ngdri[prev(t)];
 s.t. legacy_noninc_h2dri{t in T: ord(t)>1}: legacy_h2dri[t] <= legacy_h2dri[prev(t)];
 s.t. legacy_noninc_scrap{t in T: ord(t)>1}: legacy_scrap[t] <= legacy_scrap[prev(t)];
-.
+
 s.t. legacy_init_bof:   legacy_bof[first(T)]   = cap0_bof;
 s.t. legacy_init_cdri:  legacy_cdri[first(T)]  = cap0_cdri;
 s.t. legacy_init_ngdri: legacy_ngdri[first(T)] = cap0_ngdri;
