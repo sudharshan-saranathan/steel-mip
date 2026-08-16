@@ -2,15 +2,32 @@
 
 ## Start here
 
-**Done:** `core/` is complete and verified; Gurobi installed; the repo is under
-git and pushed; 1 of 8 studies migrated to `scenarios/`.
-**Next:** migrate `hydrogen-delay`, copying the shape of
-`scenarios/import-dependence/` (see "Step 5" below), then the remaining 6.
-Source material for three of them is already worked out under "Per-study sweep
-definitions" — start there rather than re-reading the templates.
+**Done (2026-08-16):** `core/` is complete and verified; Gurobi installed; the
+repo is under git and pushed; **6 of 8 studies migrated to `scenarios/` and
+their full sweeps run**: `import-dependence` (16 runs, 11 solved/5 infeasible),
+`hydrogen-delay` (36 runs, all solved), `structural-sensitivity/scrap` (33,
+all solved), `structural-sensitivity/abatement` (baseline + 6 scenarios x 26
+yrs = 182 rows, all solved), `structural-sensitivity/whr` (10, all solved),
+`structural-sensitivity/grid` (864 runs, 414 solved / 450 infeasible — the
+infeasible cells ARE the study's answer: the dirtiest-grid feasibility
+frontier). Every migrated study's driver was validated against its old
+template's objective (exact or near-exact match; see each study's own
+migration note in git history) before its sweep was trusted.
+
+This pass deliberately scoped to **Section A only** (the deterministic
+structural-feasibility studies above) per the user's explicit steer — `regret-analysis`
+and `monte-carlo` (Section B: Monte Carlo + regret) are still on the old
+per-study layout, untouched, not yet migrated.
+
+**Next:** write plotting scripts against the 6 Section A `results/*.csv` files
+above (this is what "regenerate the plots for the paper" is currently
+building toward), then migrate `regret-analysis` + `monte-carlo` (Section B)
+when the user is ready to resume that thread.
 
 **Agreed plan:** finish porting all 7 remaining studies first, *then* run every
 sweep together. Do not stop to reproduce individual sweeps along the way.
+(Superseded for this pass by the Section-A-first steer above; still the plan
+for when Section B resumes.)
 
 Nothing has been deleted. Every original study directory (`HydrogenDelay/`,
 `ImportDependency/`, `MonteCarlo/`, `RegretAnalysis/`,
