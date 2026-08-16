@@ -3,6 +3,7 @@ results/
 results_old_bilinear/
 mc_results.csv
 mc_smoke.csv
+figs/
 
 # ---- Logs ----
 *.log
