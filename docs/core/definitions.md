@@ -1,6 +1,6 @@
 # `definitions.mod` — parameter declarations
 
-> **Source:** `core/definitions.mod` — 368 lines @ `8c6cb8f`
+> **Source:** `core/definitions.mod` — 389 lines @ `HEAD` (updated 2026-08-18)
 > Update this doc whenever the source changes.
 
 ## Purpose
@@ -415,3 +415,17 @@ declared in `model.mod` immediately before the include.
 8. **`ng_biochar_cv`, `ng_coke_cv` and the other commented-out calorific
    values (lines 16-21)** suggest an earlier energy-balance formulation that
    was replaced by direct mass coefficients. They are dead but harmless.
+
+## Added 2026-08-18
+
+| Param | Default | Role |
+|---|---|---|
+| `legacy_phaseout` | 0 | **Section A policy lever.** 0 = the 2025 fleet runs its technical life; 1 = mandated linear decay to zero by 2050 (the previous hard-coded behaviour). The fleet's vintage is unknown, so the two settings bracket it. Consumed by `legacy_ceil_*` in `v_capacity.mod`. |
+| `cap_buffer` | 0.40 | Total installed capacity ceiling, `(1 + cap_buffer) * dem[t]`, via `cap_envelope` in `v_capacity.mod`. Must be >= 0.365 (the 2025 fleet already exceeds 2025 demand by 36%); inert above that, since `fopex` on idle capacity already drives cap/demand to `1/util_max` = 1.053. |
+
+`cap_add_common` was raised from `10e6` to `20e6` **and changed from four
+independent per-route caps to a single SHARED annual budget** across BOF,
+coal-DRI, NG-DRI and scrap-EAF (`cap_add_total` in `v_capacity.mod`). The
+routes now compete for one year's build capacity. Measured: it binds at every
+value tested, and it removes the scrap-share ceiling artifact that the
+per-route form produced.

@@ -57,14 +57,49 @@ s.t. cap_def_scrap{t in T}:
     cap_scrap[t] = legacy_scrap[t]
       + sum{j in T: ord(j) <= ord(t) and ord(j) >= ord(t)-life_scrap+1} build_scrap[j];
 
-# Legacy retirement: under a linearly declining ceiling that hits 0 in 2050.
-# Optimizer may sit below the ceiling (retire faster).
+# Legacy retirement is a POLICY LEVER, selected by `legacy_phaseout`:
+#
+#   legacy_phaseout = 0 (default) -- assets run their TECHNICAL LIFE
+#   legacy_phaseout = 1           -- MANDATED linear phase-out to zero by 2050
+#
+# The 2025 fleet's true vintage is unknown, so these two settings BRACKET the
+# possibilities rather than estimating a middle: 1 retires everything by 2050,
+# 0 retires each route when life_<route> expires. Report results as bounds.
+#
+# Under legacy_phaseout = 0, capacity existing in 2025 is assumed installed in
+# 2025, so it stands until life_<route> expires:
+#
+#   BOF   life 25 -> stands through 2050 (whole horizon)
+#   cDRI  life 20 -> through 2045
+#   ngDRI life 20 -> through 2045
+#   scrap life 15 -> through 2040
+#
+# This is a CEILING, not an equality, and idle capacity still pays fixed opex
+# (see the cost block below), so the optimizer remains free to retire early
+# when a plant stops earning its keep. Retirement is therefore an economic
+# decision, not an imposed schedule.
+#
+# REPLACES a linear `cap0 * (2050 - t)/25` decay applied uniformly to all five
+# routes, which forced the ENTIRE 2025 fleet (207.75 Mt) to zero by 2050
+# regardless of technology. That had no stated basis, ignored the per-route
+# life_* values the model already defines for new builds, and handed the model
+# a free fleet-wide reset -- deleting exactly the incumbent lock-in and
+# stranded-asset friction that makes steel hard to abate.
+#
+# Assumption to state in any write-up: "the 2025 fleet is assumed to run out
+# its technical life." If vintage data becomes available, replace life_<route>
+# below with a legacy_life{route} parameter; nothing else changes.
 
-s.t. legacy_ceil_bof  {t in T}: legacy_bof[t]   <= cap0_bof   * (2050 - t)/25;
-s.t. legacy_ceil_cdri {t in T}: legacy_cdri[t]  <= cap0_cdri  * (2050 - t)/25;
-s.t. legacy_ceil_ngdri{t in T}: legacy_ngdri[t] <= cap0_ngdri * (2050 - t)/25;
-s.t. legacy_ceil_h2dri{t in T}: legacy_h2dri[t] <= cap0_h2dri * (2050 - t)/25;
-s.t. legacy_ceil_scrap{t in T}: legacy_scrap[t] <= cap0_scrap * (2050 - t)/25;
+s.t. legacy_ceil_bof  {t in T}: legacy_bof[t]   <= cap0_bof   *
+    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + life_bof   then 1 else 0));
+s.t. legacy_ceil_cdri {t in T}: legacy_cdri[t]  <= cap0_cdri  *
+    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + life_cdri  then 1 else 0));
+s.t. legacy_ceil_ngdri{t in T}: legacy_ngdri[t] <= cap0_ngdri *
+    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + life_ngdri then 1 else 0));
+s.t. legacy_ceil_h2dri{t in T}: legacy_h2dri[t] <= cap0_h2dri *
+    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + life_h2dri then 1 else 0));
+s.t. legacy_ceil_scrap{t in T}: legacy_scrap[t] <= cap0_scrap *
+    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + life_scrap then 1 else 0));
 
 s.t. legacy_noninc_bof  {t in T: ord(t)>1}: legacy_bof[t]   <= legacy_bof[prev(t)];
 s.t. legacy_noninc_cdri {t in T: ord(t)>1}: legacy_cdri[t]  <= legacy_cdri[prev(t)];
@@ -80,6 +115,20 @@ s.t. legacy_init_h2dri: legacy_h2dri[first(T)] = cap0_h2dri;
 s.t. legacy_init_scrap: legacy_scrap[first(T)] = cap0_scrap;
 
 # Production bounded by installed capacity, derated to util_max
+# Total installed capacity may not exceed demand plus a buffer. Nobody builds
+# a fleet far larger than the market: capacity is envelope-limited, not just
+# rate-limited. Fixed opex on idle capacity (see the cost block) already
+# discourages overbuilding economically; this makes it a hard bound.
+#
+# UNITS CAVEAT: cap_bof and cap_scrap bound CRUDE STEEL, while cap_cdri,
+# cap_ngdri and cap_h2dri bound DRI OUTPUT, which is ~1.05-1.1 t per t of
+# steel. The sum is therefore crude-steel-EQUIVALENT to within ~10%, not exact.
+# Setting cap_buffer below ~0.15 risks infeasibility for that reason alone
+# (util_max = 0.95 already forces sum(cap) >= demand/0.95).
+s.t. cap_envelope{t in T}:
+    cap_bof[t] + cap_cdri[t] + cap_ngdri[t] + cap_h2dri[t] + cap_scrap[t]
+        <= (1 + cap_buffer) * dem[t];
+
 s.t. cap_lim_bof  {t in T}: steel_bof[t]       <= (if h2_ramp_mode = 0 then 1 else util_max) * cap_bof[t];
 s.t. cap_lim_cdri {t in T}: coaldri_output[t]  <= (if h2_ramp_mode = 0 then 1 else util_max) * cap_cdri[t];
 s.t. cap_lim_ngdri{t in T}: ngdri_output[t]    <= (if h2_ramp_mode = 0 then 1 else util_max) * cap_ngdri[t];
@@ -87,10 +136,23 @@ s.t. cap_lim_h2dri{t in T}: h2dri_output[t]    <= (if h2_ramp_mode = 0 then 1 el
 s.t. cap_lim_scrap{t in T}: steel_scrap_eaf[t] <= (if h2_ramp_mode = 0 then 1 else util_max) * cap_scrap[t];
 
 # Per-route capacity-addition ceiling
-s.t. cap_add_bof  {t in T: t > first(T)}: build_bof[t]   <= (if h2_ramp_mode = 0 then H2_BIGM else cap_add_common);
-s.t. cap_add_cdri {t in T: t > first(T)}: build_cdri[t]  <= (if h2_ramp_mode = 0 then H2_BIGM else cap_add_common);
-s.t. cap_add_ngdri{t in T: t > first(T)}: build_ngdri[t] <= (if h2_ramp_mode = 0 then H2_BIGM else cap_add_common);
-s.t. cap_add_scrap{t in T: t > first(T)}: build_scrap[t] <= (if h2_ramp_mode = 0 then H2_BIGM else cap_add_common);
+# SHARED annual build budget across the four conventional routes (changed
+# 2026-08-18). `cap_add_common` represents the finance and EPC capacity the
+# sector can deploy in one year, so the routes COMPETE for it -- scrap-EAF
+# expansion has to outbid BF-BOF, coal-DRI and NG-DRI for the same money.
+#
+# REPLACES four independent per-route caps, each against the same parameter,
+# which let the sector add up to 4 x cap_add_common per year in aggregate and
+# gave every route its own private allowance. Under that form the scrap-EAF
+# share ceiling was set by util_max * life_scrap * cap_add_common / demand[2050]
+# with no competition from other routes -- an artifact, not an economic result.
+#
+# NOTE build_h2dri is NOT in this budget: it has no per-year cap at all, and
+# H2-DRI is throttled indirectly through electrolyser capacity (h2elec_growth).
+# That asymmetry is inherited, not intended -- flag it in any write-up.
+s.t. cap_add_total{t in T: t > first(T)}:
+    build_bof[t] + build_cdri[t] + build_ngdri[t] + build_scrap[t]
+        <= (if h2_ramp_mode = 0 then H2_BIGM else cap_add_common);
 
 
 # No NEW route builds in 2025.

@@ -1,6 +1,6 @@
 # `v_capacity.mod` — capacity, vintaging, build ramps, supply chains
 
-> **Source:** `core/modules/v_capacity.mod` — 235 lines @ `8c6cb8f`
+> **Source:** `core/modules/v_capacity.mod` — 284 lines @ `HEAD` (updated 2026-08-18)
 > Update this doc whenever the source changes.
 
 ## Purpose
@@ -40,7 +40,7 @@ equations — easy to miss when scanning declarations.
 ### Parameters
 
 None. All parameters used here are declared in `definitions.mod`
-(`cap0_*`, `life_*`, `util_min_*`, `util_max`, `cap_add_common`, `sunk`,
+(`cap0_*`, `life_*`, `legacy_phaseout`, `cap_buffer`, `util_min_*`, `util_max`, `cap_add_common`, `sunk`,
 `ocapex_*`, `acapex_*`, `fopex_*`, `h2_*`, `H2_BIGM`, `ramp_frac`) or
 `parameters.mod` (`H2_cap`).
 
@@ -66,20 +66,73 @@ in 2026 or later never retires inside the horizon.
 ### 2. Incumbent fleet decay (lines 63-80)
 
 ```ampl
-legacy_bof[t]  <= cap0_bof * (2050 - t)/25;      # ceiling: linear to zero at 2050
-legacy_bof[t]  <= legacy_bof[prev(t)];           # non-increasing
-legacy_bof[first(T)] = cap0_bof;                 # seeded at 2025 capacity
+legacy_bof[t] <= cap0_bof *
+    (if legacy_phaseout = 1 then (2050 - t)/25
+     else (if t <= 2025 + life_bof then 1 else 0));   # ceiling: policy-selected
+legacy_bof[t] <= legacy_bof[prev(t)];                 # non-increasing
+legacy_bof[first(T)] = cap0_bof;                      # seeded at 2025 capacity
 ```
 
-Three constraints per route. The 2025 fleet sits under a **linearly declining
-ceiling that reaches exactly zero in 2050** — so by construction *none* of
-today's plants survive to the end of the horizon, regardless of economics.
-The optimiser may retire faster (the ceiling is `<=`, and `legacy` is
-non-increasing), never slower.
+Three constraints per route. **Retirement of the 2025 fleet is a policy
+lever**, selected by `legacy_phaseout` (added 2026-08-18):
+
+| `legacy_phaseout` | Rule | Effect |
+|---|---|---|
+| **0** (default) | assets run their technical life | BOF stands to 2050; coal-DRI and NG-DRI to 2045; scrap-EAF to 2040 |
+| **1** | mandated linear decay to zero by 2050 | the whole 207.75 Mt fleet is gone by 2050 |
+
+The fleet's true vintage is unknown, so the two settings **bracket** the
+possibilities rather than estimating a middle; results should be reported as
+bounds. Note that setting 0 is *not* "no retirement" — 117.75 of 207.75 Mt
+still goes by 2045 under the shorter route lifetimes. The cases differ mainly
+over the fate of 90 Mt of BOF.
+
+Both are ceilings (`<=`) with `legacy` non-increasing, so the optimiser may
+always retire faster, never slower. Since idle capacity still pays `fopex`,
+early retirement remains an economic decision rather than an imposed one.
+
+**Measured effect** at the baseline cell (abundant coal, policy gas, H2 2030,
+`avg_emi` 1.8): mandated phase-out costs **+36.6 $/t** (LCOP 559.66 vs 523.11)
+while delivering identical emissions, because the cumulative cap binds either
+way. The dominant mechanism is *avoided capex* — forced retirement makes the
+model rebuild 207.75 Mt of capacity it already owns — not stranded-asset
+friction, which is real but an order of magnitude smaller (`share_h2` falls
+2.4 points as surviving capacity displaces new build).
 
 This is the model's mothballing lever: `legacy` capacity is free of capex but
 pays `fopex` in `fixopex_cost_def`, so retiring early saves fixed O&M at the
 cost of losing the production headroom.
+
+### 2b. Total capacity envelope (added 2026-08-18)
+
+```ampl
+s.t. cap_envelope{t in T}:
+    cap_bof[t] + cap_cdri[t] + cap_ngdri[t] + cap_h2dri[t] + cap_scrap[t]
+        <= (1 + cap_buffer) * dem[t];
+```
+
+Caps the *stock* of installed capacity, where `cap_add_*` caps the *rate* of
+addition. Intent: nobody builds a fleet far larger than the market.
+
+**It does not bind, and cannot usefully be tightened.** Two measured facts:
+
+- `cap_buffer` **must be >= 0.365**. The 2025 fleet (207.75 Mt) already
+  exceeds 2025 demand (152.2 Mt) by 36%, so anything tighter is infeasible in
+  the first period by construction. Measured: 0.35 infeasible, 0.40 solves.
+  (That overcapacity is realistic — Indian utilisation runs ~75-80%.)
+- Above that floor it is **inert**. `fopex` is charged on installed capacity,
+  so idle plant costs money every year and the model already builds the
+  minimum it can: cap/demand settles at exactly `1/util_max` = 1.053 from 2030
+  onward, far below any admissible ceiling.
+
+Kept at `cap_buffer = 0.40` as an explicit guard on intent. To make it bite it
+would have to *decline* over time (e.g. 0.40 -> 0.10), forcing the 2025 surplus
+to consolidate faster than the optimiser chooses — a different, and genuinely
+binding, policy constraint.
+
+**Units caveat:** `cap_bof` and `cap_scrap` bound crude steel, while
+`cap_cdri`, `cap_ngdri` and `cap_h2dri` bound DRI output (~1.05-1.1 t per t of
+steel). The sum is crude-steel-*equivalent* to within ~10%, not exact.
 
 ### 3. Utilisation band (lines 83-87, 103-107)
 
@@ -108,9 +161,21 @@ build_bof[t] <= (if h2_ramp_mode = 0 then H2_BIGM else cap_add_common);   # t > 
 build_bof[first(T)] = 0;
 ```
 
-At most `cap_add_common` (default 10 Mt/yr) of new capacity per route per
-year, and **no new builds at all in 2025** — the first year is the observed
+A **single shared budget** of `cap_add_common` (default **20 Mt/yr**) across
+BOF, coal-DRI, NG-DRI and scrap-EAF combined (changed 2026-08-18; previously
+four independent per-route caps against the same parameter, allowing 4x that
+in aggregate). The routes now **compete** for one year's finance and EPC
+capacity. No new builds at all in 2025 — the first year is the observed
 starting point, not a decision.
+
+Measured: the constraint **binds** — peak annual build sits exactly at the cap
+for every value tested (20/25/30/40 Mt/yr). Tightening from 40 to 20 Mt/yr
+costs 3.8 $/t. It is also what removes the old scrap-share ceiling artifact:
+`share_scrap` is now an economic outcome (~0.264-0.267) rather than
+`util_max * life_scrap * cap_add_common / demand[2050]`.
+
+`build_h2dri` is NOT in this budget and still has no per-year ceiling of its
+own; H2-DRI is throttled only through electrolyser capacity.
 
 Note the asymmetry: there are four ceilings (BOF, coal-DRI, NG-DRI, scrap)
 and four zero-in-2025 constraints — **`build_h2dri` has neither**. H2-DRI's
@@ -269,10 +334,13 @@ Provides `capex_cost[t]` and `fixopex_cost[t]` to `r_cost.mod`'s
    pressure and per-route build limits across the whole fleet. These are
    three separate modelling assumptions sharing one flag.
 
-2. **Incumbent capacity is forced to zero by 2050 by construction**
-   (`legacy_ceil_*`). No plant built before 2025 may operate in 2050,
-   whatever its economics or actual age. For BOF with a 25-year life this is
-   roughly defensible; for a 2024-vintage BOF it is not.
+2. ~~**Incumbent capacity is forced to zero by 2050 by construction**~~
+   — **resolved 2026-08-18.** This was previously hard-coded as
+   `cap0 * (2050 - t)/25` for all five routes, with no stated basis, ignoring
+   the per-route `life_*` values the model already defines for new builds. It
+   is now the `legacy_phaseout` policy lever (see §2). The old behaviour is
+   `legacy_phaseout = 1` and remains reachable, so results computed under it
+   are still reproducible.
 
 3. **`build_h2dri` has no per-year ceiling and no zero-in-2025 constraint**,
    unlike the other four routes. The intent (build rate governed by the
@@ -310,7 +378,9 @@ Provides `capex_cost[t]` and `fixopex_cost[t]` to `r_cost.mod`'s
 | Constraints | Covered under |
 |---|---|
 | `cap_def_bof`, `cap_def_cdri`, `cap_def_ngdri`, `cap_def_h2dri`, `cap_def_scrap` | §1 Vintaged capacity accounting |
-| `legacy_ceil_bof`, `legacy_ceil_cdri`, `legacy_ceil_ngdri`, `legacy_ceil_h2dri`, `legacy_ceil_scrap` | §2 Incumbent fleet decay — linear ceiling to zero at 2050 |
+| `cap_add_total` | §4 Shared annual build budget across the four conventional routes |
+| `legacy_ceil_bof`, `legacy_ceil_cdri`, `legacy_ceil_ngdri`, `legacy_ceil_h2dri`, `legacy_ceil_scrap` | §2 Incumbent fleet decay — ceiling selected by `legacy_phaseout` |
+| `cap_envelope` | §2b Total installed capacity <= (1 + `cap_buffer`) x demand |
 | `legacy_noninc_bof`, `legacy_noninc_cdri`, `legacy_noninc_ngdri`, `legacy_noninc_h2dri`, `legacy_noninc_scrap` | §2 — non-increasing |
 | `legacy_init_bof`, `legacy_init_cdri`, `legacy_init_ngdri`, `legacy_init_h2dri`, `legacy_init_scrap` | §2 — seeded at `cap0_*` |
 | `cap_lim_bof`, `cap_lim_cdri`, `cap_lim_ngdri`, `cap_lim_h2dri`, `cap_lim_scrap` | §3 Utilisation band — `util_max` ceiling |

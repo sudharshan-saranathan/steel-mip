@@ -2,300 +2,178 @@
 
 ## Start here
 
-**Done (2026-08-16):** `core/` is complete and verified; Gurobi installed; the
-repo is under git and pushed; **6 of 8 studies migrated to `scenarios/` and
-their full sweeps run**: `import-dependence` (16 runs, 11 solved/5 infeasible),
-`hydrogen-delay` (36 runs, all solved), `structural-sensitivity/scrap` (33,
-all solved), `structural-sensitivity/abatement` (baseline + 6 scenarios x 26
-yrs = 182 rows, all solved), `structural-sensitivity/whr` (10, all solved),
-`structural-sensitivity/grid` (864 runs, 414 solved / 450 infeasible — the
-infeasible cells ARE the study's answer: the dirtiest-grid feasibility
-frontier). Every migrated study's driver was validated against its old
-template's objective (exact or near-exact match; see each study's own
-migration note in git history) before its sweep was trusted.
+Section A was rebuilt tonight (2026-08-17/18) from six separate per-study
+sweeps into **one design matrix over policy-controlled levers**, and four
+model defects were found and fixed along the way. Nothing has been swept under
+the new model yet — that is the next action, and it takes ~6 minutes.
 
-This pass deliberately scoped to **Section A only** (the deterministic
-structural-feasibility studies above) per the user's explicit steer — `regret-analysis`
-and `monte-carlo` (Section B: Monte Carlo + regret) are still on the old
-per-study layout, untouched, not yet migrated.
+**Organising principle (the thing that made the design tractable):**
+Section A sweeps ONLY what policy controls. Learning rates (`theta_tech`,
+`theta_ccs`) depend on global science, not Indian policy, so they are fixed
+here and belong to Section B's Monte Carlo. Applying that criterion cut the
+design from 524,880 cells (3.5 h) to 46,656 (~17 min) with no loss of anything
+the paper can claim.
 
-**Next:** write plotting scripts against the 6 Section A `results/*.csv` files
-above (this is what "regenerate the plots for the paper" is currently
-building toward), then migrate `regret-analysis` + `monte-carlo` (Section B)
-when the user is ready to resume that thread.
+## The Section A design
 
-**Agreed plan:** finish porting all 7 remaining studies first, *then* run every
-sweep together. Do not stop to reproduce individual sweeps along the way.
-(Superseded for this pass by the Section-A-first steer above; still the plan
-for when Section B resumes.)
+`scenarios/_matrix/axes.py` is the single source of truth.
 
-Nothing has been deleted. Every original study directory (`HydrogenDelay/`,
-`ImportDependency/`, `MonteCarlo/`, `RegretAnalysis/`,
-`StructuralSensitivity/{Abatement,Grid,Scrap,WHR}/`) is still in place and
-untouched. The deletion sweep needs the user's explicit go-ahead, and no study
-should be removed until its `scenarios/` replacement is validated against it.
-
-### Recipe for the next study
-
-1. Read the study's `*_template.mod` and `*.bat` — the `.bat` defines the sweep
-   axes and the CSV column order; the template defines the backdrop.
-2. Patch `include modules/` → `include ../core/modules/` before running the old
-   template as a baseline (see the broken-template note below).
-3. Capture the old objective for one representative scenario (Gurobi is now
-   installed, so the old template runs as originally configured).
-4. Write `study.mod` (backdrop, pure `let`), `axes/*.mod` (one per axis level),
-   `report.mod` (post-solve + CSV printf), `run.py` (cross-product driver).
-5. Delete the study's `let h2_peak_year` / `let n8_scrap_limit` lines — AMPL
-   rejects `let` on the now-derived params (see below).
-6. Re-run through the new driver and compare objectives; agreement to ~1e-15
-   relative is solver noise and counts as equivalent.
-
-### Environment
-
-- `amplpy` 0.18.0; AMPL binary at
-  `~/miniconda3/lib/python3.13/site-packages/ampl_module_base/bin/ampl`.
-- AMPL licence is activated locally (`python3 -m amplpy.modules activate <uuid>`).
-  The UUID is deliberately not recorded here — this repository is public.
-- **Solvers: HiGHS and Gurobi 13.0.2**, both installed as AMPL modules
-  (`python3 -m amplpy.modules install gurobi`). The drivers' default
-  `--solver gurobi` + `mipgap=0.002` now works out of the box and matches the
-  published-run configuration. `--solver highs` remains available for
-  cross-checking. Gurobi reproduces the baseline objective bit-identically
-  (`2008395874830.759766`).
-- Gurobi emits a `Tolerance violations` warning (MaxAbs 4E+01 on algebraic
-  constraints) on the baseline solve. Absolute-scale only, against flows of
-  1e6–1e8, so it is rounding noise rather than a modelling fault — but if
-  results ever look off, re-check with `--solver highs` before trusting them.
-
-## State — `core/` is complete and verified
-
-`core/` now holds the entire model structure:
-
-| File | Source | Notes |
+| Lever | Levels | Policy instrument |
 |---|---|---|
-| `core/definitions.mod` | MonteCarlo's copy (richest comments) | + derived-param conversion, see below |
-| `core/variables.mod` | HydrogenDelay's copy | keeps the `<= dem[t]` bound |
-| `core/parameters.mod` | HydrogenDelay's copy | hand-rolled recursions removed |
-| `core/yreport.mod` | HydrogenDelay's copy | mojibake `â€“` → ASCII `-` |
-| `core/model.mod` | new | structure only: no solver, no `solve`, no report |
-| `core/modules/*.mod` | 21 shared modules | + `whr_ccs_integration` folded in |
+| `ccoal` | 2 — abundant / scarce | import policy, domestic coking coal |
+| `ng` | 2 — policy / bau | gas allocation to steel |
+| `h2_start` | 4 — 2030/35/40/45 | green-H2 mission timing |
+| `scrap_rate` | 6 — 0.00…0.10 | collection infra, ELV rules |
+| `grid_ef` | 9 — 50…850 gCO2/kWh | power-sector decarbonisation |
+| `ramp` (`h2_ref_cap`) | 3 — 4/6/8 Mt/yr | electrolyser deployment rate |
+| `build_cap` (`cap_add_common`) | 3 — 20/30/40 Mt/yr | finance + EPC capacity (shared across the 4 conventional routes) |
+| `legacy` | 2 — run-life / mandated-phaseout | retirement policy |
+| **`avg_emi`** *(target)* | 3 — 1.6 / 1.8 / 2.0 | the constraint being tested |
 
-**Invocation contract:** AMPL resolves `include` against its *cwd*, not the
-including file. All paths in `core/model.mod` are repo-root-relative, so
-scenarios must be run from the repository root (`ampl.cd(ROOT)` in amplpy).
+**46,656 cells (~17 min).** Constants: `theta_tech` 0.5, `theta_ccs` 0.5,
+`whr_ccs_integration` 1.
 
-### Derived-param conversion ("option b")
+Demotions are measured, not assumed: swept across their full ranges,
+`theta_ccs` moves LCOP by **3.5 $/t with zero effect on feasibility** and
+`whr_mode` by **1.3 $/t**, against a 28.6 $/t H2-delay penalty.
 
-`n8_scrap_limit` and `h2_peak_year` were mutable params populated by `let`,
-so a scenario that overrode `n8_scrap_rate` or `ng_h2_start_year` silently
-did nothing unless it also re-ran the recursion by hand — which every
-template does. They are now *defined* params in `core/definitions.mod`:
+## Model changes made tonight (all in `core/`, all documented in `docs/core/`)
 
-```ampl
-param n8_scrap_seed default 37000000;
-param n8_scrap_limit{t in T} :=
-    if ord(t) = 1 then n8_scrap_seed
-    else n8_scrap_limit[prev(t)] * (1 + n8_scrap_rate);
+1. **`legacy_phaseout` (new lever).** Retirement of the 2025 fleet was
+   hard-coded as `cap0 * (2050-t)/25` for all five routes — no stated basis,
+   ignoring the per-route `life_*` the model already defines, forcing the
+   entire 207.75 Mt fleet to zero by 2050. Now a policy parameter: 0 = assets
+   run their technical life, 1 = the old mandated phase-out. Vintage data does
+   not exist, so the two settings **bracket** the truth; report as bounds.
+2. **`cap_add_common` is now a SHARED budget** (`cap_add_total`), 20 Mt/yr
+   across BOF, coal-DRI, NG-DRI and scrap-EAF combined. It was four
+   independent per-route caps against the same parameter, permitting 4x that
+   in aggregate and giving each route a private allowance.
+3. **`cap_envelope` (new).** Total installed capacity <= `(1+cap_buffer)`x
+   demand, `cap_buffer` = 0.40.
+4. **`cap_add_common` raised 10 -> 20 Mt/yr and promoted to a LEVER**
+   (`build_cap`, 20/30/40 Mt/yr) — annual build capacity is finance and
+   industrial policy, so it passes the Section A criterion.
 
-param h2_peak_lag  default 5;
-param h2_peak_year := ng_h2_start_year + h2_peak_lag;
-```
+### Measured effects
 
-## Verified (amplpy 0.18 + HiGHS)
+- **Mandated phase-out costs +36.6 $/t** (LCOP 559.66 vs 523.11) for
+  *identical* emissions, since the cumulative cap binds either way. The
+  mechanism is avoided capex — forced retirement makes the model rebuild
+  207.75 Mt it already owns — not stranded-asset friction, which is real but
+  ~10x smaller. **This is a policy result in its own right**, and it is why
+  retirement became the seventh lever.
+- **The shared build budget binds** at every value tested (peak build sits
+  exactly at the cap). Tightening 40 -> 20 Mt/yr costs 3.8 $/t.
+- **`cap_envelope` is inert.** `cap_buffer` must be >= 0.365 (the 2025 fleet
+  already exceeds 2025 demand by 36%; 0.35 is infeasible, 0.40 solves), and
+  above that floor `fopex` on idle capacity already drives cap/demand to
+  exactly `1/util_max` = 1.053 from 2030 on. Kept as a guard, not a shaping
+  constraint. To bite it would have to *decline* over time.
 
-1. **Defined params re-evaluate after instantiation**, including after a prior
-   `solve` — overriding `n8_scrap_rate` or the seed propagates into already-built
-   constraints. This is what makes scenario overrides composable.
-2. **`<= dem[t]` is provably redundant**, so promoting it is safe:
-   `coaldri_output ≤ coaldri+ngdri+h2dri = dri_eaf_steel_out = steel_eaf
-   ≤ total_steel = dem` (k_dri_h2:4, l_eaf_dri:36, n_steel_balance:4,
-   t_additional_constraints:10), all intermediates `>= 0`. RegretAnalysis drops
-   `meet_demand` but replaces it with `total_steel + steel_import = dem`,
-   `steel_import >= 0`, so `total_steel ≤ dem` still holds.
-3. **`No_H2_Before`'s index set re-instantiates** after a later
-   `let ng_h2_start_year`, even post-solve. The existing H2-year sweeps are
-   correct — do NOT "fix" the ordering.
-4. **Baseline objective is bit-identical across all 8 studies** and
-   `core/model.mod`: `2008395874830.759766`.
-5. **`whr_ccs_integration`** is inert at its default of 1 (objective unchanged)
-   and active at 0 (+$4.65B, +0.23%). WHR's boiler-only sweep is now a
-   one-line override instead of a forked module.
+## Three bundled axes the matrix disentangled
 
-## Known issue found (pre-existing) — FIXED
+Each of the six original studies had a headline lever that was secretly two
+things, so effects were attributed to whichever lever the study was named for:
 
-`MonteCarlo/modules/v_capacity.mod:71` contained a stray `.` on its own line —
-a genuine syntax error, so `MonteCarlo/main.mod` could not have run in its
-committed state. The line has been deleted. Verified: `MonteCarlo/main.mod` now
-parses and solves end-to-end to the baseline objective
-`2008395874830.759766`.
+| Study | "Axis" | Actually |
+|---|---|---|
+| hydrogen-delay | ramp | `cap_add_common` **and** `h2_ref_cap` (collinear, ratio 2.5) — so "H2 ramp" also set conventional build rates |
+| grid | grid EF | emission factor **and** electricity tariff, both via `theta_grid` |
+| whr | theta | `theta_ccs` **and** `theta_grid` — the 26.8 $/t effect was almost entirely grid, not CCS |
 
-That file otherwise differs from `core/modules/v_capacity.mod` only in
-comments, so it still belongs on the dead-file list once MonteCarlo migrates.
+`cap_add_common` is now its own lever (`build_cap`), so `ramp` scales only
+the electrolyser ramp and is genuinely H2-specific.
 
-## Step 5 — `scenarios/` migration: 1 of 8 done
+## Findings from the 524,880-cell snapshot
 
-Agreed layout: composable axis files + a Python driver (the `.bat` files are
-Windows-only and call `*_pivot.py` / `*_plot.py` scripts that are not in the repo).
+Banked at `scenarios/_matrix/results/matrix.parquet` (52 MB, gitignored),
+stamped with the git SHA of `core/` and 23 metadata keys. **It predates all
+four model changes above** — its structure is valid, its headline numbers are
+not. Verified complete: 524,880 rows, 524,880 unique coordinate tuples.
 
-`scenarios/import-dependence/` is the **reference implementation** — copy its shape:
+**The candidate headline finding — the cost of delaying hydrogen is a
+property of the scrap supply, not of hydrogen.** At `avg_emi` 1.8, abundant
+coal, policy gas, delaying H2-DRI from 2030 to 2045 costs:
 
-```
-scenarios/import-dependence/
-  study.mod        # common backdrop: pure `let` overrides, no structure
-                   # also declares `param REGIME symbolic` for the CSV label
-  axes/*.mod       # one file per axis level (ccoal_abundant, ng_policy, ...)
-  report.mod       # post-solve accounting + the CSV row printf
-  run.py           # sweeps the cross-product; sets REGIME before including report.mod
-  results/         # <tag>.txt per run + impdep_summary.csv
-```
+| Scrap growth | 2050 scrap | Delay penalty |
+|---|---|---|
+| <= 0.04 | 99 Mt | **infeasible at any delay** |
+| 0.06 | 159 Mt | **+28.6 $/t** |
+| 0.08 | 253 Mt | +8.5 $/t |
+| 0.10 | 401 Mt | +0.4 $/t |
 
-Gotchas that shaped it:
+Mechanism: H2-DRI's 2050 share falls 23.6% -> 6-7% as scrap grows. Delay gets
+cheap because hydrogen is **displaced**, not because timing stops mattering —
+state that explicitly or the claim is near-tautological.
 
-- `report.mod`'s `printf` fires at include time, so `REGIME` must be **set
-  before** the include — hence its declaration lives in `study.mod`.
-- `run.py` writes the CSV header, `report.mod` appends rows. The column order
-  in the two files is one contract; change both together.
-- `drop emission_monotonic;` must come after `core/model.mod` (it is declared
-  in `t_additional_constraints.mod`).
-- Driver defaults to `gurobi` + `mipgap=0.002`; `--solver highs` is for
-  verification only and will not reproduce published MIP numbers.
+**Related:** halving H2 cost (`theta_tech` 0 -> 1, ~$3.7 -> ~$1.8/kg) buys only
+**2.9 percentage points** of H2-DRI share (13.6 $/t on LCOP). Hydrogen uptake
+looks **deployment-limited, not cost-limited** — worth confirming that
+`h2elec_growth` is the binding constraint before claiming it.
 
-Validated: `HiCoal-HiNG_h2-2030` via the new driver gives
-`1972188578542.099609` under HiGHS vs the old `impdep_template.mod`
-mechanism's `1972188578542.098877` — 3.7e-16 relative, i.e. solver noise.
-Under Gurobi the new driver reproduces `1972188578542.098877` exactly.
+**Retracted:** an earlier "scrap saturates at 41.5% of output" finding was an
+artifact of the per-route build cap (`util_max * life_scrap * cap_add_common /
+demand[2050]`). The shared budget removes it; `share_scrap` is now ~0.264-0.267
+as an economic outcome. Do not repeat the 41.5% number.
 
-Also found: `ImportDependency/impdep_template.mod` still says
-`include modules/...`, but that directory was removed by last session's dedup —
-so the old template has been broken since then and must be patched to
-`../core/modules/` to run at all. Same class of breakage may affect the other
-templates; check before trusting any "old" baseline.
+## Reading the matrix (traps we hit, all now in the Parquet metadata)
 
-### Per-study sweep definitions (already extracted — do not re-derive)
+- `ERROR: ...presolve: constraint steel_balance...` rows are **genuine
+  infeasibilities** proven by AMPL presolve, concentrated in the
+  scarce-coal/bau-gas/late-H2 corner. Count them as infeasible; do not filter.
+- `extrapolated == 1` means `theta_grid` left [0,1], so the **coupled tariff**
+  is extrapolated past its $0.055-0.085/kWh anchors. Filter for cost claims;
+  feasibility is fine across the whole band.
+- `import_bill` **inverts** — scarce regimes post lower bills while costing
+  more per tonne, because a binding cap forbids importing. Read it with
+  `ccoal_bind_yrs` / `ng_bind_yrs`.
+- Infeasible rows retain junk numerics. Filter `solve_result == 'solved'`.
+- `grid_ef_2050` is the tripwire for the one-instance-per-run invariant.
 
-Read from the templates/`.bat`s in the session that ended here. **Not yet
-written into `scenarios/`.** The remaining four studies (MonteCarlo,
-RegretAnalysis, Abatement, WHR) still need their sources read.
+## Next
 
-**Ramp levels** are shared vocabulary across studies. `h2_ref_cap` is the
-envelope scale and the electrolyser peak is `0.25 x h2_ref_cap`:
+1. **Run the 46,656-cell sweep** — `python3 scenarios/_matrix/run_matrix.py -j 12`,
+   ~17 min. Then `to_parquet.py`. Baseline `--verify` already solves under the
+   new model (objective 1,857,353,828,038.84 at build_cap=tight).
+2. **Recompute every headline number** on the new table. The snapshot's
+   figures are pre-fix.
+3. **Verify `h2elec_growth` binds** before claiming deployment-limited uptake.
+4. **Parameter provenance table** — coefficients are literature-sourced but no
+   citation appears anywhere in `core/` or `docs/`. Needed as supplementary
+   material. Values are already extracted per module in `docs/core/`.
+5. **Section B** (`MonteCarlo/`, `RegretAnalysis/`) still on the old per-study
+   layout, untouched. The thetas belong there.
 
-| Level | `cap_add_common` | `h2_ref_cap` | peak H2 |
-|---|---|---|---|
-| Low | 10000000 | 4000000 | 1.0 Mt/yr |
-| Medium | 15000000 | 6000000 | 1.5 Mt/yr |
-| High | 20000000 | 8000000 | 2.0 Mt/yr |
+## Known open questions
 
-**`hydrogen-delay`** — 36 runs = 4 x 3 x 3. No `.bat`; driven by tokens in
-`h2delay_template.mod` (`RAMPVAL`, `H2REFVAL`, `EFVAL`, `H2YRVAL`,
-`RAMPLABEL`). Axes: `ng_h2_start_year` in {2030, 2035, 2040, 2045};
-`avg_emi` in {1.6, 1.8, 2.0}; ramp in {Low, Medium, High}. The template sets
-*no* `theta_*` and no `n5_cost_NG`, so the backdrop is core defaults — its
-`study.mod` is nearly empty. CSV columns:
-`avg_emi, ramp_label, cap_add_common, h2_ref_cap, ng_h2_start_year,
-solve_result, cap_h2dri_2050, total_ccs_2050, lcop, red_h2_2050`.
-Note the old output path `Plots/H2_Delay/results/h2delay_summary.csv` does not
-exist in this repo; write to `scenarios/hydrogen-delay/results/` instead.
+- **`theta_grid` couples grid EF to the electricity tariff** as a fixed linear
+  identity. Both are policy-controlled in India (regulated tariffs), so it
+  stays in Section A — but the *coupling rate* is an untested assumption, and
+  it is what pushes the tariff outside calibration at the ends of the EF band.
+- **`build_h2dri` has no per-year build cap at all**, unlike the four
+  conventional routes. Inherited asymmetry; state it in methods.
+- **BF-BOF decarbonises for free.** `d_blast_furnace.mod` interpolates coke
+  0.53 -> 0.48 t/thm and bio-PCI 0 -> 0.053 t/thm on a calendar schedule, with
+  no capex and no decision. Literature-sourced values, but the model hands the
+  incumbent route abatement that H2-DRI must build and pay for. Methods note.
+- **`bf_h2_in` is dead code** — interpolates 0 -> 0.
+- **`carbon_tax` exists only in `yreport.mod`**, which is not in the include
+  chain. The model has no price instrument, only the cap. A carbon price would
+  be a genuine alternative-instrument lever, but it is a model change.
+- **`emission_monotonic` is dropped in every run** (the model's only
+  nonlinearity), so nothing forces emission intensity to decline over time.
 
-**`structural-sensitivity/grid`** — 864 runs = 6 x 8 x 18. Axes:
-`ng_h2_start_year` in {2030, 2033, 2036, 2039, 2042, 2045}; `n8_scrap_rate` in
-0.01..0.08 step 0.01; `n9_grid_ef_end` in 0.0000..0.00085 step 0.00005.
-The grid axis is applied *indirectly* — the template sets
-`theta_grid := (GRIDVAL - grid_ef_end_slow)/(grid_ef_end_fast - grid_ef_end_slow)`,
-i.e. it back-solves the interpolation weight from a target end-EF. Keep that
-form. CSV columns: `h2_start, scrap_rate, grid_ef_end, theta_grid, tariff_2050,
-solve_result, avg_emis, pv_avg_cost, h2_share_2050, ccs_frac_2050,
-scrapeaf_share_2050`. It also includes a `Plots/Grid/gridresult.mod` that is
-**not in this repo** — those columns must be reconstructed in `report.mod`.
-864 Gurobi runs at `TimeLimit=300` is the largest sweep here; budget for it.
+## Environment
 
-**`structural-sensitivity/scrap`** — 33 runs = 3 x 11. Axes: `avg_emi` in
-{1.6, 1.8, 2.0}; `n8_scrap_rate` in 0.00..0.10 step 0.01. Backdrop:
-`theta_tech/grid/ccs := 0.5`, `ng_h2_start_year := 2030`,
-`n9_grid_ef_end := 0.0005`, Medium ramp, `n5_cost_NG := 10`. CSV columns:
-`avg_emi, scrap_rate, solve_result, h2dri_cap_2050, ccs_2050, red_h2_2050,
-lcop, scrap_use_2050, scrap_limit_2050, scrapeaf_share_2050`.
-
-The `red_h2_2050` / `e_h2_2050` accounting block is **identical** in
-import-dependence, hydrogen-delay and scrap. Consider hoisting it to a shared
-`scenarios/_common/red_h2.mod` rather than copying it a fourth time.
-
-### Remaining 7 studies
-
-`hydrogen-delay`, `monte-carlo`, `regret-analysis`, and the four under
-`structural-sensitivity` (Abatement, Grid, Scrap, WHR). WHR's boiler-only sweep
-is now `let whr_ccs_integration := 0;` instead of a forked module.
-
-### Old `let` sites that MUST be deleted during migration
-
-**AMPL rejects `let` on a defined param** ("`bb` has an `=` assignment in the
-model"). So the derived-param conversion requires deleting, in the same pass as
-each study's migration:
-
-- ~21 `let h2_peak_year := ...` sites
-- 8 `let n8_scrap_limit[first(T)] := ...` + recursion pairs
-  (replace with `let n8_scrap_seed := ...`)
-- the hand-rolled recursions in `ImportDependency/impdep_template.mod:16-17`
-  and `StructuralSensitivity/Grid/grid_template.mod:11-12`
-
-Carry forward deliberately when writing scenario files:
-
-- each study's `option solver gurobi;` + `gurobi_options 'mipgap=0.002'` — a MIP
-  at 0.2% gap will not match a HiGHS default-gap solve, so keep HiGHS out of the
-  committed scenario files (it was only used for verification here)
-- the `printf ... >> "results/....csv"` blocks — that CSV is the contract the
-  plotting scripts expect
-
-`ImportDependency/scenarios/{ccoal_abundant,ccoal_scarce,ng_bau,ng_policy}.mod`
-are live (driven by `impdep.bat`) and are the working prototype for what a
-scenario override file should look like: pure `let` data, no structure.
-`ng_avail_{abundant,scarce}.mod` in that directory are unreferenced.
-
-## Caveat on equivalence claims
-
-`impdep.bat` hardcodes a Windows `WORKDIR` and calls `impdep_pivot.py` /
-`impdep_plot.py`, neither of which is in the repo. So per-study *objective*
-equivalence is verified, but the *sweeps* have not been reproduced end-to-end
-against previously published numbers.
-
-## Dead files noted, NOT yet deleted
-
-Awaiting the user's confirmation on a cleanup sweep:
-
-- `ng.mod` (×7 — one per study dir, unreferenced by any template or main.mod)
-- `ImportDependency/template.mod`, `StructuralSensitivity/Abatement/template.mod`
-- `ImportDependency/scenarios/ng_avail_{abundant,scarce}.mod` (unreferenced;
-  the four files `impdep.bat` actually drives have been copied to
-  `scenarios/import-dependence/axes/`)
-- `MonteCarlo/modules/v_capacity.mod` and the three local
-  `modules/o_waste_heat.mod` copies (MonteCarlo, RegretAnalysis, WHR) — all now
-  superseded by `core/modules/`
-
-Do NOT fold `RegretAnalysis/commit_mc_case.mod`, `commit_mc_front.mod`, or
-`commit_plan.mod` into core. They carry genuinely different structure (elastic
-demand via `steel_import`, commitment constraints, regret accounting) and stay
-as a RegretAnalysis-local overlay.
-
-## Version control
-
-This tree is now a git repository, pushed to
-`github.com/sudharshan-saranathan/steel-mip` (**public** — keep licence keys
-and any unpublished data out of it).
-
-The reorg was grafted onto the four pre-existing commits rather than replacing
-them, so the history reads:
-
-```
-503df38  Add correctness audit report (AUDIT.md)      <- the old flat layout
-93529e3  Restructure into per-study directories       <- snapshot: post module-dedup
-8c7f032  Add core/ model + scenarios/ mechanism       <- this session's reorg
-```
-
-Commit `93529e3` is the pre-reorg undo point, so the old `docs/_backup/`
-directory has been deleted — `git show 93529e3:<path>` recovers any file from
-it. Beware that the old repo's `modules/o_power_balance.mod` and
-`p_waste_heat.mod` correspond to today's `p_power_balance.mod` and
-`o_waste_heat.mod`; the names were swapped during the per-study restructure.
-
-Generated outputs (`results/`, `*.nl`, `*.sol`, `temp_*.mod`) and local agent
-state (`.remember/`, `.claude/settings.local.json`) are gitignored.
+- `amplpy` 0.18.0; **Gurobi 13.0.2** and HiGHS installed as AMPL modules.
+- **Threads=1 per solve, parallelism across cells.** Measured: Gurobi gains
+  ~9% from a 10x thread budget on this LP (dual simplex, ~1,400 iterations,
+  presolved to 1,058 x 950 — it does not parallelise). 12 workers on 6 physical
+  cores gave 47-52 cells/s; 6 workers gave ~40.
+- **One AMPL instance per cell — do not "optimise" this away.**
+  `n9_grid_ef_end` is `param ... default <expr in theta_grid>`, and AMPL
+  freezes a `default` expression on first read. A reused instance would pin
+  grid EF at the first cell's value while still recording the requested target.
+- Results are gitignored (`results/`). The Parquet metadata is the only
+  provenance that travels with the data.

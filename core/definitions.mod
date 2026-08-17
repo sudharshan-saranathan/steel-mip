@@ -227,6 +227,27 @@ param cap0_h2dri default 0;                   # h2dri_output   (none in 2025)
 param cap0_scrap default 0.75e6;              # steel_scrap_eaf (dedicated 100% scrap-EAF)
 
 # Asset lifetimes (yr) 
+# Retirement policy for the 2025 fleet. 0 = assets run their technical life
+# (life_<route> from 2025); 1 = mandated linear phase-out to zero by 2050.
+# A Section A policy lever: a government can mandate closure.
+param legacy_phaseout default 0;
+
+# Total installed capacity ceiling = (1 + cap_buffer) * demand. See
+# cap_envelope in v_capacity.mod.
+#
+# MUST be >= 0.365: the 2025 fleet (207.75 Mt) already exceeds 2025 demand
+# (152.2 Mt) by 36%, so anything tighter is infeasible in the first period by
+# construction. Measured: 0.35 infeasible, 0.40 solves.
+#
+# Above that floor the constraint is INERT. Fixed opex is charged on installed
+# capacity, so idle plant costs money and the model already builds the minimum
+# it can: cap/demand settles at exactly 1/util_max = 1.053 from 2030 onward.
+# Kept as an explicit guard on intent, not as a shaping constraint.
+#
+# To make it bite, it would have to DECLINE (e.g. 0.40 -> 0.10), forcing the
+# 2025 surplus to consolidate faster than the optimizer would choose.
+param cap_buffer default 0.40;
+
 param life_bof   default 25;
 param life_cdri  default 20;
 param life_ngdri default 20;
@@ -236,7 +257,7 @@ param life_scrap default 15;
 # Capacity-addition ceiling
 # limits across routes. 10 Mt/yr for now
 # H2-DRI is not governed by this -- its build rate is set by the electrolyser
-param cap_add_common default 10e6;
+param cap_add_common default 20e6;   # per-TECH annual capacity addition cap (t/yr)
 
 # Capacity utilisation 
 param util_min_bof   default 0.85;
