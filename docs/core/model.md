@@ -39,8 +39,16 @@ Measured on the committed baseline (`amplpy` + `option show_stats 1`):
   and `total_steel`. `meet_demand` pins `total_steel[t]` to the constant
   `dem[t]`, so presolve linearises all 25 rows.
 - **Consequence: `gurobi_options 'mipgap=0.002'` is inert.** There is no
-  MIP gap on an LP. Section A's objectives are exact simplex optima, not
-  gap-limited approximations, and HiGHS/Gurobi agree to ~1e-16 relative.
+  MIP gap on an LP; objectives are exact simplex optima, not gap-limited
+  approximations, and HiGHS/Gurobi agree to ~1e-16 relative.
+- This was measured on `core/model.mod`. It holds *a fortiori* for all six
+  Section A studies: each one issues `drop emission_monotonic;` in its
+  `run.py`, removing the only nonlinear constraint outright, and none of them
+  touches `meet_demand`, `base_demand` or `growth_rate`. **Section B is a
+  different matter** — `regret-analysis` drops `meet_demand` and adds
+  `steel_import`, which unfixes `total_steel`; if it retains
+  `emission_monotonic` the model becomes genuinely bilinear. Check that
+  before assuming Section B is an LP.
 
 Baseline objective, bit-identical across all eight legacy studies and
 `core/model.mod`: **2 008 395 874 830.759766** (discounted $, 2025-2050).
@@ -85,13 +93,24 @@ repo-root-relative, so scenarios must run with the repository root as cwd
 
 ## 4. The five routes
 
+All per-tonne figures below were **read off solved runs** (`amplpy` +
+HiGHS), not derived by hand — 2025 baseline except where marked 2050, since
+the H2 and scrap routes have no 2025 output. Intensities are per tonne of
+**crude steel**, so the DRI rows are diluted by their pinned scrap blends.
+
 | Route | Reductant | 2025 share | 2025 capacity | Scope-1 tCO2/tCS | Power kWh/tCS |
 |---|---|---|---|---|---|
-| **BF-BOF** | coke + PCI coal | 51.0% | 90.0 Mt | ≈2.4 | ≈420 gross, ≈310 net of recovery |
-| **coal-DRI-EAF/IF** | non-coking coal | 44.2% | 104.1 Mt | ≈2.7 | ≈900 |
-| **NG-DRI-EAF** | natural gas | 4.8% | 12.9 Mt | ≈1.0 | ≈800 |
-| **H2-DRI-EAF** | green hydrogen | 0% | 0 | ≈0.05 | ≈1 000 grid + 3 850 dedicated RE |
-| **scrap-EAF** | none (100% scrap) | 0% | 0.75 Mt | ≈0.05 | 785 |
+| **BF-BOF** | coke + PCI coal | 51.0% | 90.0 Mt | **2.654** | 396.5 gross, 112.0 recovered → **284.5 net** |
+| **coal-DRI-EAF/IF** | non-coking coal | 44.2% | 104.1 Mt | **1.847** | **1 015** (2.64 tCO2 and 1 194 kWh per *t-DRI*) |
+| **NG-DRI-EAF** | natural gas | 4.8% | 12.9 Mt | **0.974** | **1 066** |
+| **H2-DRI-EAF** | green hydrogen | 0% | 0 | **0.0528** *(2050)* | **1 115 grid + 4 235 dedicated RE** *(2050)* |
+| **scrap-EAF** | none (100% scrap) | 0% | 0.75 Mt | **0.0528** *(2050)* | **785** |
+
+The shared 664 kWh/tCS DRI-EAF dominates all three DRI rows, which is why
+their grid-power intensities cluster within ~10% of each other despite very
+different shaft coefficients. The BF-BOF route is the *least* electricity-
+intensive and the *most* carbon-intensive; the ordering reverses entirely
+once Scope 2 is added at a dirty grid — the tension the grid study probes.
 
 The three DRI routes share **one** EAF (`l_eaf_dri.mod`); the dedicated
 scrap-EAF is separate (`m_scrap_eaf.mod`). Scrap enters three ways —
@@ -268,7 +287,10 @@ commit it was written against. Two cheap checks:
 wc -l core/*.mod core/modules/*.mod
 
 # 2. Is every constraint documented? Every `s.t. <name>` in a .mod
-#    should appear in its paired .md.
+#    should appear in its paired .md. NOTE: this checks name PRESENCE only —
+#    it cannot verify that the prose is correct, and an equivalent check on
+#    `eqNN` tags is near-vacuous (grepping for "18" matches almost any
+#    prose). Numeric claims must be verified against a solved model.
 for f in core/modules/*.mod; do
   b=$(basename "$f" .mod)
   grep -oP 's\.t\.\s+\K\w+' "$f" | while read -r c; do

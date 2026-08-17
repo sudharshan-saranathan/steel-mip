@@ -43,8 +43,9 @@ eq78 is a true surplus balance — three production streams less five internal
 consumption streams. eq79 and eq80 are pass-throughs (all EAF off-gas is
 surplus, at 3 GJ/tCS each).
 
-Per-tonne magnitudes at 2025 coefficients: the BF-BOF chain nets roughly
-**3.5 GJ/tCS** of surplus gas; each EAF route contributes exactly 3 GJ/tCS.
+Per-tonne magnitudes, measured on a solved 2025 baseline: the BF-BOF chain
+nets **4.31 GJ/tCS** of surplus gas; each EAF route contributes exactly
+3 GJ/tCS.
 
 Note **`sg_out` (sinter gas) is absent** — deliberately, per the
 `definitions.mod` comment that its calorific value is too low to be worth

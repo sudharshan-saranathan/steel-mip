@@ -95,7 +95,8 @@ It appears in five other modules:
 
 There is no CO2 term for hydrogen anywhere. `s_emissions.mod`'s
 `scope1_h2dri` counts only the EAF's coal and lime
-(`n7_cs × 0.110 × 24 + n7_ls × 0.44` ≈ **0.053 tCO2/tCS**). H2-DRI's
+(`n7_cs × 0.110 × 24 + n7_ls × 0.44` = **0.0528 tCO2/tCS**, measured —
+identical to the scrap-EAF route). H2-DRI's
 remaining footprint is entirely **Scope 2** — grid power for the shaft
 (110 kWh/t-DRI), the pellet plant (300 kWh/t-DRI) and the EAF
 (664 kWh/tCS) — since only the electrolyser is behind the renewable meter.

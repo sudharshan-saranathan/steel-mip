@@ -45,13 +45,19 @@ proportionally across the three routes here, consistent with
 
 Per-tonne intensities at 2025 coefficients:
 
+Measured on a solved 2025 baseline (`amplpy` + HiGHS), **per tonne of crude
+steel** — note the DRI rows are diluted by their pinned 2025 scrap blends:
+
 | Route | Scope-1 (tCO2/tCS) | dominant term |
 |---|---|---|
-| BF-BOF | ≈ **2.4** | coking coal (0.78 t/tCS × 2.79) |
-| coal-DRI | ≈ **2.7** | non-coking coal (1.0 t/t-DRI × 2.64) |
-| NG-DRI | ≈ **1.0** | natural gas (0.35 t/t-DRI × 2.75) |
-| H2-DRI | ≈ **0.053** | EAF carbon + lime |
-| scrap-EAF | ≈ **0.053** | EAF carbon + lime |
+| BF-BOF | **2.654** | coking coal (0.779 t/thm × 2.79) |
+| coal-DRI | **1.847** | non-coking coal (1.0 t/t-DRI × 2.64, at 0.68 t-DRI/tCS) |
+| NG-DRI | **0.974** | natural gas (0.35 t/t-DRI × 2.75, at 0.957 t-DRI/tCS) |
+| H2-DRI | **0.0528** | EAF carbon + lime |
+| scrap-EAF | **0.0528** | EAF carbon + lime |
+
+On a **per t-DRI** basis the two coal/NG figures are 2.64 and 0.96 — quote
+the basis, the two differ by the metallic ratio.
 
 ### Scope 1 total (eq110)
 

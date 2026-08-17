@@ -42,7 +42,8 @@ so it cannot be `let` by a scenario and does not improve over the horizon.
 ### Emissions profile
 
 `scope1_scrapeaf` (in `s_emissions.mod`) counts only
-`scrap_eaf_coal_in × 2.64 + scrap_eaf_lime_in × 0.44` ≈ **0.053 tCO2/tCS**.
+`scrap_eaf_coal_in × 2.64 + scrap_eaf_lime_in × 0.44` = **0.0528 tCO2/tCS**
+(measured on a solved run).
 Everything else is Scope 2: 785 kWh × `n9_grid_ef[t]`, which at the 2025 EF
 of 0.000886 is **0.70 tCO2/tCS** and at the θ_grid = 0.5 2050 EF of 0.00045
 is **0.35 tCO2/tCS**.

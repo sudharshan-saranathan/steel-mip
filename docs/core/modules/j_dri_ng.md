@@ -69,8 +69,9 @@ NG-DRI to roughly **24 Mt of crude steel** that year — the tightest year in
 the baseline.
 
 Emissions: 0.35 × 2.75 = **0.96 tCO2 per t-DRI**, about 36% of coal-DRI's
-2.64. That, plus a cheaper capture stream (see below), is why NG-DRI is the
-model's bridge technology.
+2.64. Per tonne of crude steel the measured 2025 figure is
+**0.97 tCO2/tCS** against coal-DRI's 1.85. That, plus a cheaper capture
+stream (see below), is why NG-DRI is the model's bridge technology.
 
 ### Why NG-DRI has the cheapest capture
 

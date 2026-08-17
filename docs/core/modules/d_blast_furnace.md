@@ -93,12 +93,17 @@ coefficients, the entire BF-BOF chain collapses. Per tonne of hot metal in
       → 0.53 t coke → 0.779 t coking coal
       → 0.15 t PCI coal
       → 0.025 t lime
-      → 55 + 63.25 (sinter) + 39.75 (coke) + 70 (pellets) kWh, less 35 (TRT)
-        and 42.4 (CDQ) and 34.5 (sinter cooler) kWh recovered
+      → 55 (BF) + 57.5 (sinter) + 39.75 (coke) + 70 (pellets) kWh,
+        less 35 (TRT) + 42.4 (CDQ) + 34.5 (sinter cooler) kWh recovered
 ```
 
 And `bf_hot_metal = 1.1·steel_bof − bof_scrap_in`, so at the 2025 pinned
-9% scrap blend, 1 tCS of BOF steel needs 1.001 thm.
+9% scrap blend, 1 tCS of BOF steel needs **1.0010 thm**. Adding the BOF's
+own 174 kWh/tCS gives the route totals **396.5 kWh/tCS gross** and
+**112.0 kWh/tCS recovered → 284.5 net**.
+
+> All figures in this block were read off a solved 2025 baseline
+> (`amplpy` + HiGHS), not derived by hand.
 
 ## Depends on
 

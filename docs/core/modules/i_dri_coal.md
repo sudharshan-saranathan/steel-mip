@@ -63,13 +63,24 @@ Two figures carry embedded modelling decisions:
 - **217 kWh/t-DRI.** `definitions.mod` records this as *100 base + 117*, the
   117 being the extra power of coal-DRI's induction-furnace-heavy secondary
   melting (129 kWh/tCS ÷ 1.1 t-DRI/tCS). Folding it into the shaft's
-  coefficient lets `n7_e_eaf` stay route-neutral at 664 kWh/tCS. So coal-DRI
-  is charged **217 + 664/1.1 ≈ 821 kWh per t-DRI equivalent**, materially
-  above NG-DRI (120) and H2-DRI (110).
+  coefficient lets `n7_e_eaf` stay route-neutral at 664 kWh/tCS. The
+  often-quoted `217 + 664/1.1 ≈ 821 kWh/t-DRI` holds only at a **zero**
+  scrap blend; at the 2025 pinned 38.2% blend the ratio is 0.68 t-DRI/tCS,
+  so the measured figure is **1 194 kWh/t-DRI**, or **1 015 kWh/tCS**
+  including the pellet plant. Against NG-DRI's 1 066 kWh/tCS and H2-DRI's
+  1 115 kWh/tCS of *grid* power, the route is not the outlier the raw
+  shaft coefficients suggest — the shared 664 kWh/tCS EAF dominates all
+  three.
 - **1.0 t non-coking coal per t-DRI.** Coal is both reductant and fuel in a
   rotary kiln, and this is the dominant emissions term: at 2.64 tCO2/t-coal
-  (`scope1_def`) that is **2.64 tCO2 per t-DRI** before the EAF's own
-  emissions — by far the dirtiest route in the model.
+  (`scope1_def`) that is **2.64 tCO2 per t-DRI**. Per tonne of *crude steel*
+  the 2025 figure is **1.85 tCO2/tCS**, the scrap blend diluting it — still
+  the dirtiest route in the model, but the per-t-DRI and per-tCS figures
+  differ by more than the scrap share alone would suggest, so quote the
+  basis.
+
+> Both measured figures above were read off a solved 2025 baseline
+> (`amplpy` + HiGHS), not derived by hand.
 
 The coal is priced as `ng_cost_ncoal = 98 $/t` in `r_cost.mod`.
 
