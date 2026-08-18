@@ -17,7 +17,8 @@ paired cells. Retained snapshots: `matrix_preratchet.*` (decaying ramp),
 1. **Cost claims use calibrated rows only.** `extrapolated == 1` marks rows
    where the coupled electricity tariff runs past its $0.055–0.085/kWh
    anchors. The flag is exactly `grid_ef_target ∉ {0.00035, 0.00045,
-   0.00055}` — verified a pure function of the grid level. Feasibility uses
+   0.00055}` — verified a pure function of the grid level. That leaves
+   **10,202 of 30,371 feasible scenarios** usable for $/t. Feasibility uses
    all 46,656 cells.
 2. **Deltas are paired.** Infeasibility runs 4.8% at `h2_start` 2030 and
    62.2% at 2045, so an unpaired mean shrinks any penalty by selection alone — in

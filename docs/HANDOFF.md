@@ -95,7 +95,7 @@ fixes). All gitignored — regenerate with `run_matrix.py` then `to_parquet.py`.
   model decides). Unrecovered capital is 13.1% of NPV at a 2030 debut vs 8.5%
   at 2045, so the delay penalty is conservative and the phase-out cost likely
   overstated. Stated as a limitation, not corrected.
-- **Cost claims use calibrated rows only** (9,068 of 30,371); feasibility uses
+- **Cost claims use calibrated rows only** (10,202 of 30,371); feasibility uses
   all 46,656.
 - **Every delta is paired**; the design is a complete factorial, so feasibility
   marginals are already balanced.
