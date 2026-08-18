@@ -214,10 +214,33 @@ it is stronger than the single-lever version and it does not overstate.
 3. **Parameter provenance table** — coefficients are literature-sourced but
    no citation appears in `core/` or `docs/`. Needed as supplementary
    material; values are already extracted per module in `docs/core/`.
-4. **Methods notes** carried over: `build_h2dri` has no per-year build cap
+4. **Capital treatment (stated limitation, not a defect).** `sunk = 1`:
+   overnight capex charged in full in the build year on `build_*`, and fixed
+   opex charged on installed capacity rather than production, so capital is
+   irreversible and idle capacity still costs. The 2025 legacy fleet enters
+   `cap_*` with no `build_*` variable, so its capital is already sunk (it does
+   pay `fopex`). This is what makes Headline 2 mean what it says. The
+   `(1-sunk)` branch — annualised capex via CRF, charged on output — is
+   deliberately unused: amortisation presumes the plant runs a fixed number of
+   years, which is the decision the model exists to make.
+
+   **No salvage or terminal value at 2050**, by decision (2026-08-18). A plant
+   built in 2048 with a 25-year life pays 100% of capex for 2 years of
+   service. Measured on the baseline coordinate (straight-line remaining life,
+   discounted at 6%): capital paid for but never used is **13.1% of NPV for a
+   2030 H2 debut and 8.5% for a 2045 debut** (52% and 38% of discounted capex
+   respectively). Because the *earlier* debut carries more unrecovered
+   capital, crediting salvage would make an early debut relatively cheaper and
+   the delay penalty **larger** — so the +36.58 $/t headline is conservative.
+   The phase-out cost runs the other way (forced rebuilds land late and get no
+   residual credit), so +38.17 $/t is likely an overestimate. State both
+   directions in methods. Figures are post-hoc accounting on a fixed solution;
+   a model with salvage would re-optimise.
+
+5. **Methods notes** carried over: `build_h2dri` has no per-year build cap
    (unlike the four conventional routes); BF-BOF decarbonises on a calendar
    schedule with no capex or decision; `bf_h2_in` is dead code; the model has
    no carbon price, only the cap; `emission_monotonic` is dropped in every
    run; the ramp ceiling has no saturation roll-over.
-5. **Section B** (`MonteCarlo/`, `RegretAnalysis/`) still on the old
+6. **Section B** (`MonteCarlo/`, `RegretAnalysis/`) still on the old
    per-study layout. `theta_tech` and `theta_ccs` belong there.
