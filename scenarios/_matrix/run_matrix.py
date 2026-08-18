@@ -103,6 +103,9 @@ def coord_key(cell):
             cell["build_cap"][0], cell["legacy"][0], cell["avg_emi"])
 
 
+EXTRA_LETS = ""
+
+
 def solve_cell(cell, solver="gurobi", verbose=False):
     from amplpy import AMPL
 
@@ -151,6 +154,13 @@ def solve_cell(cell, solver="gurobi", verbose=False):
         f"let theta_grid := ({grid_ef} - grid_ef_end_slow) "
         f"/ (grid_ef_end_fast - grid_ef_end_slow);"
     )
+
+    # Experiment hook: extra `let` statements applied last, just before solve.
+    # Empty in every production run; used by one-off diagnostics that need to
+    # override something the axis registry does not expose (e.g. decoupling
+    # h2_peak_lag from the H2 debut year).
+    if EXTRA_LETS:
+        ampl.eval(EXTRA_LETS)
 
     ampl.eval(f"option solver {solver};")
     if solver == "gurobi":

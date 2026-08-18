@@ -35,9 +35,13 @@ import axes as AX  # noqa: E402
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "scenarios" / "_matrix" / "results"
 
-COORD_COLUMNS = ["ccoal","ng","h2_start","avg_emi","ramp","scrap_rate","grid_ef_target","theta_ccs","whr_mode"]
+# Derived from the axis registry so it CANNOT go stale: a hand-maintained list
+# that misses an axis silently collapses distinct cells during dedup (a stale
+# list once folded 46,656 rows to 7,776). Only the CSV column name differs.
+_CSV_NAME = {"grid_ef": "grid_ef_target"}
+COORD_COLUMNS = [_CSV_NAME.get(a, a) for a in AX.AXES]
 
-CATEGORICAL = ["ccoal", "ng", "ramp", "whr_mode", "solve_result"]
+CATEGORICAL = ["ccoal", "ng", "ramp", "build_cap", "legacy", "solve_result"]
 
 
 def git_sha():
@@ -143,7 +147,12 @@ def main():
     # buffer when a prior run was killed (SIGTERM discards it), so the CSV can
     # carry duplicate coordinates. The LP is deterministic, so duplicates agree
     # -- but they must go before any count or groupby is trusted.
-    coords = [c for c in COORD_COLUMNS if c in df]
+    missing = [c for c in COORD_COLUMNS if c not in df]
+    if missing:
+        sys.exit(f"CSV is missing axis columns {missing}: it was produced by a "
+                 f"different design than axes.py describes. Refusing to dedup "
+                 f"on an incomplete key.")
+    coords = list(COORD_COLUMNS)
     before = len(df)
     df = df.drop_duplicates(subset=coords, keep="last").reset_index(drop=True)
     if before != len(df):
