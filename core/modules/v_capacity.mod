@@ -273,25 +273,17 @@ s.t. h2elec_cover{t in T}:
 s.t. h2re_cover{t in T}:
     h2_kwh_per_t * h2dri_h2_in[t] <= cap_h2re[t] * 8760 * re_cf;
 
-# Ceiling on ELECTROLYSER capacity additions
+# Ceiling on ELECTROLYSER capacity additions (NET change, so retirements can
+# be replaced freely -- only growth is throttled). h2_growth_ceiling is the
+# ratcheted Gaussian; see core/definitions.mod for why it plateaus.
 s.t. h2elec_growth{t in T: t > first(T)}:
     cap_h2elec[t] - cap_h2elec[prev(t)] <=
         ( if   h2_ramp_mode = 0 then H2_BIGM
           else if h2_ramp_mode = 1 then ramp_frac * H2_cap
-          else h2_ref_cap * ( h2_base[t]
-                             + (h2_peak_rate
-                                - (h2_base_start + (h2_base_end - h2_base_start)
-                                                   *(h2_peak_year-2025)/25))
-                               * exp( -((t - h2_peak_year)^2)
-                                      / (2*h2_gauss_sigma^2) ) ) );
+          else h2_growth_ceiling[t] );
 
 s.t. h2elec_first{t in T: t = first(T)}:
     cap_h2elec[t] <=
         ( if   h2_ramp_mode = 0 then H2_BIGM
           else if h2_ramp_mode = 1 then ramp_frac * H2_cap
-          else h2_ref_cap * ( h2_base[t]
-                             + (h2_peak_rate
-                                - (h2_base_start + (h2_base_end - h2_base_start)
-                                                   *(h2_peak_year-2025)/25))
-                               * exp( -((t - h2_peak_year)^2)
-                                      / (2*h2_gauss_sigma^2) ) ) );
+          else h2_growth_ceiling[t] );

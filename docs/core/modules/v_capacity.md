@@ -271,13 +271,13 @@ the grid balance, so green H2 draws no grid power and incurs no Scope-2.
 cap_h2elec[t] - cap_h2elec[prev(t)] <=
     if   h2_ramp_mode = 0 then H2_BIGM
     else if h2_ramp_mode = 1 then ramp_frac * H2_cap
-    else h2_ref_cap * ( h2_base[t]
-                       + (h2_peak_rate - h2_base[h2_peak_year])
-                         * exp( -((t - h2_peak_year)^2) / (2*h2_gauss_sigma^2) ) );
+    else h2_growth_ceiling[t];        # core/definitions.mod
 ```
 
-(the inner `h2_base[h2_peak_year]` is written out longhand in the source as
-`h2_base_start + (h2_base_end - h2_base_start)*(h2_peak_year-2025)/25`.)
+Note the left side is the **net** change, so retirements can be replaced
+freely — only growth is throttled. `h2_growth_ceiling` was factored out of
+this constraint and `h2elec_first` (it was duplicated verbatim in both) and
+now carries the ratchet described below.
 
 Three modes:
 
@@ -296,6 +296,26 @@ total at the peak is exactly `h2_peak_rate = 0.25`. At the default
 Because `h2_peak_year` is a *defined* param, moving `ng_h2_start_year` moves
 the crest with it — the delay studies sweep the debut year and get a
 correctly-shaped ramp each time, with no per-scenario bookkeeping.
+
+**The ratchet** (`h2_ramp_ratchet`, default 1, added 2026-08-18). Past the
+crest the raw bell decays back to `h2_base`: it said an industry that added
+1.5 Mt/yr at its crest could manage only 0.24 Mt/yr five years later, with
+capability expiring on the calendar rather than because the market saturated.
+Combined with the crest following the debut year, this made a LATE debut
+better-resourced than an early one in the late years — 13 years in which the
+2030-debut ceiling sat *below* the 2035-debut ceiling, worst 0.24 vs 1.50
+Mt/yr in 2040 — so **delaying hydrogen came out cheaper in 67.3% of paired
+cells**, which a constraint that only forbids cannot do. The early debut was
+forced to build its fleet early and, with `life_h2elec = 15` against a 2050
+horizon, buy it again: 13.91 Mt of electrolyser built versus 10.15 Mt for a
+2035 debut, for the *same* 9.96 Mt standing in 2050.
+
+Holding the ceiling at the crest rate once reached (`max(h2_bell[t],
+h2_peak_rate)` for `t > h2_peak_year`) leaves the ramp-up untouched and gives
+the earlier debut a pointwise-higher ceiling in every year, which is what
+makes the delay penalty monotone. `h2_ramp_ratchet := 0` reproduces the
+decaying ramp exactly; both are regression-tested in
+`scenarios/_matrix/experiments/h2_ratchet_check.py`.
 
 `h2elec_first` applies the same expression as an absolute ceiling on
 `cap_h2elec[2025]`, not a delta.

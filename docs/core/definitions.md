@@ -340,6 +340,11 @@ param h2_base_start := 0.00;      param h2_base_end := 0.05;
 param h2_gauss_sigma := 2;
 param h2_peak_lag   default 5;
 param h2_peak_year  := ng_h2_start_year + h2_peak_lag;
+param h2_bell{t in T} := ...;              # the raw Gaussian-on-baseline
+param h2_ramp_ratchet default 1;           # 1 = plateau past the crest
+param h2_growth_ceiling{t in T} :=
+    h2_ref_cap * (if h2_ramp_ratchet = 1 and t > h2_peak_year
+                  then max(h2_bell[t], h2_peak_rate) else h2_bell[t]);
 ```
 
 `h2_ref_cap` is the **envelope scale** — the electrolyser build ceiling in
@@ -358,6 +363,21 @@ levels" used across studies pair it with `cap_add_common`:
 — the buildout crest sits 5 years after the H2 debut. Pre-refactor this was
 a mutable param each template re-`let` by hand; a scenario that moved the
 debut year without moving the peak got a Gaussian centred in the wrong place.
+
+`h2_growth_ceiling` (2026-08-18) **plateaus past the crest** rather than
+decaying back to `h2_base`. The raw bell said an industry that added
+1.5 Mt/yr at its crest could manage only 0.24 Mt/yr five years later —
+capability expiring on the calendar. Combined with the crest following the
+debut year, that made a LATE debut better-resourced than an early one in the
+late years (13 years where the 2030-debut ceiling sat below the 2035-debut
+ceiling, worst 0.24 vs 1.50 Mt/yr in 2040), so **delaying hydrogen came out
+cheaper in 67.3% of paired cells** — impossible for a constraint that only
+forbids. Holding the ceiling at the crest rate gives pointwise dominance of
+the earlier debut and makes the delay penalty monotone; verified in
+`scenarios/_matrix/experiments/h2_ratchet_check.py`. Cumulative dominance
+would not have sufficed: the constraint caps the year-on-year increment, so
+an early starter cannot bank an unused allowance and spend it later.
+`h2_ramp_ratchet := 0` restores the decaying ramp exactly.
 
 `h2_ramp_mode = 0` is a **no-discipline counterfactual**: it swaps in
 `H2_BIGM = 1e10` for every ramp ceiling *and* switches off the utilisation

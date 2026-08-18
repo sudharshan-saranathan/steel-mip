@@ -387,3 +387,33 @@ param h2_base{t in T} := h2_base_start + (h2_base_end - h2_base_start)*(t-2025)/
 param h2_peak_lag   default 5;          # years from H2 debut to buildout crest
 param h2_peak_year  := ng_h2_start_year + h2_peak_lag;
 
+# The mode-2 ramp ceiling, factored out of h2elec_growth/h2elec_first (it was
+# duplicated verbatim in both).
+param h2_bell{t in T} :=
+    h2_base[t]
+  + (h2_peak_rate - (h2_base_start + (h2_base_end - h2_base_start)
+                                     *(h2_peak_year-2025)/25))
+    * exp( -((t - h2_peak_year)^2) / (2*h2_gauss_sigma^2) );
+
+# RATCHET (default on). Past the crest the raw bell DECAYS back to h2_base --
+# it says an industry that added 1.5 Mt/yr at its crest can manage only
+# 0.24 Mt/yr five years later, capability expiring on the calendar. Because
+# h2_peak_year follows the debut year, that decay made a LATE debut strictly
+# better-resourced than an early one in the late years (13 years where the
+# 2030-debut ceiling sits below the 2035-debut ceiling, worst 0.24 vs 1.50
+# Mt/yr in 2040), so delaying hydrogen came out CHEAPER in 67% of paired
+# cells -- impossible for a constraint that only forbids.
+#
+# Holding the ceiling at the crest rate once reached gives POINTWISE
+# DOMINANCE of the earlier debut in every year, which is what makes the delay
+# penalty monotone. Cumulative dominance is not enough: the constraint caps
+# the year-on-year increment, so an early starter cannot bank an unused
+# allowance and spend it later.
+#
+# Set to 0 to reproduce the pre-2026-08-18 decaying ramp.
+param h2_ramp_ratchet default 1;
+param h2_growth_ceiling{t in T} :=
+    h2_ref_cap * ( if h2_ramp_ratchet = 1 and t > h2_peak_year
+                   then max(h2_bell[t], h2_peak_rate)
+                   else h2_bell[t] );
+
