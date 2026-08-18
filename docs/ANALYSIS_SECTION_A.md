@@ -19,8 +19,8 @@ paired cells. Retained snapshots: `matrix_preratchet.*` (decaying ramp),
    anchors. The flag is exactly `grid_ef_target ∉ {0.00035, 0.00045,
    0.00055}` — verified a pure function of the grid level. Feasibility uses
    all 46,656 cells.
-2. **Deltas are paired.** Infeasibility runs 14% at `h2_start` 2030 and 62%
-   at 2045, so an unpaired mean shrinks any penalty by selection alone — in
+2. **Deltas are paired.** Infeasibility runs 4.8% at `h2_start` 2030 and
+   62.2% at 2045, so an unpaired mean shrinks any penalty by selection alone — in
    exactly the direction of the headline claim. Every delta reports
    `n_pairs` and `n_dropped`.
 
@@ -129,9 +129,24 @@ At `h2_start` 2030, mean 2050 shares against scrap growth:
 
 H2-DRI falls **50% → 11%** as scrap grows, against a near-constant BF-BOF
 share: the two zero-carbon routes trade off against each other, not against
-the incumbent. The ratchet raised H2-DRI's ceiling substantially (it was
-29% → 8% under the decaying ramp), so hydrogen's share is now large enough
-that the displacement story carries the paper.
+the incumbent.
+
+The ratchet raised H2-DRI's share substantially, and that rise is
+**mechanical, not compositional**. Restricting both tables to the cells
+feasible in *both* (so the 3,272 newly-feasible cells — which are the hard,
+hydrogen-hungry ones — cannot inflate the comparison):
+
+| scrap growth | decaying ramp | plateau | Δ |
+|---|---|---|---|
+| 0.00 | 0.285 | 0.502 | +0.216 |
+| 0.04 | 0.253 | 0.417 | +0.164 |
+| 0.08 | 0.160 | 0.218 | +0.057 |
+| 0.10 | 0.083 | 0.107 | +0.024 |
+
+Same cells, same coordinates: the plateau adds 21.6 pp of H2-DRI share in the
+scrap-poor world and 2.4 pp in the scrap-rich one — exactly where a binding
+deployment ceiling would show. Hydrogen's share is now large enough that the
+displacement story carries the paper.
 
 **The retracted 41.5% scrap ceiling stays retracted** — `share_scrap` spans
 0.00–0.71 with no pile-up at a constant.
@@ -158,20 +173,42 @@ P(solved), scrap growth × H2 debut:
 | 0.08 | 1.000 | 0.975 | 0.829 | 0.666 |
 | 0.10 | 1.000 | 1.000 | 0.983 | 0.939 |
 
-**This is the headline the ratchet changed most.** Under the decaying ramp
-the story was "scrap dominates feasibility" (0.534 solved at zero scrap
-growth with a 2030 debut). It is now **either/or**: an early hydrogen
-programme reaches 0.858 with *no* scrap growth at all, and abundant scrap
-reaches 0.939 with hydrogen delayed to 2045. Neither lever is individually
-necessary; the infeasible corner is where **both** fail — late hydrogen and
-poor scrap collection. That is a stronger and more useful policy statement
-than the single-lever version, and it is the one to lead with.
+**This is the headline the ratchet changed most** — but it must be read in
+the joint, not the marginal, because the table above averages over `avg_emi`
+including the easy 2.0 target. P(solved), scrap × H2 debut, **within each
+target**:
+
+| scrap | 1.6: 2030 / 2045 | 1.8: 2030 / 2045 | 2.0: 2030 / 2045 |
+|---|---|---|---|
+| 0.00 | 0.685 / 0.000 | 0.898 / 0.000 | 0.991 / 0.083 |
+| 0.04 | 0.880 / 0.000 | 0.991 / 0.065 | 1.000 / 0.491 |
+| 0.08 | 1.000 / 0.258 | 1.000 / 0.769 | 1.000 / 0.972 |
+| 0.10 | 1.000 / 0.818 | 1.000 / 1.000 | 1.000 / 1.000 |
+
+Under the decaying ramp the story was "scrap dominates feasibility" (0.534
+solved at zero scrap growth with a 2030 debut). It is now **either/or, and it
+survives at the strictest target**: at `avg_emi` 1.6 an early hydrogen
+programme reaches 0.685 with *no* scrap growth at all, and abundant scrap
+reaches 0.818 with hydrogen delayed to 2045. Neither lever is individually
+necessary at any target; the infeasible corner is where **both** fail.
+
+The either/or does weaken as the target tightens — 0.685 and 0.818 at 1.6
+against 0.991 and 0.939-equivalent at 2.0 — so the accurate statement is
+"substitutable at every target, comfortably so at 1.8 and 2.0, with a real
+success-probability cost to relying on either alone at 1.6". Lead with that;
+it is stronger than the single-lever version and it does not overstate.
 
 ## Open items
 
-1. **`h2elec_growth` binds** — the ratchet result is strong indirect evidence
-   (raising the ceiling moved 3,272 cells into feasibility), but confirm
-   directly before claiming H2 uptake is deployment-limited.
+1. **`h2elec_growth` still binds, with diminishing force.** Raising the
+   ceiling moved 3,272 cells into feasibility and added up to 21.6 pp of
+   H2-DRI share on identical cells, so it bound hard under the decaying ramp.
+   Under the plateau it binds less: paired on the calibrated set, `share_h2`
+   rises **+3.86 pp** from low → medium ramp but only **+1.40 pp** from
+   medium → high (`cap_h2dri_2050` 119.6 → 154.1 → 169.6 Mt). So hydrogen is
+   deployment-limited at a low ramp and approaching cost-limited at a high
+   one — do not state either without the qualifier. Confirm directly against
+   the constraint's slack before publishing.
 2. **Peak-annual-build readback** in `report.mod`, to settle whether
    `cap_add_total` stops binding above 30 Mt/yr.
 3. **Parameter provenance table** — coefficients are literature-sourced but

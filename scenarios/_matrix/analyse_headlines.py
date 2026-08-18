@@ -21,6 +21,9 @@ Two rules govern the whole file:
 
 import pathlib
 import pandas as pd
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import axes as AX
 
 RESULTS = pathlib.Path(__file__).resolve().parent / "results"
 COORDS = ["ccoal", "ng", "h2_start", "scrap_rate", "grid_ef_target",
@@ -137,10 +140,30 @@ rule("HEADLINE 5 -- mechanism: H2-DRI share is displaced by scrap")
 print(base[base.h2_start == 2030].groupby("scrap_rate", observed=True)[
     ["share_h2", "share_scrap", "share_bof", "scrap_use_2050"]].mean().round(4).to_string())
 
+rule("HEADLINE 4b -- does the ramp still bind? share_h2 by ramp level")
+print("(if flat, H2 uptake is cost-limited, not deployment-limited)")
+kk = [c for c in COORDS if c != "ramp"]
+piv = cal.pivot_table(index=kk, columns="ramp", values="share_h2",
+                      observed=True).dropna()
+print(f"  paired (n={len(piv):,}):  low->medium {(piv['medium']-piv['low']).mean():+.4f}"
+      f"   medium->high {(piv['high']-piv['medium']).mean():+.4f}")
+print(cal.groupby("ramp", observed=True)[["share_h2", "cap_h2dri_2050"]]
+         .mean().round(4).to_string())
+
 rule("HEADLINE 6 -- feasibility frontier (all 46,656 cells)")
+print("infeasible share by h2_start: "
+      f"{(1 - df.groupby('h2_start').solved.mean()).round(3).to_dict()}\n")
 piv = df.pivot_table(index="scrap_rate", columns="avg_emi", values="solved",
                      aggfunc="mean").round(3)
 print("P(solved) by scrap growth x emissions target\n", piv.to_string())
 print("\nP(solved) by h2_start x scrap growth\n",
       df.pivot_table(index="scrap_rate", columns="h2_start", values="solved",
                      aggfunc="mean").round(3).to_string())
+
+# The either/or reading must be checked in the JOINT, not the marginal: the
+# table above averages over avg_emi, including the easy 2.0 target.
+for tgt in AX.AVG_EMI:
+    print(f"\n  -- within avg_emi {tgt} --")
+    print(df[df.avg_emi == tgt].pivot_table(
+        index="scrap_rate", columns="h2_start", values="solved",
+        aggfunc="mean").round(3).to_string())
