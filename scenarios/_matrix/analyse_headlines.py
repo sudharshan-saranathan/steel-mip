@@ -109,11 +109,23 @@ for m in ("cum_co2", "share_bof", "share_h2"):
     r = paired(cal, "legacy", "run-life", "mandated-phaseout", metric=m)
     print(f"  {m:10s} {r['delta']:+.6g}")
 
+rule("HEADLINE 2b -- is the phase-out cost stable across h2_start?")
+print("(if it is, the number survives whatever the ramp-crest decision is)")
+t = paired(cal, "legacy", "run-life", "mandated-phaseout", by="h2_start")
+print(t.round(2).to_string())
+
 rule("HEADLINE 3 -- shared annual build budget")
 for lo, hi in (("tight", "mid"), ("tight", "loose"), ("mid", "loose")):
     r = paired(cal, "build_cap", lo, hi)
     print(f"  {lo:6s} -> {hi:6s}  {r['delta']:+.2f} $/t   "
           f"(n_pairs {r['n_pairs']:,}, dropped {r['n_dropped']:,})")
+
+print("\n  share of the 20->40 gain captured by the first 10 Mt/yr: "
+      f"{paired(cal,'build_cap','tight','mid')['delta']/paired(cal,'build_cap','tight','loose')['delta']:.1%}")
+
+rule("HEADLINE 3b -- is the build-budget value stable across h2_start?")
+t = paired(cal, "build_cap", "tight", "loose", by="h2_start")
+print(t.round(2).to_string())
 
 rule("HEADLINE 4 -- electrolyser ramp")
 for lo, hi in (("low", "medium"), ("medium", "high")):

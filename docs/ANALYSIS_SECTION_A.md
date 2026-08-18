@@ -31,7 +31,11 @@ headline finding.
 **Evidence it is not a pure restriction.** In an LP, a later `No_H2_Before`
 can only shrink the feasible set, so the objective must be non-decreasing in
 `h2_start`. It is not: over paired coordinates, **67.3% of 2030 → 2035 pairs
-get CHEAPER with delay** (n = 7,626, largest −₹2.67e10 in objective).
+get CHEAPER with delay** (n = 7,626, largest −$2.67e10 in objective, ~1.5% of
+the objective — far above any solver tolerance). The violation rate falls
+67.3% → 20.9% → 0.0% across 2030→2035, 2035→2040, 2040→2045, which is exactly
+what a sliding crest predicts: a five-year slide buys most when the crest is
+still well inside the horizon, and nothing once it is truncated at 2050.
 
 **Controlled test** (`experiments/h2_crest_confound.py`) — same coordinates,
 crest pinned at 2035 via `h2_peak_lag := 2035 − start`:
@@ -47,12 +51,20 @@ Decoupled, LCOP is monotone in the debut year, as theory requires. Coupled,
 2035 shows a spurious −4.8 $/t "delay dividend", and the 2030 → 2045 penalty
 reads 26.5 $/t instead of 30.3 $/t.
 
-**Consequence.** Every `h2_start` number below (Headline 1) is contaminated
-and must not be published as-is. The fix is a model decision, not an analysis
-one: either pin the crest (make `h2_peak_lag` absolute, so the ramp shape is
-a technology fact independent of policy timing) or promote the crest to its
-own lever. Then re-sweep — only the `h2_start` axis is affected, so the other
-levers below stand.
+**This is a semantics decision, not obviously a bug.** A coupled crest is
+defensible physics: an electrolyser industry that debuts in 2045 plausibly
+does crest around 2050, because the supply-chain and learning clock starts at
+debut. The defect is that the model conflates two distinct quantities and the
+paper reported the first as if it were the second:
+
+- **coupled crest** → cost of delaying the hydrogen *programme* (later start
+  plus the ramp reshaping a later start brings with it);
+- **pinned crest** → cost of delaying *deployment* against a fixed industrial
+  ramp — pure timing.
+
+Both are publishable. Deciding which the paper claims comes before the
+re-sweep; if it claims both, `h2_peak_lag` becomes an explicit axis rather
+than a constant. Either way only the `h2_start` geometry changes.
 
 ## Headline 1 (CONTAMINATED — for reference only)
 
@@ -73,8 +85,11 @@ showing through. Re-run after the crest decision.
 
 ## Headline 2 — mandated phase-out of the 2025 fleet: **+37.83 $/t**
 
-n_pairs 4,532, dropped 4. Pre-fix estimate was +36.6 $/t from a single
-coordinate; the paired mean over the calibrated set confirms it.
+n_pairs 4,532, dropped 4. The pre-fix estimate was +36.6 $/t from a single
+coordinate, so the capacity fixes did not materially move it.
+**Robust to the crest decision**: broken out by `h2_start` the delta is
+36.96 / 37.85 / 38.96 / 38.27 $/t at 2030 / 2035 / 2040 / 2045 — a 2 $/t
+spread, so this number survives whatever is decided above.
 Emissions are identical to 1.5e-07 tCO2 — the cumulative cap binds either
 way, so this is pure avoided capex: forced retirement makes the model rebuild
 207.75 Mt it already owns. BOF's 2050 share falls 4.88 pp and H2-DRI's rises
@@ -96,10 +111,19 @@ it as "feasibility is essentially insensitive", not "identical".
 | mid (30) → loose (40 Mt/yr) | −0.72 $/t | 3,023 |
 
 Zero pairs dropped: the budget never decides feasibility. The value is
-**concentrated in the first 10 Mt/yr** (91% of the total gain) and nearly
-exhausted by 30 Mt/yr — the budget stops binding somewhere in 30–40. The
-pre-fix figure of 3.8 $/t for 40 → 20 was measured at one coordinate and
-understates it by half.
+**concentrated in the first 10 Mt/yr** — 91.0% of the 20 → 40 gain, computed
+in the script — and its marginal value is nearly exhausted by 30 Mt/yr.
+Whether the constraint actually stops binding above 30 is NOT established:
+`report.mod` has no peak-annual-build readback, and a small delta is not
+evidence of slack. Add the readback before claiming it. The pre-fix figure of
+3.8 $/t for 40 → 20 was measured at one coordinate and understates it by half.
+
+**Not robust to the crest decision.** Broken out by `h2_start`, the tight →
+loose delta is −7.43 / −5.60 / −5.61 / −16.38 $/t at 2030 / 2035 / 2040 /
+2045: conventional build capacity is worth ~3x more when hydrogen arrives
+late, which is mechanistically sensible but means the aggregate −7.96 $/t is
+weighted by a design whose `h2_start` geometry is about to change. Report the
+breakout, not the mean, and recompute after the re-sweep.
 
 ## Headline 4 — electrolyser ramp
 
