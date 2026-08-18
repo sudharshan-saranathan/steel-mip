@@ -297,6 +297,24 @@ Because `h2_peak_year` is a *defined* param, moving `ng_h2_start_year` moves
 the crest with it — the delay studies sweep the debut year and get a
 correctly-shaped ramp each time, with no per-scenario bookkeeping.
 
+**What the curve represents.** The ramp phase is the state building the
+enabling conditions — port and pipeline infrastructure, power evacuation,
+stack manufacturing, EPC and O&M supply chains, the trained workforce. The
+crest is the point at which that scaffolding is in place. The plateau is the
+**finished state**: a mature industry that adds electrolyser capacity
+steadily, at a rate the completed infrastructure supports. Under this reading
+the crest legitimately follows `ng_h2_start_year`, because the programme
+clock starts when the programme starts; and the plateau height is the same
+whenever the industry matures, because a mature supply chain's throughput
+does not depend on the calendar year it was finished in.
+
+This also makes the ceiling a logistic on *cumulative* capacity rather than a
+bell on the addition rate — the standard adoption form. A decaying tail would
+say the infrastructure itself decays five years after completion, which is
+not what the curve is modelling. (Saturation is not represented here: the
+model's own demand, cost and emissions constraints decide when H2-DRI stops
+growing, so the ceiling stays flat rather than rolling over.)
+
 **The ratchet** (`h2_ramp_ratchet`, default 1, added 2026-08-18). Past the
 crest the raw bell decays back to `h2_base`: it said an industry that added
 1.5 Mt/yr at its crest could manage only 0.24 Mt/yr five years later, with
