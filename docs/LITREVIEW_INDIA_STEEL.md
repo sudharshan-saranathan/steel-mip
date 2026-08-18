@@ -31,7 +31,7 @@ The closest Indian work found:
 | [Carbon abatement options for large iron and steel plants in India](https://doi.org/10.1016/j.jclepro.2024.144505) (J. Cleaner Production, 2024) | Plant-level abatement options. Abstract not in OpenAlex. |
 | [Process-level emission analysis and decarbonization pathway for BF-BOF route](https://doi.org/10.1016/j.jenvman.2024.123483) (J. Environmental Management, 2024) | Single-route process analysis. |
 | [The Contribution of CCS to the Decarbonization of India's Steel Industry](https://doi.org/10.1021/acssuschemeng.3c08088) (ACS Sust. Chem. Eng., 2024) | Single-lever (CCS) assessment. |
-| [Economic analysis of the hard-to-abate sectors in India](https://doi.org/10.1016/j.eneco.2022.106149) (Energy Economics, 2022) | Cross-sector economic analysis. Abstract not in OpenAlex. |
+| [Economic analysis of the hard-to-abate sectors in India](https://doi.org/10.1016/j.eneco.2022.106149) (Energy Economics, 2022) | **Resolved via green OA copy** ([AgEcon 333419](https://ageconsearch.umn.edu/record/333419/files/11103.pdf)): an enhanced **MIT EPPA CGE model** with iron & steel, non-ferrous metals, non-metallic minerals and chemicals represented explicitly. Economy-wide, scenario-based (electrification / gas support / resource efficiency / carbon pricing), reporting emissions trajectories — CCS made competitive by carbon pricing gives 80% reduction by 2050. Not a sectoral capacity-expansion optimisation, and no feasibility surface. |
 | [Towards net-zero emissions concrete and steel in India, Brazil and South Africa](https://doi.org/10.1080/14693062.2023.2187750) (Climate Policy, 2023, 38 cites) | Abstract retrieved. In-country models, decomposition and emissions-driver analysis, scenarios "linked to usable policy levers". Reports mitigation *potential* ranges (13–26% demand side, 58–71% production side) — potential under scenarios, not a feasibility surface. |
 | [Green transformation in the iron and steel industry in India](https://doi.org/10.1016/j.esr.2022.100968) (Energy Strategy Reviews, 2022, 76 cites) | Innovation-systems, qualitative. |
 | [CEEW, *Evaluating Net-zero for the Indian Steel Industry*](https://www.ceew.in/publications/how-can-india-decarbonise-for-net-zero-steel-industry) | MAC curves across four pillars × four steelmaking routes. Fetched: the page does not disclose whether an optimisation underlies it. |
@@ -129,11 +129,17 @@ place to source the parameter provenance table that remains open.
   returned generic industrial-decarbonisation reviews and, worse, materials-
   science papers matching "steel" and "optimization". The filtered
   title/abstract queries worked; the earlier ones wasted budget.
-- **Paywalled abstracts.** The 2023 Energy Conversion & Management paper, the
-  2022 Energy Economics paper and the 2024 J. Cleaner Production paper are the
-  three most likely to contain an optimisation model, and I could not read
-  any of their abstracts directly (ScienceDirect returns 403). **Read these
-  three before making a novelty claim in print.**
+- **Two papers still unread.** Of the three flagged as most likely to contain
+  an optimisation model, the 2022 Energy Economics paper is now resolved (MIT
+  EPPA CGE — see above). The [2023 Energy Conversion & Management](https://doi.org/10.1016/j.enconman.2023.117511)
+  and [2024 J. Cleaner Production](https://doi.org/10.1016/j.jclepro.2024.144505)
+  papers remain unread: both are closed access (Unpaywall: `closed`), neither
+  has an abstract in OpenAlex or Semantic Scholar, and ScienceDirect returns
+  403 to unauthenticated fetches. **Read these two before making a novelty
+  claim in print** — an institutional session reaches them, but this harness
+  has no browser access (the Claude-in-Chrome extension is not connected;
+  claude.ai/chrome would enable it). Failing that, drop the PDFs into the repo
+  and I can read them directly.
 - **Grey literature is thin in OpenAlex.** Much Indian sectoral modelling
   lives in TERI, CEEW, NITI Aayog, IEA and IEEFA reports. The one CEEW page
   fetched did not disclose its method. If a lever sweep exists anywhere, a
