@@ -1,7 +1,9 @@
 # Section A — analysis of the design matrix
 
-Table: `scenarios/_matrix/results/matrix.parquet`, model_commit `0c3a6f2`,
-46,656 cells, **30,371 solved / 16,285 infeasible, 0 errors**, 14.1 min.
+Table: `scenarios/_matrix/results/matrix.parquet`, model_commit `be8751d`,
+46,656 cells, **30,371 solved / 16,285 infeasible, 0 errors**, 21.8 min at
+`-j 12`. `core/` is unchanged since `0c3a6f2`, under which these numbers were
+first produced; the table has since been regenerated and reproduces them.
 Every number here is produced by `scenarios/_matrix/analyse_headlines.py`
 (raw output: `analysis_section_a_raw.txt`). Nothing is hand-arithmetic.
 
@@ -9,8 +11,15 @@ Supersedes the pre-ratchet reading of this table. The electrolyser ramp
 ceiling now plateaus at its crest instead of decaying (`h2_ramp_ratchet`, see
 `docs/core/modules/v_capacity.md`); the previous ceiling let a LATE hydrogen
 debut out-build an early one, which made delay come out cheaper in 67.3% of
-paired cells. Retained snapshots: `matrix_preratchet.*` (decaying ramp),
-`matrix_pre_capfix.*` (before the four capacity fixes).
+paired cells.
+
+**Provenance warning.** The pre/post comparisons below — the 3,272-cell
+relaxation count, and the decaying-ramp column in Headline 5 — were computed
+against `matrix_preratchet.*` and `matrix_pre_capfix.*`, which **no longer
+exist**: they were gitignored and have not survived. Those specific figures are
+carried forward from the session that computed them and cannot currently be
+re-derived. Everything else on this page regenerates from the live table.
+Rebuilding the pre-ratchet snapshot means sweeping with `h2_ramp_ratchet := 0`.
 
 ## Two rules the analysis obeys
 

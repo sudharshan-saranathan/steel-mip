@@ -108,8 +108,8 @@ success, and the design weights each level of each lever equally.
 
 The model is written in AMPL and solved with Gurobi 13.0.2. Each instance
 presolves to approximately 1,000 constraints by 950 variables and solves in
-well under a second by dual simplex; the full design solves in 14 minutes on
-six cores. Source code, scenario definitions and the complete results table are
+well under a second by dual simplex; the full design solves in roughly 20
+minutes on twelve cores. Source code, scenario definitions and the complete results table are
 available at [repository].
 
 ### Limitations

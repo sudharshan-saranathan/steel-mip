@@ -40,6 +40,59 @@ changes when the lever moves.
 | legacy | 0.002 | 0.2% | mandated-phaseout = 0.650 | run-life = 0.652 |
 | build_cap | 0.000 | 0.0% | tight = 0.651 | loose = 0.651 |
 
+## 2b. Lever ranking within each emissions target
+
+The same two measures with `avg_emi` held fixed, so it drops out as a
+lever. Reported because the pooled ranking above averages over targets,
+which hides levers that trend in opposite directions across them:
+coking-coal availability RISES in importance as the target loosens while
+every other lever falls.
+
+### Emissions target 1.6 tCO2/t crude steel
+
+15,552 cells, 7,302 feasible (47.0%).
+
+| lever | swing | decisive | least permissive | most permissive |
+|---|---|---|---|---|
+| scrap_rate | 0.740 | 74.0% | 0.0 = 0.201 | 0.1 = 0.942 |
+| h2_start | 0.702 | 70.2% | 2045 = 0.181 | 2030 = 0.883 |
+| grid_ef_target | 0.361 | 36.1% | 0.00085 = 0.278 | 5e-05 = 0.639 |
+| ramp | 0.176 | 17.6% | low = 0.374 | high = 0.550 |
+| ccoal | 0.085 | 8.5% | scarce = 0.427 | abundant = 0.512 |
+| ng | 0.060 | 6.0% | bau = 0.439 | policy = 0.500 |
+| legacy | 0.005 | 0.5% | mandated-phaseout = 0.467 | run-life = 0.472 |
+| build_cap | 0.001 | 0.1% | tight = 0.469 | loose = 0.470 |
+
+### Emissions target 1.8 tCO2/t crude steel
+
+15,552 cells, 10,245 feasible (65.9%).
+
+| lever | swing | decisive | least permissive | most permissive |
+|---|---|---|---|---|
+| scrap_rate | 0.653 | 65.3% | 0.0 = 0.347 | 0.1 = 1.000 |
+| h2_start | 0.614 | 61.4% | 2045 = 0.361 | 2030 = 0.975 |
+| grid_ef_target | 0.316 | 31.6% | 0.00085 = 0.493 | 5e-05 = 0.809 |
+| ccoal | 0.132 | 13.2% | scarce = 0.593 | abundant = 0.725 |
+| ramp | 0.122 | 12.2% | low = 0.593 | high = 0.714 |
+| ng | 0.069 | 6.9% | bau = 0.624 | policy = 0.693 |
+| legacy | 0.001 | 0.1% | mandated-phaseout = 0.658 | run-life = 0.659 |
+| build_cap | 0.000 | 0.0% | loose = 0.659 | loose = 0.659 |
+
+### Emissions target 2.0 tCO2/t crude steel
+
+15,552 cells, 12,824 feasible (82.5%).
+
+| lever | swing | decisive | least permissive | most permissive |
+|---|---|---|---|---|
+| scrap_rate | 0.441 | 44.1% | 0.0 = 0.559 | 0.1 = 1.000 |
+| h2_start | 0.408 | 40.8% | 2045 = 0.591 | 2030 = 0.998 |
+| grid_ef_target | 0.273 | 27.3% | 0.00085 = 0.682 | 5e-05 = 0.955 |
+| ccoal | 0.151 | 15.1% | scarce = 0.749 | abundant = 0.900 |
+| ramp | 0.071 | 7.1% | low = 0.785 | high = 0.856 |
+| ng | 0.062 | 6.2% | bau = 0.793 | policy = 0.856 |
+| legacy | 0.001 | 0.1% | mandated-phaseout = 0.824 | run-life = 0.825 |
+| build_cap | 0.000 | 0.0% | tight = 0.824 | loose = 0.825 |
+
 ## 3. Feasibility surface: scrap growth x H2 debut, within each target
 
 P(feasible). Rows = annual scrap-availability growth; columns = year green
@@ -189,7 +242,7 @@ Effect on the 2050 hydrogen share and installed H2-DRI capacity:
 |---|---|---|
 | high | 0.313 | 169610046.672 |
 | low | 0.221 | 119611672.298 |
-| medium | 0.284 | 154114839.967 |
+| medium | 0.284 | 154114823.970 |
 
 ## 12. Route shares in 2050, by scrap growth
 

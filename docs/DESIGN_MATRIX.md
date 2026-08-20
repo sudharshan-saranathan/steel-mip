@@ -7,7 +7,8 @@ rather than a separate script with its own backdrop.
 - `scenarios/_matrix/axes.py` — axis registry (single source of truth)
 - `scenarios/_matrix/report.mod` — post-solve accounting (computes only)
 - `scenarios/_matrix/run_matrix.py` — parallel runner
-- output: `scenarios/_matrix/results/matrix.csv` (gitignored)
+- `scenarios/_matrix/to_parquet.py` — CSV → parquet, stamps provenance metadata
+- output: `scenarios/_matrix/results/matrix.{csv,parquet}` (gitignored)
 
 ## Why
 
@@ -24,40 +25,62 @@ its own at all. Its six "named scenarios" are points in this space — EF1.6/EF1
 are `avg_emi`, S4/S8 are scrap 0.04/0.08, and RL/RH are byte-identical to
 `ramp_low`/`ramp_high`.
 
-## Axes — 524,880 cells
+## Axes — 46,656 cells
 
-| Axis | Levels | Values |
-|---|---|---|
-| `ccoal` | 3 | abundant, scarce, **unbounded** (core default) |
-| `ng` | 3 | policy, bau, **baseline** (core's own series) |
-| `h2_start` | 4 | 2030, 2035, 2040, 2045 |
-| `avg_emi` | 9 | 1.60 … 2.00, step 0.05 |
-| `ramp` | 3 | low, medium, high |
-| `scrap_rate` | 6 | 0.00 … 0.10, step 0.02 |
-| `grid_ef` | 9 | 0.00005 … 0.00085, step 0.0001 |
-| `theta_ccs` | 5 | 0, 0.25, 0.5, 0.75, 1 |
-| `whr_mode` | 2 | integrated, boiler-only |
+**The selection criterion is that the design sweeps only what policy
+controls** — levers a ministry can decide through investment or regulation.
+Everything else is either a constant (background condition) or belongs to
+Section B, the Monte Carlo over things nobody controls. This is what took the
+design from an earlier 524,880 cells down to 46,656: the earlier version swept
+everything that *could* vary, this one sweeps what the paper can make a policy
+claim about.
+
+| Axis | Levels | Values | Policy it represents |
+|---|---|---|---|
+| `ccoal` | 2 | abundant (293.6 Mt by 2050), scarce (91.1 Mt) | Import policy, domestic supply |
+| `ng` | 2 | policy (32.2 Mm³ by 2050), bau (10.7 Mm³) | Gas allocation to steel |
+| `h2_start` | 4 | 2030, 2035, 2040, 2045 | Green-H₂ debut year |
+| `scrap_rate` | 6 | 0.00 … 0.10 /yr, step 0.02 | Collection infrastructure, ELV rules |
+| `grid_ef` | 9 | 0.00005 … 0.00085 tCO₂/kWh, step 0.0001 | Power-sector decarbonisation |
+| `ramp` | 3 | low 4 / medium 6 / high 8 M(t-H₂/yr) | Electrolyser deployment rate |
+| `build_cap` | 3 | tight 20 / mid 30 / loose 40 Mt/yr | Shared annual build budget |
+| `legacy` | 2 | run-life, mandated-phaseout | Retirement of the 2025 fleet |
+| **`avg_emi`** | **3** | **1.6, 1.8, 2.0 tCO₂/t** | **The constraint being tested — not a lever** |
+
+2 × 2 × 4 × 6 × 9 × 3 × 3 × 2 = **15,552 lever combinations**, each solved
+against all three targets = **46,656 cells**.
+
+### Held fixed (`CONSTANTS` in `axes.py`)
+
+`theta_tech` = 0.5 and `theta_ccs` = 0.5 are technology learning rates set by
+global science, not Indian policy, so they are constants here and sampled in
+Section B. `whr_ccs_integration` = 1 is a plant engineering choice.
+
+Both thetas were **measured across their full range before being demoted**:
+`theta_ccs` moves LCOP by 3.5 $/t with *zero* effect on feasibility, and
+`whr_mode` by 1.3 $/t — against a 36.58 $/t hydrogen-delay penalty. That is a
+sensitivity result, not an assumption.
 
 ### How the level counts were chosen
 
-Rebalanced against **measured** response, not per-study convention. Swing in
-LCOP across each axis's sampled range, others held at baseline:
+Rebalanced against **measured** response, not per-study convention.
 
-| Axis | Old levels | $/t per step | Action |
-|---|---|---|---|
-| `avg_emi` | 3 | **20.0** | 3 → **9**. Coarsest axis, and the one that decides feasibility — every scrap infeasibility and most of hydrogen-delay's sit at 1.6. |
-| `h2_start` | 4 / 6 | 11.9 | → **4**. Two studies used 5-yr spacing, one used 3-yr, for no documented reason. 5-yr chosen (user decision, 2026-08-17). |
-| `scrap_rate` | 11 | 9.2 | 11 → **6**. Response near-linear (mean 2nd difference 1.2 $/t vs ~9 $/t first differences); interpolation error ~1–2 $/t. |
-| `theta_ccs` | 5 | 6.7 | unchanged. |
-| `ramp` | 3 | 4.0 | unchanged at 3 — weakest axis, but `medium` is the baseline every other study uses and dropping it would break the regression oracle. |
-| `grid_ef` | 18 | — | 18 → **9**. The study's output is one *threshold* per cell, not 18 levels; 0.0001 spacing still brackets it. A bisection would need ~5 adaptive solves, at the cost of making the runner non-factorial — deferred. |
+| Axis | Old levels | Action |
+|---|---|---|
+| `h2_start` | 4 / 6 | → **4**. Two studies used 5-yr spacing, one 3-yr, for no documented reason. 5-yr chosen (user decision, 2026-08-17). |
+| `scrap_rate` | 11 | → **6**. Response near-linear; interpolation error ~1–2 $/t. |
+| `grid_ef` | 18 | → **9**. The output is one *threshold* per cell, not 18 levels; 0.0001 spacing still brackets it. |
+| `avg_emi` | 9 | → **3**. The three targets the original studies used. It is the constraint, and three named targets is the right granularity for that role. |
+| `ramp` | 3 | unchanged — `medium` is the baseline every other study uses, so dropping it would break the regression oracle. |
+| `theta_ccs`, `whr_mode` | 5, 2 | **removed** — not policy levers (see above). |
+| `build_cap`, `legacy` | — | **added**. `build_cap` was previously collinear with `ramp` (ratio 2.5), so any effect attributed to "H2 ramp" was partly conventional capacity. |
 
 Two rules constrain any future edit to `axes.py`:
 
 1. **Every level set must contain its baseline value** (see `BASELINE` in
    `axes.py`), so the original studies remain reproducible slices.
 2. `grid_ef` is offset by 0.00005 so the 0.0001 grid lands *on* 0.00045, the
-   value implied by `theta_grid = 0.5`.
+   value implied by `theta_grid = 0.5` (`core/definitions.mod:168-169`).
 
 ### Grid EF band and extrapolation
 
@@ -74,25 +97,31 @@ Every row carries `theta_grid` and an `extrapolated` flag so this is
 queryable rather than hidden. **Filter on `extrapolated == 0` for any claim
 about cost.**
 
+Verified on the solved table: `extrapolated` is exactly
+`grid_ef_target ∉ {0.00035, 0.00045, 0.00055}` — a pure function of the grid
+level. That leaves **10,202 of 30,371 feasible cells (33.6%)** usable for $/t.
+Feasibility uses all 46,656.
+
 ## Output schema
 
 One row per cell, solved or not. Infeasible rows keep their coordinates and
 carry whatever numerics the solver left — filter on `solve_result == 'solved'`
 before using any metric.
 
-**Infeasibility arrives by two paths, and both count.** Most cells return
-`solve_result = infeasible` from Gurobi. A minority return
+**Infeasibility can arrive by two paths, and both count.** Most cells return
+`solve_result = infeasible` from Gurobi. Some may instead return
 `ERROR: AMPLException: presolve: constraint steel_balance[...] cannot hold` —
 AMPL's presolve proving infeasibility arithmetically before the solver runs.
-These are concentrated in the tightest corner (`scarce` coal + `bau` gas +
-late H2 debut), where no route combination can physically meet demand. They
-are **genuine infeasibilities, not run failures**: count them as infeasible.
-Dropping them biases the feasibility frontier toward looking more permissive
-exactly where it is tightest. Use
+These are **genuine infeasibilities, not run failures**: count them as
+infeasible. Dropping them would bias the feasibility frontier toward looking
+more permissive exactly where it is tightest. Use
 `solved = (solve_result == 'solved')` and treat everything else as infeasible,
-rather than filtering `ERROR` rows out. Columns: the 9 axis coordinates, then
-`solve_result`, `objective`, `theta_grid`, `extrapolated`, then the metrics
-(union of the six studies' reports).
+rather than filtering `ERROR` rows out. (The current design produces **zero**
+ERROR rows; the rule stands for future edits that tighten the corner.)
+
+Columns: the 9 axis coordinates, then `solve_result`, `objective`,
+`theta_grid`, `extrapolated`, then the metrics (union of the six studies'
+reports).
 
 Two additions beyond the union:
 
@@ -100,20 +129,18 @@ Two additions beyond the union:
   row *proves* the grid axis propagated (see the invariant below).
 - **`ccoal_bind_yrs`, `ng_bind_yrs`** — years in which each availability cap
   binds. These are the companions to `import_bill`, which **inverts**: scarce
-  regimes post *lower* import bills (LoCoal-LoNG 288 B$ vs HiCoal-HiNG 363 B$)
-  while costing *more* per tonne (568.5 vs 559.7 $/t), because a binding cap
-  forbids importing. A low bill with a high bind-year count is forced
-  scarcity, not a good outcome. `import_bill` itself is unchanged so old
+  regimes post *lower* import bills while costing *more* per tonne, because a
+  binding cap forbids importing. A low bill with a high bind-year count is
+  forced scarcity, not a good outcome. `import_bill` itself is unchanged so old
   results stay reproducible.
 
 Per-year output (the abatement decomposition, 26 rows/run) is **deliberately
-not** in this table, and not merely for size reasons (524,880 × 26 = 13.6M
-rows). The matrix answers a feasibility question — one bit per cell plus
-endpoint metrics — and that question has no time dimension. Year-wise trends
-answer a different question: how abatement accrues over time. That needs a
-handful of scenarios, not the cross product, so it stays a separate small run
-(the old study was 7 scenarios x 26 years = 182 rows) and should not be scaled
-with the matrix.
+not** in this table, and not merely for size reasons. The matrix answers a
+feasibility question — one bit per cell plus endpoint metrics — and that
+question has no time dimension. Year-wise trends answer a different question:
+how abatement accrues over time. That needs a handful of scenarios, not the
+cross product, so it stays a separate small run (the old study was 7 scenarios
+× 26 years = 182 rows) and should not be scaled with the matrix.
 
 ## The one invariant
 
@@ -125,6 +152,9 @@ while every later row still records the *requested* target — a table that look
 plausible and is wrong. `grid_ef_2050` is the tripwire: if it ever goes constant
 while `grid_ef_target` varies, this has been violated.
 
+Checked on the current table: 9 distinct `grid_ef_2050` against 9 targets, max
+|`grid_ef_2050` − `grid_ef_target`| = 1.0e-16. Clean.
+
 Related: `Threads=1`. Measured, Gurobi gains ~9% from a 10× thread budget on
 this LP — it solves by dual simplex (~1,400 iterations, presolved to
 1,058 × 950), which does not parallelize. Parallelism belongs across cells.
@@ -132,23 +162,31 @@ this LP — it solves by dual simplex (~1,400 iterations, presolved to
 ## Running
 
 ```bash
-python3 scenarios/_matrix/axes.py                    # print the design + size
-python3 scenarios/_matrix/run_matrix.py --verify     # baseline cell only
-python3 scenarios/_matrix/run_matrix.py --smoke      # 20 cells
-python3 scenarios/_matrix/run_matrix.py -j 6         # full matrix, ~4.2 h
-python3 scenarios/_matrix/run_matrix.py -j 6 --resume # continue a partial run
+python3 scenarios/_matrix/axes.py                     # print the design + size
+python3 scenarios/_matrix/run_matrix.py --verify      # baseline cell only
+python3 scenarios/_matrix/run_matrix.py --smoke       # 20 cells
+python3 scenarios/_matrix/run_matrix.py -j 12         # full matrix
+python3 scenarios/_matrix/run_matrix.py -j 12 --resume  # continue a partial run
+python3 scenarios/_matrix/to_parquet.py               # then convert for analysis
 ```
 
-Measured throughput: **34.7 cells/s on 6 workers** (6 physical cores).
+Throughput is machine-dependent: **35.7 cells/s (21.8 min) at `-j 12` on a
+12-core M4 Pro**, against 48–59 cells/s at the same `-j` on a 6-physical-core
+box. On Apple silicon the efficiency cores drag the average, so `-j 8` may beat
+`-j 12` — untested.
+
+Requires `amplpy` with the `base` and `gurobi` AMPL modules, plus `pandas` and
+`pyarrow` for the parquet step.
 
 ## Verification
 
-- Row count must equal the product of the axis levels exactly: **524,880**.
-- The import-dependence anchor reproduces **bit-identically**: cell
-  (abundant, policy, 2030, 1.8, medium, 0.06, 0.00045, 0.5, integrated) gives
-  objective `1972188578542.0989` vs the stored `1972188578542.098877`
-  (relative delta 0.0), `import_bill` 362.8 B$, `lcop` 559.66 — all matching
-  the old `impdep_summary.csv` row.
+- Row count must equal the product of the axis levels exactly: **46,656**.
+- `--verify` solves the baseline coordinate (`BASELINE` in `axes.py`:
+  abundant / policy / 2030 / scrap 0.06 / grid 0.00045 / medium ramp / tight
+  build / run-life / 1.8) and must give **lcop 516.74 $/t** with
+  `avg_emis` 1.800.
+- Reference run (model_commit `be8751d`): **30,371 solved, 16,285 infeasible,
+  0 errors**; 10,202 calibrated.
 - The six per-study drivers are **retained** as the regression oracle. Do not
   delete them until each study's slice has been checked against its own CSV.
 
@@ -159,7 +197,9 @@ Measured throughput: **34.7 cells/s on 6 workers** (6 physical cores).
 - ~~**Adaptive bisection** on `grid_ef`~~ — declined 2026-08-17. The fixed
   9-level grid resolves the frontier to 0.0001 tCO2/kWh, which is enough;
   keeping the design a clean factorial is worth more than the extra precision.
-- **Solved fraction will drop sharply** versus the old studies: `avg_emi` now
-  samples 1.65/1.70/1.75, i.e. *into* the infeasible region. That is the design
-  working — the boundary is the result — but the table will be mostly
-  infeasible, and slices must filter accordingly.
+- **Peak-annual-build readback** missing from `report.mod`. Without it, whether
+  `cap_add_total` stops binding above 30 Mt/yr is unevidenced — a small delta
+  is not proof of slack.
+- **`build_h2dri` has no per-year build cap** (`v_capacity.mod:150`), unlike
+  the four conventional routes. This asymmetry limits the strongest reading of
+  the build-budget result.

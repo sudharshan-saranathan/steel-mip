@@ -90,9 +90,9 @@ scrap_rate
 HEADLINE 2 -- mandated phase-out of the 2025 fleet
 ======================================================================
   LCOP  +38.17 $/t   (n_pairs 5,096, dropped 10)
-  cum_co2    +4.11712e-08
+  cum_co2    -9.58166e-08
   share_bof  -0.0625839
-  share_h2   +0.00475077
+  share_h2   +0.00475075
 
 ======================================================================
 HEADLINE 2b -- is the phase-out cost stable across h2_start?

@@ -14,10 +14,17 @@ they answer a different question and rest on a third of the design.
 | `LITREVIEW_INDIA_STEEL.md` | Literature check on the framing |
 | `analysis_section_a_raw.txt`, `analysis_section_a_feasibility.txt` | Raw script output |
 
-Table: `scenarios/_matrix/results/matrix.parquet`, model_commit `0c3a6f2`,
-46,656 cells, 30,371 solved, 0 errors, 14.1 min at `-j 12`. Snapshots kept:
-`matrix_preratchet.*` (decaying ramp), `matrix_pre_capfix.*` (pre capacity
-fixes). All gitignored — regenerate with `run_matrix.py` then `to_parquet.py`.
+Table: `scenarios/_matrix/results/matrix.parquet`, model_commit `be8751d`,
+46,656 cells, 30,371 solved, 0 errors, 21.8 min at `-j 12`. `core/` is
+unchanged since `0c3a6f2`. All results are gitignored — regenerate with
+`run_matrix.py` then `to_parquet.py`.
+
+**The `matrix_preratchet.*` and `matrix_pre_capfix.*` snapshots no longer
+exist** on any machine reachable from this repo. The pre/post-ratchet
+comparisons in `ANALYSIS_SECTION_A.md` (Headline 5, the 3,272-cell relaxation
+count) therefore cannot currently be re-derived. To rebuild the pre-ratchet
+snapshot, sweep with `h2_ramp_ratchet := 0`; the capacity-fix snapshot predates
+the current model and is not recoverable.
 
 **Never hand-derive a number.** `analyse_feasibility.py` and
 `analyse_headlines.py` produce everything in the docs.
@@ -103,5 +110,12 @@ fixes). All gitignored — regenerate with `run_matrix.py` then `to_parquet.py`.
 
 ## Environment
 
-`amplpy` 0.18.0, Gurobi 13.0.2 and HiGHS as AMPL modules. Threads=1 per solve,
-parallelism across cells; 12 workers gave 48–59 cells/s on 6 physical cores.
+Conda env `py313-cat`: `amplpy` 0.16.0 with the `base` and `gurobi` AMPL
+modules (Gurobi 13.0.2), plus `pandas` and `pyarrow` — `to_parquet.py` and both
+analysis scripts need parquet support. AMPL licence is academic, valid to
+2027-04-08. Threads=1 per solve, parallelism across cells.
+
+Throughput is machine-dependent: 35.7 cells/s at `-j 12` on a 12-core M4 Pro
+(8P+4E), against 48–59 cells/s at the same `-j` on a 6-physical-core box. The
+efficiency cores drag the average on Apple silicon, so `-j 8` may beat `-j 12`
+there — untested.
