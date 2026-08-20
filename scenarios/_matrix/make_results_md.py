@@ -109,6 +109,34 @@ rank["swing"] = rank.swing.map("{:.3f}".format)
 rank["decisive"] = rank.decisive.map("{:.1%}".format)
 table(rank, "lever")
 
+w("## 2b. Lever ranking within each emissions target")
+w("")
+w("The same two measures with `avg_emi` held fixed, so it drops out as a")
+w("lever. Reported because the pooled ranking above averages over targets,")
+w("which hides levers that trend in opposite directions across them:")
+w("coking-coal availability RISES in importance as the target loosens while")
+w("every other lever falls.")
+w("")
+for tgt in AX.AVG_EMI:
+    d = df[df.avg_emi == tgt]
+    w(f"### Emissions target {tgt} tCO2/t crude steel")
+    w("")
+    w(f"{len(d):,} cells, {d.ok.sum():,} feasible ({d.ok.mean():.1%}).")
+    w("")
+    rows = []
+    for lev in LEVERS:
+        g = d.groupby(lev, observed=True).ok.mean()
+        keys = [c for c in LEVERS if c != lev]
+        grp = d.groupby(keys, observed=True).ok.agg(["min", "max"])
+        rows.append({"lever": lev, "swing": g.max() - g.min(),
+                     "decisive": (grp["min"] != grp["max"]).mean(),
+                     "least permissive": f"{g.idxmin()} = {g.min():.3f}",
+                     "most permissive": f"{g.idxmax()} = {g.max():.3f}"})
+    r = pd.DataFrame(rows).sort_values("swing", ascending=False).set_index("lever")
+    r["swing"] = r.swing.map("{:.3f}".format)
+    r["decisive"] = r.decisive.map("{:.1%}".format)
+    table(r, "lever")
+
 w("## 3. Feasibility surface: scrap growth x H2 debut, within each target")
 w("")
 w("P(feasible). Rows = annual scrap-availability growth; columns = year green")

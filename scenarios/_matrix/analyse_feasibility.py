@@ -56,6 +56,28 @@ for lev in LEVERS + ["avg_emi"]:
     flip = (g["min"] != g["max"]).mean()
     print(f"  {lev:15s} {flip:6.1%}  of {len(g):,} groups")
 
+rule("2b -- lever ranking WITHIN each target")
+print("same swing/decisiveness, computed with avg_emi held fixed so it drops\n"
+      "out as a lever. The pooled ranking above averages over targets, which\n"
+      "hides two levers that trend in OPPOSITE directions across them.\n")
+for tgt in AX.AVG_EMI:
+    d = df[df.avg_emi == tgt]
+    print(f"-- avg_emi {tgt} --   cells {len(d):,}   "
+          f"feasible {d.ok.sum():,} ({d.ok.mean():.1%})")
+    rows = []
+    for lev in LEVERS:
+        g = d.groupby(lev, observed=True).ok.mean()
+        keys = [c for c in LEVERS if c != lev]
+        gg = d.groupby(keys, observed=True).ok.agg(["min", "max"])
+        rows.append({"lever": lev, "swing": g.max() - g.min(),
+                     "decisive": (gg["min"] != gg["max"]).mean(),
+                     "worst": f"{g.idxmin()}={g.min():.3f}",
+                     "best": f"{g.idxmax()}={g.max():.3f}"})
+    r = pd.DataFrame(rows).sort_values("swing", ascending=False)
+    r["swing"] = r.swing.map("{:.3f}".format)
+    r["decisive"] = r.decisive.map("{:.1%}".format)
+    print(r.to_string(index=False), "\n")
+
 rule("3 -- the two dominant levers, jointly, within each target")
 for tgt in AX.AVG_EMI:
     print(f"\n-- avg_emi {tgt} --   P(feasible), rows=scrap growth, "
