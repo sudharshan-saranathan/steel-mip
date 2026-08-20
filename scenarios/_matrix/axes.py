@@ -56,8 +56,12 @@ RAMP = [("low", 4_000_000), ("medium", 6_000_000), ("high", 8_000_000)]
 
 # Shared annual build budget across the four conventional routes (Mt/yr).
 # Finance and EPC capacity the sector can deploy in one year -- industrial
-# policy, so a lever rather than a constant. It BINDS at every level tested
-# (peak annual build sits exactly at the cap); 20 -> 40 Mt/yr is worth 3.8 $/t.
+# policy, so a lever rather than a constant. 20 -> 40 Mt/yr is worth 5.54 $/t
+# on average, but that mean is an artefact of how the design weights h2_start:
+# the value runs 3.21 / 3.54 / 5.10 / 16.38 $/t at a 2030 / 2035 / 2040 / 2045
+# hydrogen debut. Report it disaggregated. It never decides feasibility (0.0%
+# of scenarios flip). Whether the constraint still BINDS above 30 Mt/yr is not
+# established -- report.mod has no peak-annual-build readback.
 # Note the four routes COMPETE for this budget (cap_add_total in
 # v_capacity.mod); it is not a per-route allowance.
 BUILD_CAP = [("tight", 20e6), ("mid", 30e6), ("loose", 40e6)]
@@ -91,7 +95,8 @@ AXES = {
 # Held fixed in every cell. Values chosen for the reasons noted; the two thetas
 # were measured across their full range before being demoted -- theta_ccs moves
 # LCOP by 3.5 $/t with ZERO effect on feasibility, whr_mode by 1.3 $/t, against
-# a 28.6 $/t H2-delay penalty. That is a sensitivity result, not an assumption.
+# a 36.58 $/t H2-delay penalty (2030 -> 2045 at 0.06 scrap growth). That is a
+# sensitivity result, not an assumption.
 CONSTANTS = {
     "theta_tech":          0.5,      # H2/RE learning -- science, not policy (Section B)
     "theta_ccs":           0.5,      # CCS learning   -- science, not policy (Section B)
@@ -127,5 +132,8 @@ if __name__ == "__main__":
     print(f"\nconstants: {CONSTANTS}")
     n = size()
     print(f"\ntotal cells: {n:,}")
-    for w in (6, 12):
-        print(f"  {w:2d} workers @ ~47 cells/s total: {n / 47 / 60:.1f} min")
+    # Measured: 35.7 cells/s at -j 12 on a 12-core M4 Pro (8P+4E). Throughput is
+    # machine-dependent -- an earlier 6-physical-core box did 48-59 cells/s at
+    # the same -j. Treat this as an order-of-magnitude estimate, not a spec.
+    for rate in (36, 48, 59):
+        print(f"  @ {rate:2d} cells/s: {n / rate / 60:.1f} min")

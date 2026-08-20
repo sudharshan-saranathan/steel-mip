@@ -166,7 +166,7 @@ param n9_whr {t in T} :=
     0.05 +(0.3 - 0.05) * (t - 2025) / 25;               # WHRS penetration level from 5% in 2025 to 30% by 2050
 param n9_grid_ef_start default 0.000886; #0.000757 from grid having 36% share and 0.00096 from CPP having 64% share
 param n9_grid_ef_end default
-    grid_ef_end_slow + theta_grid * (grid_ef_end_fast - grid_ef_end_slow);   # theta_grid-coupled (0.0003 at 0.5)
+    grid_ef_end_slow + theta_grid * (grid_ef_end_fast - grid_ef_end_slow);   # theta_grid-coupled (0.00045 at 0.5)
 param n9_grid_ef{t in T} :=
     n9_grid_ef_start + (n9_grid_ef_end - n9_grid_ef_start) * (t - 2025) /25;   # Grid emission factor from 2025 to 2050
 

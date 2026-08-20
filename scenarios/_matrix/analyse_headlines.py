@@ -13,7 +13,7 @@ Two rules govern the whole file:
 
 2. DIFFERENCES ARE PAIRED. A delta between two levels of one lever is only
    meaningful over coordinates feasible at BOTH levels. Infeasibility runs
-   19.7% at h2_start=2030 and 62.2% at 2045, so averaging over whatever
+   4.8% at h2_start=2030 and 62.2% at 2045, so averaging over whatever
    survives makes any penalty shrink by selection alone -- in exactly the
    direction of the headline claim. Every delta below reports n_pairs and
    n_dropped.
