@@ -27,6 +27,8 @@ Benchmark cell: EF 1.8, mid ramp, H₂ from 2030 (paper Fig. 3: LCOP 524 $/t, H�
 | 6 | `3f225f8` | ST-13 emission factors as sourced parameters ⚑ | 420.7 | 24.2 % | 2.555 |
 | 7 | `9fcfdb8` | ST-03 pellet fuel, ST-04 purchased breeze carbon ⚑ | 424.3 | 26.6 % | 2.620 |
 | 8 | `9d70a87` | BF-BOF coefficients (fuel rate etc.) ⚑ | 409.9 | 17.6 % | 2.442 |
+| 9 | `c376a12` | ST-12 firming plug removed; green-H₂ inputs ⚑ | 410.4 | 12.6 % | 2.442 |
+| 10 | `861a6a9` | ST-10 capture limit; CCS start 2035, ceiling 25 %; costs ⚑ | 410.7 | 12.6 % | 2.442 |
 
 ## 2. Decisions I made on your behalf (⚑)
 
@@ -54,10 +56,33 @@ Verified in the source: Ministry of Steel 2024 Table 5.4 (BF fuel rate 505–579
 
 Not changed (noted for later): carbon in sold tar is counted as emitted (small over-count); whether "lime" flows mean limestone or burnt lime; BF slag kept at 0.30 although Indian ore suggests ~0.40 (slag earns a credit, so the lower value is pessimistic). 18 of 61 parameters in this group have no admissible source and keep their current values (sheet §H). SAIL's annual report could not be opened (incomplete TLS chain); I did not bypass certificate checks.
 
+### Green hydrogen (sheet: `stage2/hydrogen.md`)
+Verified in source: IEA *Global Hydrogen Review 2025*, IOCL Panipat bid "INR 397/kg H2 (~USD 4.6/kg H2)"; IEA WEO 2024 Table B.4a India capacity factors (solar 20–22 %, wind 26–30 %).
+| Call | My choice | Why |
+|---|---|---|
+| Firming plug (ST-12) | **Removed** (`h2_firm_on = 0`, can be switched back) | With sourced inputs the bottom-up cost is **4.72 $/kg in 2025**, already above the Indian tender median (3.6; range 3.0–5.1). The plug forced 5 $/kg and declined by an unsourced rule |
+| `re_cf` | **0.25** (median of 6; was 0.35, unsourced) | Also sets electrolyser utilisation |
+| 2050 end-points | slow = **no learning** (pessimistic bound, stated as such); fast = **IRENA best-case electrolyser 159 $/kW, IEA hybrid RE 695 $/kW** | The old fast values were back-solved to 1.50 $/kg, below every source. 2050 H₂ cost at θ_tech 0 / 0.5 / 1 is now **4.72 / 3.55 / 2.39 $/kg** (was 5.00 / 3.25 / 1.50) |
+| H₂ ramp levels 0.5/1/1.5 Mt/yr | **Unchanged** (paper's design) | Flag: even the low level is ~70 % of the whole-economy NGHM pace; see "Needs your call" |
+Other values: electrolyser 800 $/kW; RE 835 $/kW (now a parameter, was hard-coded); 53 kWh/kg; variable opex 30 $/t (was 300, unsourced); electrolyser O&M 3 % of capex, now falling with capex; RE O&M 22 $/kW-yr.
+
+### CCS (sheet: `stage2/ccs.md`)
+Verified in source: NITI 2022 Table 6-4, iron & steel 2 Mtpa BF-BOF "2,900-3,600" Rs/tCO₂; MoS 2024 Table 9.13 "Total CCS cost 64 (41 - 92)" USD/t.
+| Call | My choice | Why |
+|---|---|---|
+| 2025 all-in cost | **75 $/t** (was 125) | Indian estimates median ~67; rounded up (pessimistic) |
+| ST-10 capture limit | **0.90 × capturable share** (BF-BOF 0.67 → 0.60 of route CO₂; coal-DRI 0.67 by analogy; NG-DRI 0.90) | Removes the stacked 0.85 × 0.90 and the "all CO₂ is capturable" base |
+| Earliest CCS | **2035** (was 2027) | DST CCUS roadmap 2025: pilots only to 2035; MoS 6–9 yr lead time |
+| 2050 ceiling | **25 % of route CO₂** (was 50 %) | IEA ~25 % for steel; NITI economy-wide ~26 % |
+| Cost decline | **27 % slow / 60 % fast** (was back-solved 32 / 84 %) | The old $60/t end-point is unreachable once energy + T&S ≈ $55/t |
+Other values: T&S 25, solvent 2, FOM 5 %, life 25 yr, capture power and NG-process steam raised (Indian DRI capture units report ~1.7 t steam/tCO₂). Effect on the benchmark is small because CCS is barely used in these cells; it matters for the low-H₂, tight-target cases.
+
 Deferred to the 2025-calibration step (with the demand/fleet sheet): `init_f_cdri` 0.902 → 0.84 and `cap0_cdri` 104.1 → 91.
 
 ## 3. Needs your call (short list)
 
 1. Central scrap growth in the study templates: 6 % (paper) or 5 % (evidence)?
+2. H₂ supply-ramp axis (0.5/1/1.5 Mt H₂/yr for steel alone): keep, or rescale to 0.25/0.5/0.75 (evidence-bracketed)?
+3. The paper's sampled H₂ cost range "1.5–5 $/kg" no longer matches the model (2050 ends at 2.4–4.7 $/kg); the text needs updating.
 
 *(more to follow as the other sheets land)*

@@ -154,7 +154,23 @@ All trade figures below are from the DGCIS Export-Import Data Bank (Ministry of 
 
 ## F. Grid electricity tariff
 
-IN PROGRESS
+| # | Source | Quote / data | Boundary | 2025 USD/kWh |
+|---|---|---|---|---|
+| P1 | CEA (2026) *Electricity Tariff & Duty and Average Rates of Electricity Supply in India*, as on 31 March 2025, Table 7(h) "LARGE INDUSTRIES 50000 KW 60% LF (21900000 Unit/Month) (AT 33 KV)" (pdf p. 231) | Total (paise/kWh, incl. duty) in the main steel states: Odisha (132 kV) 690, Chhattisgarh 939, Jharkhand (132 kV) 859, Karnataka 836, Maharashtra 1239, Gujarat 632, West Bengal (132 kV) 888, Andhra Pradesh 830. Median 847.5 (incl. duty), 764 (average rate, excl. duty) | HT industrial grid supply, tariffs effective 2024 (inflated with WPI 2024→25) | **0.098** incl. duty (range 0.073–0.143); 0.088 excl. duty |
+| P2 | CEA (2026), same, Table 8(b) "POWER INTENSIVE INDUSTRIES 50000 KW 80% LF" (pdf p. 232) | Odisha (11/33 kV) 561, Chhattisgarh (132 kV) 813, Andhra Pradesh 707, Maharashtra 1202 | Power-intensive category, where a state has one | 0.065–0.139 (context) |
+| P3 | Transition Asia & TERI (2026) workbook, sheet Grid: "APERC retail tariff for high-tension industrial consumers, real 2025 USD"; 2025 0.0717, 2030 0.0745, 2050 0.0765 | | Andhra Pradesh HT, real 2025 | **0.072** |
+| P4 | Domínguez Bennett et al. (2026), IECC, Table S-1 (pdf p. 33): "Grid electricity (dry hours) US$/MWh 90" for 2030 and 2035 | | India, grid top-up for H₂/EAF | **0.090** |
+| P5 | Yadav, Guhan & Biswas (2021), CEEW, pdf p. 16: "a grid power cost of 7.6 INR/kWh" (Bellary, Karnataka) | | Karnataka HT, 2021 | **0.100** |
+| — | Åhman & Arens (2024), *Utilities Policy* 91 (cited by the paper) | Paywalled; not read, so no number is used | | — |
+
+Four estimates (P1 0.098, P3 0.072, P4 0.090, P5 0.100): **median 0.094 → 0.095 $/kWh**. The current 0.07 is at the bottom of the range (only Gujarat and Odisha tariffs, or the AP-based P3, are that low). Caveat: about two-thirds of the electricity of Indian integrated plants comes from captive coal plants, which cost less than grid power (register ST-06). The model prices all purchased power at the grid tariff, so a grid tariff is the right input for *new* electric routes.
+
+**2050 "fast" end-point (0.055).** No admissible source projects a falling real industrial tariff: P3 rises slightly (0.072 → 0.077 by 2050), and P4 holds 90 $/MWh flat to 2035. 0.055 is a scenario assumption (tag A). If it is kept, the same −21 % relative fall from the new start gives **0.075**.
+
+| Parameter | file:line | Current | Evidence | Proposed | Pessimistic direction | Flag |
+|---|---|---|---|---|---|---|
+| grid_price_start | definitions.mod:148 | 0.07 | P1 0.098, P3 0.072, P4 0.090, P5 0.100 | **0.095** | upper (cost; also penalises the electric routes) | NEEDS CALL |
+| grid_price_end_fast | definitions.mod:149 | 0.055 | no source for a decline; P3 0.077 in 2050 | **0.075** (keeps the −21 % scenario) or = start (no decline) | upper | NEEDS CALL (part of the grid-tariff call) |
 
 ## Structural notes
 
