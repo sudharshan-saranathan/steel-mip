@@ -183,7 +183,7 @@ param ng_credit_power default 0.03;       # Selling cost per kWh of generated po
 param ng_cost_fineore default 65;         # Cost per ton of fineore
 param ng_cost_lime default 60;            # Cost per ton of lime
 param ng_cost_biochar default 60;         # Cost per ton of biomass
-param ng_capex_pell default 10;           # CAPEX of pellets plant per tCS production
+param ng_capex_pell default 60;           # Pellet plant: up-front capex, 2025 USD per (tCS/yr) [audit ST-01; share of BF-BOF 1200]
 param ng_cost_lumpore default 70;         # Cost per ton of lumpore
 param ng_cost_pcoal default 110;          # Cost per ton of PCI coal
 param ng_credit_slag default 15;          # Selling cost per ton of slag
@@ -191,20 +191,18 @@ param ng_cost_scrap default 350;          # Cost per ton of scrap
 param ng_cost_ncoal default 98;          # Cost per ton of non coking coal
 param n0_credit_breeze default 55;        # Selling cost per ton of breeze
 param n0_credit_tar default 20;           # Selling cost per ton of tar
-param n0_capex default 40;                # CAPEX of cokeoven per tCS rpoduction
+param n0_capex default 240;               # Coke oven: up-front capex, 2025 USD per (tCS/yr) [audit ST-01]
 param n1_cost_breeze default 85;          # Cost per ton of breeze                         
-param n1_capex default 30;                # CAPEX of sinter plant per tCS production
-param n2_capex default 80;               # CAPEX of blast furnace per tCS production
-param n3_capex default 40;                # CAPEX of BOF per tCS production                              
-param n4_capex_coal default 110;          # CAPEX of Coal-DRI per tCS production
-param n5_capex_ng := 90;                  # CAPEX of NG-DRI per tCS production
+param n1_capex default 180;               # Sinter plant: up-front capex, 2025 USD per (tCS/yr) [audit ST-01]
+param n2_capex default 480;              # Blast furnace: up-front capex, 2025 USD per (tCS/yr) [audit ST-01]
+param n3_capex default 240;               # BOF: up-front capex, 2025 USD per (tCS/yr) [audit ST-01; BF-BOF total 1200, greenfield upper bound]                              
+param n4_capex_coal default 400;          # Coal rotary kiln: up-front, 2025 USD per (tCS/yr) [audit ST-01; TA-TERI 2026 300 $/tDRI x1.2 owner's cost x1.1 tDRI/tCS]
+param n5_capex_ng := 460;                 # NG shaft furnace: up-front, 2025 USD per (tCS/yr) [audit ST-01; Vogl 2018 / TA-TERI 2026 ~415 $/tDRI x1.1]
 param n5_cost_NG {t in T} default 10;     # Cost of natural gas per MMBtu
-param n6_capex_h2{t in T} :=
-    if t <= 2025 then 120
-    else 120+ (90-120) * (t-2025)/25;     # CAPEX of H2-DRI per tCS from 2025 to 2050
-param n7_capex default 70;                # CAPEX of EAF plant (DRI based) per tCS
+param n6_capex_h2{t in T} := n5_capex_ng; # H2 shaft furnace = NG shaft furnace (Vogl 2018; TA-TERI 2026) [audit ST-01; was 120->90]
+param n7_capex default 400;               # EAF incl. casting: up-front, 2025 USD per (tCS/yr) [audit ST-01; TA-TERI 2026 337 x1.2; Vogl 2018 332]
 param n7_cost_electrode default 3000;     # Cost per ton of electrode (corrected 2026-08-21, was 600 -- well below realistic UHP graphite electrode market levels)
-param n8_capex default 70;                # CAPEX of EAF plant (Scrap-based) per tCS     
+param n8_capex default 400;               # Scrap EAF: same unit as n7; scrap handling via ocapex_scrapchain [audit ST-01]     
 param n8_cost_electrode default 3000;     # Cost per ton of electrode (corrected 2026-08-21, was 600 -- well below realistic UHP graphite electrode market levels)
 param n9_whr_capex default 0.009;         # CAPEX of WHR system per kWh of power generated
 param n9_whr_opex default 0.003;          # OPEX of WHR system per kWh of power generated
@@ -280,19 +278,22 @@ param crf_ngdri := real_discount_rate*(1+real_discount_rate)^life_ngdri/((1+real
 param crf_h2dri := real_discount_rate*(1+real_discount_rate)^life_h2dri/((1+real_discount_rate)^life_h2dri-1);
 param crf_scrap := real_discount_rate*(1+real_discount_rate)^life_scrap/((1+real_discount_rate)^life_scrap-1);
 
-# Annualised capital charge per unit route output
-param acapex_bof   := n0_capex + n1_capex + ng_capex_pell + n2_capex + n3_capex;          # $/tCS/yr
-param acapex_cdri  := n4_capex_coal + ng_capex_pell + n7_capex;                           # $/tCS/yr
-param acapex_ngdri := n5_capex_ng   + ng_capex_pell + n7_capex;                           # $/tCS/yr
-param acapex_h2dri {t in T} := n6_capex_h2[t] + ng_capex_pell + n7_capex;                 # $/tCS/yr
-param acapex_scrap := n8_capex;                                                           # $/tCS/yr
+# [audit ST-01] n*_capex are UP-FRONT (overnight) costs per t/yr of crude-steel
+# capacity, charged once on each build. They were previously read as annualised
+# charges and divided by the CRF, which inflated new-plant capex (BF-BOF 2557 $/t).
+# Overnight capex per unit capacity (2025 USD per tCS/yr):
+param ocapex_bof   := n0_capex + n1_capex + ng_capex_pell + n2_capex + n3_capex;
+param ocapex_cdri  := n4_capex_coal + ng_capex_pell + n7_capex;
+param ocapex_ngdri := n5_capex_ng   + ng_capex_pell + n7_capex;
+param ocapex_h2dri {t in T} := n6_capex_h2[t] + ng_capex_pell + n7_capex;
+param ocapex_scrap := n8_capex;
 
-# Overnight capex per unit capacity = annualised charge / CRF.
-param ocapex_bof   := acapex_bof   / crf_bof;
-param ocapex_cdri  := acapex_cdri  / crf_cdri;
-param ocapex_ngdri := acapex_ngdri / crf_ngdri;
-param ocapex_h2dri {t in T} := acapex_h2dri[t] / crf_h2dri;
-param ocapex_scrap := acapex_scrap / crf_scrap;
+# Annualised charge (used only by the sunk = 0 branch) = overnight x CRF.
+param acapex_bof   := ocapex_bof   * crf_bof;
+param acapex_cdri  := ocapex_cdri  * crf_cdri;
+param acapex_ngdri := ocapex_ngdri * crf_ngdri;
+param acapex_h2dri {t in T} := ocapex_h2dri[t] * crf_h2dri;
+param acapex_scrap := ocapex_scrap * crf_scrap;
 param ocapex_scrapchain default 100;  #collection,  shredding, sorting, processing/prurification
 param ocapex_coalchain default 0;     # $/(t-coal/yr);  coal mines/transport; already included in fuel cost so remains zero for now
 param ocapex_ngchain   default 0;     # $/(t-NG/yr);  NG pipelines/terminals; if there has to be new mined built or something the model can be edited
