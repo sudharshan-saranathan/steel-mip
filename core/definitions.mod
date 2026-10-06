@@ -78,22 +78,22 @@ param n3_rec_cog default 65;        # Recovered COG as fuel (Nm3/tCS)
 #reduce specific energy consumption
 
 #Coal DRI
-param n4_e_dri default 217;         # Electricity (kWh) per ton DRI (100 base + 117 for coal-DRI's IF-heavy secondary: 129 kWh/tCS / 1.1 t-DRI)
-param n4_pel_dri default 1.5;       # Pellets (tons) per ton DRI 
-param n4_ore_dri default 0.1;       # Ore (tons) per ton DRI 
-param n4_c_dri default 1;           # Coal (tons) per ton DRI                 
+param n4_e_dri default 310;         # [audit DRI] kiln 70 + IF step 237 per t DRI (scrap-share corrected); see dri_eaf_scrap.md. Was 217         # Electricity (kWh) per ton DRI (100 base + 117 for coal-DRI's IF-heavy secondary: 129 kWh/tCS / 1.1 t-DRI)
+param n4_pel_dri default 1.05;      # [audit DRI] pellets per t DRI (CEEW survey lump/pellet mix). Was 1.5
+param n4_ore_dri default 0.55;      # [audit DRI] lump ore per t DRI; total feed 1.6 t (MoS 2024 Table 10.1: 1.5-1.6). Was 0.1
+param n4_c_dri default 0.9;         # [audit DRI] t coal (24 GJ/t basis) per t DRI = 21.6 GJ/t; Indian kilns ~21 GJ/t (median of 4). Was 1.0                 
 
 # NG DRI
 param n5_e_dri default 120;         # Electricity (kWh) per ton DRI 
 param n5_pel_dri default 1.5;       # Pellets (tons) per ton DRI  
-param n5_ore_dri default 0.1;       # Ore (tons) per ton DRI 
-param n5_ng_dri default 0.35;       # Natural gas (tons) per ton DRI  
+param n5_ore_dri default 0;         # [audit DRI] shaft furnaces run on pellet; total feed 1.5 t. Was 0.1
+param n5_ng_dri default 0.22;       # [audit DRI] 10.9 GJ/t DRI, median of 5 (10.0-16.2) incl. MoS 2024 T10.1/10.3, CEEW 2021, TA-TERI 2026. Was 0.35       # Natural gas (tons) per ton DRI  
 param n5_ng_cap {T};
 
 #H2 DRI
-param n6_e_dri default 110;         # Electricity (kWh) per ton DRI 
+param n6_e_dri default 125;         # [audit DRI] upper of available estimates. Was 110         # Electricity (kWh) per ton DRI 
 param n6_pel_dri default 1.5;       # Pellets (tons) per ton DRI 
-param n6_ore_dri default 0.1;       # Ore (tons) per ton DRI     
+param n6_ore_dri default 0;         # [audit DRI] as n5_ore_dri. Was 0.1       # Ore (tons) per ton DRI     
 param n6_h2_dri default 0.07;       # Hydrogen (tons) per ton DRI (conservative incl. energy efficiency / shaft losses)
 param ng_h2_start_year default 2040;
 
@@ -101,21 +101,21 @@ param ng_h2_start_year default 2040;
 param n7_e_eaf {t in T} :=
     664;    # Electricity (kWh) per tCS: DRI-EAF/IF weighted on the gas-DRI all-EAF basis (coal-DRI's extra IF power is carried in n4_e_dri)
 param n7_dri_ratio default 1.1;            # Metallic charge (ton DRI + scrap) per tCS in DRI-EAF
-param n7_eltrd default 0.003;              # Electrode (ton) per tCS  
-param n7_ls default 0.06;                  # Limestone (ton) per tCS 
-param n7_cs default 0.01;                  # Coal (ton) per tCS  
+param n7_eltrd default 0.002;      # [audit DRI] Vogl 2018; TA-TERI 2026. Was 0.003              # Electrode (ton) per tCS  
+param n7_ls default 0.09;         # [audit DRI] limestone-equivalent flux, upper. Was 0.06                  # Limestone (ton) per tCS 
+param n7_cs default 0.02;         # [audit DRI] charge/injection carbon, single source -> upper. Was 0.01                  # Coal (ton) per tCS  
 param n7_ss default 0.15;                  # Slag (ton) per tCS   
-param n7_eafg default 3;                   # EAF Gas (GJ) per tCS                           
+param n7_eafg default 0;          # [audit DRI] no source; recoverable off-gas credit set to its lower bound. Was 3                   # EAF Gas (GJ) per tCS                           
  
 # EAF (Scrap-Based)
 param n8_e_eaf {t in T} :=
-    785; # Electricity (kWh) per tCS: scrap secondary, 75% IF @825 + 25% EAF @664 weighted (India IF-heavy secondary route)
+    590; # [audit DRI] 100%-scrap charge, median of 4 (CEEW 2024 550; TA-TERI 2026 600; Vogl 2018 667; IEA 2020 <=583). Was 785 (DRI-heavy fleet averages)
 param n8_phi_eaf default 1.1;            # Scrap (ton) per tCS
-param n8_eltrd default 0.003;            # Electrode (ton) per tCS  
+param n8_eltrd default 0.002;    # [audit DRI] route costed as EAF. Was 0.003            # Electrode (ton) per tCS  
 param n8_ls default 0.06;                # Limestone (ton) per tCS 
-param n8_cs default 0.01;                # Coal (ton) per tCS 
+param n8_cs default 0.02;      # [audit DRI] as n7_cs. Was 0.01                # Coal (ton) per tCS 
 param n8_ss default 0.15;                # Slag (ton) per tCS 
-param n8_eafg default 3;                 # EAF Gas (GJ) per tCS                           
+param n8_eafg default 0;       # [audit DRI] as n7_eafg. Was 3                 # EAF Gas (GJ) per tCS                           
 # Scrap can be used three ways:
 #   1. blended into the BF-BOF metallic charge (displacing hot metal 1:1),
 #   2. blended into the DRI-EAF metallic charge (coal / NG / H2 sub-routes,
@@ -134,7 +134,7 @@ param phi_max_cdri  default 0.40;    # max scrap share of Coal DRI-EAF charge
 param phi_max_ngdri default 0.40;    # max scrap share of NG DRI-EAF charge
 param phi_max_h2dri default 0.40;    # max scrap share of H2 DRI-EAF charge
 param blend_ramp    default 0.05;
-param n8_scrap_rate default 0.06;
+param n8_scrap_rate default 0.05; # [audit DRI] 37 Mt x 1.05^25 = 125 Mt in 2050 = NITI 2026 lower case. Was 0.06 (study templates still set 0.06)
 param n8_scrap_seed default 37000000;    # scrap availability in first(T), t/yr
 # Derived (defined param, not `let`): recomputes automatically whenever
 # n8_scrap_seed or n8_scrap_rate is overridden by a scenario.
