@@ -166,10 +166,9 @@ s.t. cap_add_scrap0: build_scrap[first(T)] = 0;
 
 # No H2-DRI PLANT builds before the debut year (mirrors No_H2_Before in
 # core/parameters.mod, which zeroes H2 fuel input over the same window).
-# Electrolyser/RE buildout is NOT gated on ng_h2_start_year -- h2elec_growth
-# has no such restriction, so the supply chain can ramp ahead of debut in
-# preparation; only the DRI plant itself (which would sit idle with no H2 to
-# run on before debut) is restricted here.
+# [audit ST-14] Electrolyser and dedicated-RE capacity ARE also gated on the
+# debut year, by h2elec_predebut / h2re_predebut further down (cap = 0 before
+# ng_h2_start_year). The earlier comment here said the opposite.
 s.t. cap_add_h2dri0{t in T: t < ng_h2_start_year}: build_h2dri[t] = 0;
 
 # Minimum capacity utilisation

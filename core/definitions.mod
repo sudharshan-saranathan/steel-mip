@@ -261,10 +261,12 @@ param life_scrap default 40;
 # default keeps it available through 2050. Decoupled from life_* (new builds).
 param legacy_life default 25;
 
-# Capacity-addition ceiling
-# limits across routes. 10 Mt/yr for now
-# H2-DRI is not governed by this -- its build rate is set by the electrolyser
-param cap_add_common default 20e6;   # per-TECH annual capacity addition cap (t/yr)
+# Capacity-addition ceiling [audit: comment corrected]
+# ONE shared annual build budget across all five routes incl. H2-DRI
+# (cap_add_total in v_capacity.mod). Derived assumption: India needs ~13-22
+# Mt/yr of new capacity on average to 2050 at 5 %/yr demand growth (~26 Mt/yr
+# in 2049-50). Studies set 20 / 30 Mt/yr.
+param cap_add_common default 20e6;   # shared annual capacity addition budget (t/yr)
 
 # Capacity utilisation 
 param util_min_bof   default 0.85;
