@@ -1,10 +1,14 @@
 # Stage 2 — Demand, 2025 fleet, utilisation, fixed opex, resource availability, study-only values
 
-Status: IN PROGRESS. Sub-groups are filled in as they are finished.
+Status: complete (2026-10-06). Scope: Indian steel sector, 2025 base year. Line numbers refer to the audit target  @ b33b88a. Conversions use  (India WPI, ₹87.16/$).
 
 ## Needs your call
 
-IN PROGRESS
+1. **Demand growth (`growth_rate`).** (a) 0.044 = median of MoS/TERI 374 Mt, IEA ≈444 Mt and NITI 624 Mt in 2050 (2050 demand 446 Mt); (b) keep 0.05 (515 Mt; between IEA and NITI, the newest GoI figure is higher, FY26 grew +10 %). Sensitivity 0.037–0.058 either way.
+2. **2025 starting point and utilisation.** (a) Set f_bof = 0.411 (JPC FY25), util_min_bof 0.85 → 0.70, util_min_cdri 0.75 → 0.70, util_max 0.95 → 0.85 (sector utilisation was 76–80 % in FY22–25); (b) only f_bof + util_min_bof (minimum needed for consistency); (c) leave as is and state the calibration gap. util_max 0.85 adds about 12 % capacity and capex.
+3. **Fixed opex.** (a) Route-specific maintenance = 3 % of up-front capex (BF-BOF 36, coal-DRI 26, NG/H₂-DRI 28, scrap-EAF 12 $/t-cap) plus labour 22 for all routes; this also settles ST-11; (b) uniform: labour 22 + maintenance 26 = $48/t for all routes; (c) keep $35 uniform.
+4. **Discount rate.** (a) Keep 0.06 and state the model is a social planner (Murty et al.'s rate for environmental projects); (b) 0.10, the private rate (IECC and TA-TERI WACC 10 %; Murty's return on capital 10 %; Planning Commission's 10 %), which is pessimistic; (c) 0.08 (Murty's general rate). Run a 6/8/10 % sensitivity in any case.
+5. **Resource axes.** NG: (a) keep the 2025 point and grow at PNGRB's steel-gas multiple (×2.5 by 2030, ×5.6–7.5 by 2040), relabel "10 % share" as an assumption (actual 1–1.7 %); (b) rebase to PNGRB's absolute values (2.2 Mt in 2030, 5.5 Mt in 2040) after fixing `n5_ng_dri`; (c) keep and only relabel. Coking coal: (a) 2025 base 63.4 Mt (FY25 imports 57.6 + washed domestic 5.9); (b) 72 Mt (FY24 consumption, MoS); (c) keep 60.5 and cite the FY25 ICMW 54.1 Mt import figure.
 
 ## A. Demand (base_demand, growth_rate)
 
@@ -217,8 +221,62 @@ Proposed text for the paper (assumption A, flag default): "The three caps corres
 
 ## Structural notes
 
-IN PROGRESS
+Noted only, not fixed (no code was changed).
+
+- **S-1 (extends ST-07): scrap-based steel is booked to coal-DRI in 2025.** `init_scrap_eaf` fixes scrap-EAF output at 0, so all 89.7 Mt of EAF + IF steel goes to the DRI routes. About 30 Mt of India's crude steel is made from scrap (MoS Roadmap Fig. 1.8, FY24), and the model routes nearly all of it through coal-DRI (f_cdri ≈ 0.90). That overstates 2025 coal-DRI emissions and likely explains much of the 2.80 vs 2.54 tCO₂/tCS gap. A fix needs a 2025 scrap-route share (≈ 0.2 of crude steel), with capacity to match. `cap0_scrap` = 0.75 Mt cannot carry it today.
+- **S-2: util_min_bof and f_bof cannot both be "right".** With the JPC share (0.411), 2025 BOF output is 62.5 Mt, or 0.69 of `cap0_bof`. `min_util_bof` (0.85) then forces ≥ 76.5 Mt from 2026. The two must be changed together (section C).
+- **S-3: NG units and intensity.** `n5_ng_cap` is in tonnes (cost uses 50 MMBtu/t), but some comments say "Mm3". `n5_ng_dri` = 0.35 t NG/t DRI (≈ 18 MMBtu/t) is 1.7× PNGRB's 280 scm/t DRI (0.21 t). Refer to the DRI group. Section G's 2025 calibration depends on it.
+- **S-4: emissions boundary vs taxonomy.** `avg_emi` is per tonne of crude steel and is a 2025–2050 cumulative average. The taxonomy is per tonne of finished steel (× 1.037), plant-level, with limited Scope 3. State the mapping in the paper (section H).
+- **S-5: fixed opex basis.** `fopex_*` is charged on capacity when `sunk = 1` and on output otherwise (`v_capacity.mod:240–253`), so it changes meaning between modes. `other_opex` is always per tonne produced. ST-11 (identical fixed opex for every route) can be fixed with values alone by overriding the `fopex_<route>` defaults (section D).
+- **S-6: units of IMPORT_REPORT.** Import prices are per tonne of *finished* steel, while `steel_import` displaces crude steel. ×1.037 is minor. State it.
+- **S-7: coking-coal scarce axis vs 2026 data.** The scarce cap for 2026 (60.95 Mt) is below FY2025-26 coking-coal imports alone (66.33 Mt, Ministry of Coal) and FY24 sector consumption (72 Mt, MoS). If the cap binds in 2026–2030 in model runs, the scarce case is tighter than present reality, not a future shock. Worth stating, or rebasing (section F).
+
+## Summary of proposed values
+
+| Parameter | Current | Proposed | Flag |
+|---|---|---|---|
+| base_demand | 152.2 Mt | 152.2 Mt | default |
+| growth_rate | 0.05 | 0.044 (or keep 0.05) | NEEDS CALL |
+| init f_bof / f_eaf | 0.51 / 0.49 | 0.411 / 0.589 | NEEDS CALL (item 2) |
+| init_f_cdri | 0.902 | 0.91 (keep ≈ 0.902) | default |
+| cap0_bof / cdri / ngdri / scrap | 90 / 104.1 / 12.9 / 0.75 Mt | 90 / 104.1 / 11.2 / 0.75 Mt | default |
+| util_min bof / cdri / ngdri / h2dri / scrap | 0.85 / 0.75 / 0.70 / 0.70 / 0.60 | 0.70 / 0.70 / 0.70 / 0.70 / 0.60 | NEEDS CALL (bof); others default |
+| util_max | 0.95 | 0.85 | NEEDS CALL (item 2) |
+| labor_cost | 20 | 22 | default |
+| maintenance_cost | 15 | route-specific 3 % of capex, or 26 | NEEDS CALL |
+| other_opex | 10 | 10 (no admissible source) | default |
+| real_discount_rate | 0.06 | 0.06 social / 0.10 private | NEEDS CALL |
+| ccoal_cap 2025 | 60.5 Mt | 63.4 (or 72) Mt | NEEDS CALL (item 5) |
+| n5_ng_cap | 5.35 → 10.7 / 32.2 Mt | see G | NEEDS CALL (item 5) |
+| avg_emi | 1.6 / 1.8 / 2.0 | keep; map to taxonomy stars | default |
+| IMPORT_REPORT | 650 $/t | 760 $/t | default |
+| IMPORT_P / PEN | 20,000 / 5,000 | keep (numerical devices) | default |
+
+Parameters with **no admissible source found**: `other_opex` (no source matches its boundary) and `util_min_h2dri` (no Indian H₂-DRI fleet; kept as assumption A). IMPORT_P and PEN are numerical penalties and need none.
 
 ## Bibliography
 
-IN PROGRESS
+- Domínguez Bennett, J., Jain, N., Chojkiewicz, E., Abhyankar, N. & Phadke, A. (2026). *Economic Case for Green Steel Production in India.* India Energy and Climate Center, UC Berkeley. https://iecc.gspp.berkeley.edu/wp-content/uploads/2026/05/IECC-Economic-Case-for-Green-Steel-Production-in-India-Report-May26.pdf
+- DGTR, Ministry of Commerce and Industry (2025). *Final Findings: Safeguard investigation concerning imports of Non-Alloy and Alloy Steel Flat Products*, 16 Aug 2025. https://dgtr.gov.in/sites/default/files/2025-08/NCV%20FINAL%20SGD%20Steel%2016.08.2025.pdf
+- Ghosh, A. M., Vasudevan, N. & Kumar, S. (2021). *Energy-efficient technology options for direct reduction of iron process (sponge iron plants).* TERI. https://www.teriin.org/sites/default/files/2021-08/Direct%20Reduction%20of%20Iron%20Process.pdf
+- Global Energy Monitor (2026). *Pedal to the Metal 2026: The iron and steel industry's coal lock-in crisis.* https://globalenergymonitor.org/sites/default/files/2026-05/Pedal%20to%20the%20Metal%202026.pdf
+- IEA (2020). *Iron and Steel Technology Roadmap.* https://www.iea.org/reports/iron-and-steel-technology-roadmap
+- JSW Steel Ltd (2025). *Integrated Report 2024-25*: Standalone Financial Statements; Directors' Report (company). https://www.jswsteel.in/jsw-steel-annual-report-2024-25/pdf/JSW-Steel-Standalone-FS.pdf ; https://www.jswsteel.in/jsw-steel-annual-report-2024-25/pdf/JSW-Steel-Directors-Report.pdf
+- Ministry of Coal (2025). *Monthly Statistical Report, March 2025* (Tables 1.1(b), 1.4B, 4.1, 8.1). https://coal.gov.in (Major Statistics)
+- Ministry of Coal (2025). *Coal Directory of India 2024-25.* https://coal.gov.in/sites/default/files/2024-03/28-11-2025a-stc.pdf
+- Ministry of Coal. *Production and Supplies* (import table 2021-22 to 2026-27), accessed 2026-10-06. https://coal.gov.in/major-statistics/production-and-supplies
+- Ministry of Steel (2024). *Greening the Steel Sector in India: Roadmap and Action Plan* (with CEEW, TERI and others). https://steel.gov.in/green-steel-initiative
+- Ministry of Steel (2026). *Annual Report 2025-26* (JPC data, Annexures III–V, XI). https://steel.gov.in/sites/default/files/2026-04/Final%20Annual%20Report%202025-26%20(English%20Version).pdf
+- Murty, M. N., Panda, M. & Joe, W. (2018). *Reassessment of National Parameters for Project Appraisal in India.* Institute of Economic Growth for NITI Aayog. https://www.niti.gov.in/sites/default/files/2019-06/Final%20Report%20of%20the%20Research%20Study%20on%20%20Reassessment%20of%20National%20Parameters%20for%20Project%20Appraisal%20in%20India%20conducted%20by%20Institute%20of%20Economic%20Growth%20(IEG)_Delhi.pdf
+- Murty, M. N., Panda, M. & Joe, W. (2020). *Estimating Social Time Preference Rate for India.* IEG Working Paper 388. https://iegindia.org/upload/profile_publication/doc-310320_153806wp388.pdf
+- NITI Aayog (2026). *Scenarios Towards Viksit Bharat and Net Zero — Sectoral Insights: Industry.* https://niti.gov.in/sites/default/files/2026-02/Scenarios-Towards-Viksit-Bharat-and-Net-Zero-Sectoral-Insights-Industry.pdf
+- PIB / Ministry of Petroleum & Natural Gas (18 Dec 2023). *Share of Natural Gas in Total Energy Mix.* https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=1987803
+- PIB / Ministry of Steel (12 Dec 2024). *Union Minister … Releases India's Green Steel Taxonomy.* https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=2083839
+- PIB (5 May 2026). *India's Steel Sector Advances Towards Self-Reliance.* https://static.pib.gov.in/WriteReadData/specificdocs/documents/2026/may/doc202655864101.pdf
+- PNGRB (2024). *Report on Rapid Assessment: Natural Gas Demand – 2040 Projections for India* (prepared by Deloitte). https://pngrb.gov.in/pdf/CaseStudies/20241201_CSAUTH_Rapid_NGD.pdf
+- PPAC (2026). *India's Oil & Gas Ready Reckoner FY2025-26.* https://ppac.gov.in/download.php?file=rep_studies/1784899305_The_PPAC_Ready_Reckoner_FY_2025–26_Final.pdf
+- Srikanth, R. (2024). *Enhancing Domestic Coking Coal Availability to Reduce the Import of Coking Coal.* NIAS report to NITI Aayog, NIAS/NSE/EECP/U/RR/01/2024.
+- Tata Steel Ltd (2025). *Integrated Report & Annual Accounts 2024-25* (standalone notes 27, 30; Board's report) (company). https://www.tatasteel.com/media/23971/ir-fy2024-25.pdf
+- Transition Asia & TERI (2026). *Is Green Steel Within Reach in India?* Model input workbook `india/data/Model_input_India.xlsx` (sheets Tech, Commodities, Params_Finance). https://github.com/transition-asia/green-steel-dri-model
+
+Not retrievable in this session: SAIL *Annual Report 2024-25* (sail.co.in blocked by the network policy); the Green Steel Taxonomy gazette (egazette.gov.in TLS failure; steel.gov.in reset). The PIB release (T1) states the bands verbatim. No CEEW or IEEFA 2050 crude-steel projection could be retrieved as a primary document.
