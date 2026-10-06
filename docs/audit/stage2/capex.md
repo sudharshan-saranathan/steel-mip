@@ -20,9 +20,11 @@ The input data are in this folder: `wpi_cal.xls` (Office of the Economic Adviser
 | JSW Steel Integrated Report 2021-22: Vijayanagar +5 Mtpa, ₹20,000 cr (+ ₹5,000 cr sinter and support) | company, brownfield | 530–660 | sensitivity only |
 | Model before the fix (200 / CRF) | | 2,557 | — |
 
-**Adopted: $1,000/t** (decision 2026-10-06). This lies between the two India-specific greenfield anchors, IECC ($800) and the CEEW ceiling (< $1,220), and at the low end of IEA's global full-plant range. There are too few independent Indian estimates to apply the median rule, so the paper should cite the anchors and describe $1,000 as a rounded central value.
+**Adopted: $1,200/t** (decision 2026-10-06, replacing an interim $1,000). This is a rounded **upper bound**: just below the CEEW ceiling (< $1,220), above the IECC estimate ($800), and at the bottom of IEA's global full-plant range ($1,240–1,860). There are too few independent Indian estimates to apply the median rule, so the paper should cite these anchors.
 
-Suggested sensitivity range: **$800–1,250/t** (IECC to the CEEW ceiling and the bottom of IEA's full-plant range). Brownfield values ($530–700/t) give a low-capex case.
+**Selection rule (decision 2026-10-06):** where evidence is thin, take the bound that makes decarbonisation look harder, so the bias runs in one known direction. For capex and prices that is the upper bound. For efficiencies and recovery rates it is the lower bound. The direction is recorded per parameter. Caveat for the paper: the bound applies to total cost; route choice can still shift, because routes with wider evidence ranges are penalised more.
+
+Sensitivity: brownfield values ($530–700/t) give a low-capex case.
 
 ## Other routes (evidence so far; no values adopted yet)
 
