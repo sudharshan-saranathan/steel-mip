@@ -10,7 +10,7 @@ param real_discount_rate default 0.06;   # was `:=` (defined, un-let-able) -- no
 param ng_e_pell default 70;          # [audit ST-03] kWh/t pellet (upper of sourced; see bfbof_coefficients.md). Was 200
 param ng_pell_fuel default 1.6;       # [audit ST-03] induration fuel, GJ per t pellet; costed and emitted as non-coking coal (pessimistic; fuel mix unsourced)         # Electricity (kWh) per ton of pellets   
 param ng_ore_pell default 1.1;       # Iron ore (ton) per ton of pellets
-param ng_cog_cv default 0.018;       # Calorific value (GJ/Nm3) of COG
+param ng_cog_cv default 0.0176;      # [audit] MoS 2024 s10.9: 4200 kcal/Nm3. Was 0.018       # Calorific value (GJ/Nm3) of COG
 param ng_bfg_cv default 0.0033;      # Calorific value (GJ/Nm3) of BFG 
 param ng_bofg_cv default 0.008;      # Calorific value (GJ/Nm3) of BOFG
 param ng_sintgas_cv default 0.0006;  # Calorific value (GJ/Nm3) of sinter
@@ -53,15 +53,15 @@ param n2_slag_hm default 0.3;        # Slag (ton) per thm
 param n2_pel_hm default 0.35;        # Pellets (ton) per thm   
 param n2_ore_hm default 0.15;        # Lump ore (ton) per thm   
 param n2_bfg_hm default 1500;        # BFG (Nm3) per thm            
-param n2_rec_bfg default 500;        # Recovered BFG as fuel (Nm3/thm)   
+param n2_rec_bfg default 690;        # [audit BF] BFG used in stoves etc. Was 500        # Recovered BFG as fuel (Nm3/thm)   
 param n2_rec_cog default 30;         # Recovered COG as fuel (Nm3/thm) 
 param n2_trt_whr default 35;         # Top pressure recovery turbine (kWh/thm)   
-param n2_coalpci_hm_25 default 0.15; # PCI (ton) per thm in 2025 
+param n2_coalpci_hm_25 default 0.11; # [audit BF] fuel rate 0.58 = top of MoS 2024 Table 5.4 (505-579 kg/tHM). Was 0.15 # PCI (ton) per thm in 2025 
 param n2_biopci_hm_25 default 0;     # Biomass injection (ton) per thm in 2025
-param n2_coalpci_hm_50 default 0.16; # PCI (ton) per thm by 2050
-param n2_biopci_hm_50 default 0.053; # Biomass injection (ton) per thm by 2050
-param n2_coke_hm_25 default 0.53;    # Coke (ton) per thm in 2025 
-param n2_coke_hm_50 default 0.48;    # Coke (ton) per thm by 2050 
+param n2_coalpci_hm_50 default 0.15; # [audit BF] Was 0.16 # PCI (ton) per thm by 2050
+param n2_biopci_hm_50 default 0.04; # [audit BF] Was 0.053 # Biomass injection (ton) per thm by 2050
+param n2_coke_hm_25 default 0.47;   # [audit BF] 0.579 - PCI 0.11 (MoS 2024 Table 5.4 upper fuel rate). Was 0.53    # Coke (ton) per thm in 2025 
+param n2_coke_hm_50 default 0.40;   # [audit BF] 2050 total fuel 0.59 (no fuel-rate gain). Was 0.48    # Coke (ton) per thm by 2050 
 param n2_h2_hm_25 default 0;         # Hydrogen in blast furnace in 2025 (t/thm)
 param n2_h2_hm_50 default 0;         # Hydrogen in blast furnace by 2050 (t/thm) 
 #Biochar replacement is limited to 20%
@@ -71,7 +71,7 @@ param n2_h2_hm_50 default 0;         # Hydrogen in blast furnace by 2050 (t/thm)
 param n3_e_bof default 174;         # Electricity (kWh) per ton crude steel from BOF
 param n3_metallic_bof default 1.1;  # Total metallic charge (hot metal + scrap, ton) per tCS in BOF
 param n3_ls_bof default 0.075;      # Limestone (ton) per tCS in BOF
-param n3_sl_bof default 0.1;        # Slag (ton) per tCS in BOF
+param n3_sl_bof default 0.15;        # [audit BF] lower bound of range (slag earns a credit). Was 0.1        # Slag (ton) per tCS in BOF
 param n3_bofg_bof default 100;      # BOFG gas (Nm3) formed per tCS in BOF
 param n3_rec_cog default 65;        # Recovered COG as fuel (Nm3/tCS)
 #All BOFG gas assumed being routed to power plant
@@ -123,14 +123,14 @@ param n8_eafg default 0;       # [audit DRI] as n7_eafg. Was 3                 #
 #      displacing DRI 1:1),
 #   3. as 100% scrap-based steel via the dedicated Scrap-EAF route (1.1 t/tCS).
 # There is a limit set for blends
-param phi0_bof      default 0.09;    # 2025 baseline scrap share of BOF metallic charge
+param phi0_bof      default 0.10;    # [audit BF] Was 0.09    # 2025 baseline scrap share of BOF metallic charge
 param phi0_cdri     default 0.382;   # 2025 baseline scrap share, Coal DRI-EAF/IF charge
 param phi0_ngdri    default 0.13;    # 2025 baseline scrap share, NG DRI-EAF charge
 param phi_min_bof   default 0.05;    # min scrap share of BF-BOF charge 
 param phi_min_cdri  default 0;       # min scrap share, Coal DRI-EAF 
 param phi_min_ngdri default 0;       # min scrap share, NG DRI-EAF
 param phi_min_h2dri default 0;       # min scrap share, H2 DRI-EAF
-param phi_max_bof   default 0.20;    # max scrap share of BF-BOF metallic charge
+param phi_max_bof   default 0.25;    # [audit BF] Was 0.20    # max scrap share of BF-BOF metallic charge
 param phi_max_cdri  default 0.40;    # max scrap share of Coal DRI-EAF charge
 param phi_max_ngdri default 0.40;    # max scrap share of NG DRI-EAF charge
 param phi_max_h2dri default 0.40;    # max scrap share of H2 DRI-EAF charge
