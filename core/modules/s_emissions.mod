@@ -34,6 +34,8 @@ s.t. scope1_def{t in T}:
         + (sinter_lime_in[t] + bf_lime_in[t] + bof_lime_in[t] + eaf_lime_in[t] + scrap_eaf_lime_in[t]) * ef_lime)
         + (eaf_electrode_in[t]+ scrap_eaf_electrode_in[t]) * ef_eltrd
         + (ccs_steam_boiler[t]/ccs_boiler_eff) * ng_co2_gj
+        + (bf_pellets_in[t] + coaldri_pellets_in[t] + ngdri_pellets_in[t] + h2dri_pellets_in[t]) * ng_pell_fuel * ef_ncoal/24     # [audit ST-03] pellet induration fuel (coal, 24 GJ/t basis)
+        + ef_breeze * (sinter_breeze_in[t] - coke_breeze_out[t])   # [audit ST-04] purchased breeze; own breeze carbon is already in coking coal
         - scope1_emissions[t] = 0;                         # eq110
 
 # Scope 2 Emissions (Total)

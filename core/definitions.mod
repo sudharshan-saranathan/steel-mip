@@ -7,7 +7,8 @@ param real_discount_rate default 0.06;   # was `:=` (defined, un-let-able) -- no
 
 # TECHNICAL PARAMETERS 
 # Global parameters
-param ng_e_pell default 200;         # Electricity (kWh) per ton of pellets   
+param ng_e_pell default 70;          # [audit ST-03] kWh/t pellet (upper of sourced; see bfbof_coefficients.md). Was 200
+param ng_pell_fuel default 1.6;       # [audit ST-03] induration fuel, GJ per t pellet; costed and emitted as non-coking coal (pessimistic; fuel mix unsourced)         # Electricity (kWh) per ton of pellets   
 param ng_ore_pell default 1.1;       # Iron ore (ton) per ton of pellets
 param ng_cog_cv default 0.018;       # Calorific value (GJ/Nm3) of COG
 param ng_bfg_cv default 0.0033;      # Calorific value (GJ/Nm3) of BFG 
@@ -35,10 +36,10 @@ param n0_rec_bfg default 270;        # Recovered BFG as fuel (energy) (Nm3/t cok
 param n1_e_sint default 50;          # Electricity (kWh) per ton of sinter    
 param n1_lime_sint default 0.04;     # Lime (ton)per ton of sinter                              
 param n1_ore_sint default 0.9;       # Iron ore (ton) per ton of sinter      
-param n1_brz_sint_25 default 0.09;   # Breeze (ton) per ton sinter in 2025                   
+param n1_brz_sint_25 default 0.05;  # [audit ST-04] upper of India range. Was 0.09   # Breeze (ton) per ton sinter in 2025                   
 param n1_bio_sint_25 default 0;      # Biochar (ton) per ton sinter in 2025  
-param n1_brz_sint_50 default 0.058;  # Breeze (ton) per ton sinter by 2050                   
-param n1_bio_sint_50 default 0.022;  # Biochar (ton) per ton sinter by 2050
+param n1_brz_sint_50 default 0.04;  # [audit] Was 0.058  # Breeze (ton) per ton sinter by 2050                   
+param n1_bio_sint_50 default 0.01;  # [audit] was 0.022 (27.5% of fuel, above 20-25% ceiling)  # Biochar (ton) per ton sinter by 2050
 param n1_sintcool_whr default 30;    # Waste heat power (kWh) produced per ton of sinter from sinter cooler and sinter machine    
 param n1_sintgas_sint default 1800;  # Sinter gas (Nm3) per ton sinter
 #Remaining sinter gas is waste with very low energy value

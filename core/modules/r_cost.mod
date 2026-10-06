@@ -23,6 +23,7 @@ s.t. cost_sinter_def{t in T}:
 s.t. cost_pellet_bf_def{t in T}:
     ng_cost_fineore  * pellets_fineore_bf[t]
   + ng_cost_power[t]    * pellets_bf_power[t]
+  + ng_cost_ncoal * ng_pell_fuel/24 * bf_pellets_in[t]   # [audit ST-03] induration fuel
   - cost_pellet_bf[t] = 0;                           # eq91
 
 # Blast Furnace
@@ -48,18 +49,21 @@ s.t. cost_bof_def{t in T}:
 s.t. cost_pellet_coaldri_def{t in T}:
     ng_cost_fineore  * pellets_fineore_coaldri[t]
   + ng_cost_power[t]    * pellets_power_coaldri[t]
+  + ng_cost_ncoal * ng_pell_fuel/24 * coaldri_pellets_in[t]   # [audit ST-03]
   - cost_pellet_coaldri[t] = 0;                      # eq94
 
 #  Pellets NG DRI
 s.t. cost_pellet_ngdri_def{t in T}:
     ng_cost_fineore * pellets_fineore_ngdri[t]
   + ng_cost_power[t]   * pellets_power_ngdri[t]
+  + ng_cost_ncoal * ng_pell_fuel/24 * ngdri_pellets_in[t]   # [audit ST-03]
   - cost_pellet_ngdri[t] = 0;                        # eq95
 
 # Pellets H2 DRI
 s.t. cost_pellet_h2dri_def{t in T}:
     ng_cost_fineore * pellets_fineore_h2dri[t]
   + ng_cost_power[t]   * pellets_power_h2dri[t]
+  + ng_cost_ncoal * ng_pell_fuel/24 * h2dri_pellets_in[t]   # [audit ST-03]
   - cost_pellet_h2dri[t] = 0;                        # eq96
 
 # Coal DRI
