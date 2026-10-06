@@ -29,17 +29,17 @@ printf "%-6s %-10s %-10s %-10s %-10s %-8s   %-12s %-12s\n",
 for {t in T: t = 2025 or t = 2035 or t = 2050} {
     printf "%4d %9.2f %9.2f %9.2f %9.2f %9.2f %11.1f%% %11.1f%%\n",
         t,
-        ( h2elec_capex_kw[t]/(8760*re_cf/h2_kwh_per_t)*crf_h2elec + fopex_h2elec )/1000,
+        ( h2elec_capex_kw[t]/(8760*re_cf/h2_kwh_per_t)*crf_h2elec + fopex_h2elec[t] )/1000,
         ( h2_kw_per_t*(re_capex_kw[t]*crf_re + fopex_h2re) )/1000,
         ( h2_firm_capex[t]*crf_h2elec )/1000,
         h2_opex[t]/1000,
-        ( ocapex_h2elec[t]*crf_h2elec + fopex_h2elec
+        ( ocapex_h2elec[t]*crf_h2elec + fopex_h2elec[t]
           + h2_kw_per_t*(ocapex_h2re[t]*crf_re + fopex_h2re) + h2_opex[t] )/1000,
         100*( h2_kw_per_t*(re_capex_kw[t]*crf_re + fopex_h2re) + h2_firm_capex[t]*crf_h2elec )
-           /( ocapex_h2elec[t]*crf_h2elec + fopex_h2elec
+           /( ocapex_h2elec[t]*crf_h2elec + fopex_h2elec[t]
               + h2_kw_per_t*(ocapex_h2re[t]*crf_re + fopex_h2re) + h2_opex[t] ),
-        100*( h2elec_capex_kw[t]/(8760*re_cf/h2_kwh_per_t)*crf_h2elec + fopex_h2elec )
-           /( ocapex_h2elec[t]*crf_h2elec + fopex_h2elec
+        100*( h2elec_capex_kw[t]/(8760*re_cf/h2_kwh_per_t)*crf_h2elec + fopex_h2elec[t] )
+           /( ocapex_h2elec[t]*crf_h2elec + fopex_h2elec[t]
               + h2_kw_per_t*(ocapex_h2re[t]*crf_re + fopex_h2re) + h2_opex[t] );
 }
 
@@ -50,7 +50,7 @@ printf "%-6s %-12s %-14s %-12s %-15s\n",
 for {t in T: t = 2025 or t = 2030 or t = 2035 or t = 2040 or t = 2045 or t = 2050} {
     printf "%4d %10.4f %14.6f %12.2f %15.2f\n",
         t, ng_cost_power[t], n9_grid_ef[t],
-        ( ocapex_h2elec[t]*crf_h2elec + fopex_h2elec
+        ( ocapex_h2elec[t]*crf_h2elec + fopex_h2elec[t]
           + h2_kw_per_t*(ocapex_h2re[t]*crf_re + fopex_h2re) + h2_opex[t] ) / 1000,
         ocapex_ccs[t]*(crf_ccs + ccs_fom_pct)                       # all-in incl T&S (BF ref stream)
           + ccs_kwh_bf*ng_cost_power[t] + ccs_steam_bf*ccs_ref_steam
@@ -248,7 +248,7 @@ for {t in T} {
         # to this route by its share of total H2 use (DRI vs BF injection).
         if t >= ng_h2_start_year && steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]) > 0 then
            ( acapex_h2dri[t]*(cap_h2dri[t]-legacy_h2dri[t]) + fopex_h2dri*cap_h2dri[t]
-           + ( (acapex_h2elec[t]+fopex_h2elec)*cap_h2elec[t] + (acapex_h2re[t]+fopex_h2re)*cap_h2re[t] )
+           + ( (acapex_h2elec[t]+fopex_h2elec[t])*cap_h2elec[t] + (acapex_h2re[t]+fopex_h2re)*cap_h2re[t] )
              * ( if h2dri_h2_in[t]+bf_h2_in[t] > 0 then h2dri_h2_in[t]/(h2dri_h2_in[t]+bf_h2_in[t]) else 0 )
            + cost_h2dri[t] + (1-f_cdri[t]-f_ngdri[t])*cost_eaf[t] + cost_pellet_h2dri[t]
            + other_opex*(steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]))

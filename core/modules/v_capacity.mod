@@ -239,14 +239,14 @@ s.t. fixopex_cost_def{t in T}:
                + fopex_ngdri * cap_ngdri[t]
                + fopex_h2dri * cap_h2dri[t]
                + fopex_scrap * cap_scrap[t]
-               + fopex_h2elec * cap_h2elec[t]                      # green-H2: electrolyser fixed O&M
+               + fopex_h2elec[t] * cap_h2elec[t]                      # green-H2: electrolyser fixed O&M
                + fopex_h2re   * cap_h2re[t] )                      # green-H2: renewable fixed O&M
     + (1-sunk) * ( fopex_bof   * steel_bof[t]                      # not sunk: fixed opex on production
                + fopex_cdri  * coaldri_output[t]
                + fopex_ngdri * ngdri_output[t]
                + fopex_h2dri * h2dri_output[t]
                + fopex_scrap * steel_scrap_eaf[t]
-               + fopex_h2elec * h2dri_h2_in[t]
+               + fopex_h2elec[t] * h2dri_h2_in[t]
                + fopex_h2re   * h2dri_h2_in[t] * h2_kwh_per_t/(8760*re_cf) );
 
 # CCS retrofit capacity

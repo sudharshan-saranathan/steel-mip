@@ -153,10 +153,15 @@ param grid_price_end_fast default 0.055;   # 2050 grid tariff at theta_grid=1 (i
 # 2025 anchors through 2050 (slow endpoint = start value, mirrors theta_grid's
 # convention). theta_tech=1 -> ~$1.8/kg by 2050 (cheap band $1-2/kg).
 # 2050 H2 cost is never specified directly -- it emerges from this build-up.
-param h2elec_capex_end_slow default 850;    # 2050 electrolyser capex $/kW, slow (= 2025 start -> flat)
-param h2elec_capex_end_fast default 100.31; # 2050 electrolyser capex $/kW, fast (scaled x0.6688 off 150 DOE-optimistic; theta_tech=1 -> 2050 LCOH = $1.50/kg)
-param re_capex_end_slow   default 800;      # 2050 renewable capex $/kW, slow (= 2025 start -> flat)
-param re_capex_end_fast   default 133.75;   # 2050 renewable capex $/kW, fast (scaled x0.6688 off 200 IRENA-optimistic; theta_tech=1 -> 2050 LCOH = $1.50/kg)
+# [audit H2] Slow end-points = no learning (explicit pessimistic bound; no source
+# projects zero learning). Fast end-points = pessimistic sourced values: IRENA
+# best-case electrolyser 130 $/kW (USD 2020) = 159 (2025 USD); IEA WEO 2024
+# India 2050 hybrid solar/wind 695 $/kW. Was 850/100.31 and 800/133.75 (the
+# fast values were back-solved to hit 1.50 $/kg, below every source).
+param h2elec_capex_end_slow default 800;
+param h2elec_capex_end_fast default 159;
+param re_capex_end_slow   default 835;
+param re_capex_end_fast   default 695;
 param theta_ccs default 0;                 # capture-plant learning speed
 param ccs_capex_fall_slow default 0.3165;  # 2050 overnight-capex decline vs 2025, slow (theta_ccs=0 -> 2050 all-in cost = $100/tCO2)
 param ccs_capex_fall_fast default 0.8435;  # 2050 overnight-capex decline vs 2025, fast (theta_ccs=1 -> 2050 all-in cost = $60/tCO2)
@@ -366,32 +371,34 @@ param fom_ccs    {t in T} := ccs_fom_pct * ocapex_ccs[t];   # fixed O&M $/tCO2-c
 
 
 # GREEN-H2 SUPPLY CHAIN: electrolyser + dedicated renewable (sunk capacity)
-param h2_kwh_per_t default 55000;     # electrolyser electricity, kWh per t H2 (~55 kWh/kg incl BoP)
-param re_cf        default 0.35;      # dedicated renewable capacity factor (India solar/wind hybrid)
-param h2_opex{t in T} default 300;    # residual H2 variable opex (water + stack O&M), $/t H2
+param h2_kwh_per_t default 53000;     # [audit H2] median 52.9 kWh/kg incl. BoP. Was 55000
+param re_cf        default 0.25;      # [audit H2] India solar/wind portfolio, median of 6 sources (0.23-0.31; IEA WEO 2024, IRENA 2024, MoS 2024 31%, NGHM). Was 0.35 (no source). Also electrolyser utilisation.
+param h2_opex{t in T} default 30;     # [audit H2] water + labour; stack replacement is in fixed O&M. Was 300 (no source)
 param h2_capex_mult default 1;
-param h2elec_capex_start default 850;
+param h2elec_capex_start default 800; # [audit H2] median of 5 (550-2360) $/kW, 2025. Was 850
+param re_capex_start default 835;     # [audit H2] India solar/wind hybrid $/kW, 2025. Was hard-coded 800
 param h2elec_capex_kw{t in T} :=
     h2elec_capex_start
     + ( (h2elec_capex_end_slow + theta_tech*(h2elec_capex_end_fast - h2elec_capex_end_slow))
         - h2elec_capex_start )*(t-2025)/25;
 param life_h2elec default 15;         # electrolyser plant life (incl stack replacement)
 param crf_h2elec := real_discount_rate*(1+real_discount_rate)^life_h2elec/((1+real_discount_rate)^life_h2elec-1);
-param fopex_h2elec default 400;       # fixed O&M, $/(t-H2/yr)/yr (placeholder ~3% of capex)
+param fopex_h2elec{t in T} := 0.03 * h2elec_capex_kw[t]/(8760*re_cf/h2_kwh_per_t);  # [audit H2] 3 % of capex per yr, follows capex. Was constant 400
 param re_capex_kw{t in T} :=
-    800 + ( (re_capex_end_slow + theta_tech*(re_capex_end_fast - re_capex_end_slow))
-            - 800 )*(t-2025)/25;
+    re_capex_start + ( (re_capex_end_slow + theta_tech*(re_capex_end_fast - re_capex_end_slow))
+            - re_capex_start )*(t-2025)/25;
 param life_re default 25;             # renewable plant life
 param crf_re := real_discount_rate*(1+real_discount_rate)^life_re/((1+real_discount_rate)^life_re-1);
-param fopex_h2re default 15;          # fixed O&M, $/kW/yr (placeholder ~2% of capex)
-param lcoh_2025_target default 5000;  # $/t H2 (= $5/kg) calibration anchor
+param fopex_h2re default 22;          # [audit H2] $/kW-yr, hybrid (upper of 2). Was 15
+param lcoh_2025_target default 5000;  # $/t H2 anchor; [audit ST-12] now a CHECK only (h2_firm_on = 0)
+param h2_firm_on default 0;           # [audit ST-12] 1 restores the old firming plug. Off: the sourced build-up gives ~4.7 $/kg (Indian tenders 3.0-5.1, median 3.6)
 param h2_kw_per_t := h2_kwh_per_t/(8760*re_cf);   # kW of dedicated RE per (t-H2/yr)
 param h2_lcoh_base_2025 :=            # 2025 LCOH of the bare build-up (no firming, mult=1)
-      h2elec_capex_kw[2025]/(8760*re_cf/h2_kwh_per_t) * crf_h2elec + fopex_h2elec
+      h2elec_capex_kw[2025]/(8760*re_cf/h2_kwh_per_t) * crf_h2elec + fopex_h2elec[2025]
     + h2_kw_per_t * (re_capex_kw[2025]*crf_re + fopex_h2re)
     + h2_opex[2025];
 param h2_firm_capex{t in T} :=        # overnight $ per (t-H2/yr), declines with electrolyser capex
-    max(lcoh_2025_target - h2_lcoh_base_2025, 0)/crf_h2elec
+    h2_firm_on * max(lcoh_2025_target - h2_lcoh_base_2025, 0)/crf_h2elec
     * h2elec_capex_kw[t]/h2elec_capex_kw[2025];
 
 param ocapex_h2elec{t in T} := h2_capex_mult * ( h2elec_capex_kw[t]/(8760*re_cf/h2_kwh_per_t) + h2_firm_capex[t] );
