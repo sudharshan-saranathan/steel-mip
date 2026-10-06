@@ -10,7 +10,7 @@ s.t. init_f_cdri: coaldri_output[first(T)] = 0.902 * dri_eaf_steel_out[first(T)]
 
 # Demand and availability Constraints
 s.t. meet_demand{t in T}:
-    total_steel[t] = base_demand * (1 + growth_rate)^(ord(t) - 1);
+    total_steel[t] = dem[t];   # [audit] was the exponential formula repeated; now follows dem_profile
 
 # scrap-availability constraint
 s.t. scrap_bound{t in T: t > first(T)}:

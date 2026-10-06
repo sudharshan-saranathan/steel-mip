@@ -240,14 +240,14 @@ def case_text(world, h2ready, tstar, committed):
     lines.append("var steel_import{T} >= 0;")
     lines.append("drop meet_demand;")
     lines.append("s.t. meet_demand_elastic{t in T}: total_steel[t] + steel_import[t] "
-                 "= base_demand*(1+growth_rate)^(ord(t)-1);")
+                 "= dem[t];")   # [audit] follows dem_profile
 
     lines.append("drop emission_monotonic;")   # [audit] kept dropped here: demand is elastic (imports), so dem[t] != total_steel[t]
     lines.append("drop avg_emis_cap_total;")
     lines.append("param PEN := 5000;")
     lines.append("var emis_slack >= 0;")
     lines.append("param carbon_budget := avg_emi * sum{t in T} "
-                 "base_demand*(1+growth_rate)^(ord(t)-1);")
+                 "dem[t];")   # [audit] follows dem_profile
     lines.append("s.t. cap_elastic: sum{t in T} total_emissions[t] "
                  "<= carbon_budget + emis_slack;")
 

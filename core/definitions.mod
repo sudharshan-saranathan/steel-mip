@@ -2,7 +2,19 @@
 # Crude Steel Production
 param base_demand default 152200000;  # Steel production at year 2025
 param growth_rate default 0.05;
-param dem{t in T} := base_demand * (1 + growth_rate)^(ord(t) - 1);
+# [audit] Demand profile. 0 = constant exponential growth (original);
+# 1 = logistic (S-curve) through base_demand in 2025 with initial growth dem_g0,
+#     approaching the saturation level dem_sat (plateau around/after 2050).
+#     Logistic rate k and midpoint t0 follow from D(2025) = base_demand and
+#     dD/dt / D at 2025 = dem_g0.
+param dem_profile default 0;
+param dem_sat     default 500e6;   # t/yr crude steel at saturation (set from sourced per-capita x population)
+param dem_g0      default 0.082;   # 2025 growth: FY22-FY25 CAGR of crude steel, 120.29 -> 152.18 Mt (JPC, MoS AR 2025-26)
+param dem_k  := dem_g0 / (1 - base_demand/dem_sat);
+param dem_t0 := 2025 + log(dem_sat/base_demand - 1) / dem_k;
+param dem{t in T} :=
+    if dem_profile = 0 then base_demand * (1 + growth_rate)^(ord(t) - 1)
+    else dem_sat / (1 + exp(-dem_k * (t - dem_t0)));
 param real_discount_rate default 0.06;   # was `:=` (defined, un-let-able) -- now a mutable input for MC sweeps
 
 # TECHNICAL PARAMETERS 
