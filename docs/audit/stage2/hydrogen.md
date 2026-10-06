@@ -1,6 +1,6 @@
 # Stage 2 — Green hydrogen supply chain (ST-12, register §3.7)
 
-Status: IN PROGRESS (sections A–C done; D, E, structural notes, call list in progress).
+Status: complete (2026-10-06). Downloads and scripts: `scratchpad/h2_dl/`, `scratchpad/h2_scripts/` (`lcoh.py` replicates lines 344–372).
 
 Model: `core/definitions.mod` @ b33b88a, lines 6, 98, 146–158, 344–414. Real discount rate in the model is 6 % (`real_discount_rate`, line 6); every LCOH figure below that is computed by me uses the model's own formula (replicated in `scratchpad/h2_scripts/lcoh.py`) at 6 % unless stated.
 Conversions: `convert_2025usd.py` (US GDP deflator factors to 2025: 2020 ×1.2233, 2022 ×1.0921, 2023 ×1.0526, 2024 ×1.0263; INR 2025 values ÷ ₹87.16/$).
@@ -8,7 +8,23 @@ Units in the model: electrolyser capacity is in t H₂/yr **of actual output** (
 
 ## Needs your call
 
-IN PROGRESS
+1. **Firming plug (ST-12) and the 2025 anchor.** Indian evidence on near-term delivered green-H₂ prices runs from 3.0 to 5.1 $/kg (median 3.6; IOCL tender 4.56; Ministry of Steel anchor 5.13). With the sourced component values in A–C, the model's own build-up already gives 4.71 $/kg at 6 %, so the plug is nearly zero.
+   (a) **Recommended:** adopt A–C and set `h2_firm_capex` = 0. The 2025 LCOH is then 4.71 $/kg, and `lcoh_2025_target` becomes a reporting check only.
+   (b) Keep the plug with the 5 $/kg anchor (adds 0.29 $/kg with the A–C values), relabelled as "MoS 2024 anchor".
+   (c) Model firming explicitly (oversized solar + 15 h battery, electrolyser at ~95 %; IECC 2026), with the firming cost following battery cost (125 → 86 → 74 $/kWh). This needs a code change (S1).
+2. **`re_cf` 0.35 → 0.25.** Six India sources give 0.23–0.31 for a solar/wind portfolio (median 0.25); none gives 0.35. Because `re_cf` is also electrolyser utilisation, this raises the bare build-up from 3.66 to 4.71 $/kg (it is what removes the plug in #1), and it lowers the 2050 θ = 1 end-point. Options: 0.25 (median, recommended); 0.31 (MoS, upper); keep 0.35 (unsourced).
+3. **2050 end-points (θ_tech) and the paper's 1.5–5 $/kg range.** The fast RE end-point of 133.75 $/kW sits below every source (IEA NZE India 2050: solar 280, wind 1,040 $/kW, 2023 $). The electrolyser fast end-point of 100.31 is below IRENA's best case (130 $/kW, 2020 $ = 159).
+   (a) **Recommended:** fast ends 159 / 695 (hybrid) → 2050 LCOH ≈ 2.4 $/kg at θ = 1.
+   (b) Fast RE end 295 (solar-led 2050 mix) → ≈1.9 $/kg.
+   (c) Keep the back-solved ends to hold 1.5 $/kg (unsourced). Cite MoS's "USD 1.5 per kg by 2030-31" and NITI–RMI's 0.70 $/kg by 2050 as optimistic context.
+   Slow ends: keep "no learning" (≈4.7–5 $/kg) as an explicitly labelled pessimistic bound, or use the sourced slow case (376 / 732 $/kW → ≈3.2 $/kg).
+4. **Ramp levels 0.5 / 1 / 1.5 Mt H₂/yr for steel alone.** NGHM implies ≈0.71 Mt/yr for *all* sectors to 2030. MoS (2024) sees 1.1 Mt in steel by 2030-31 only in the ambitious case. IEA expects under 20 % of India's target to be firm by 2030.
+   (a) Keep as a scenario axis, but state that the low level already equals 70 % of the national pace.
+   (b) Rescale to 0.25 / 0.5 / 0.75 Mt/yr, which brackets the evidence (pessimistic).
+
+Defaults applied unless you object: electrolyser capex 850 → 800 $/kW; RE capex 800 → 835 $/kW (as a parameter); `h2_kwh_per_t` 55,000 → 53,000; `h2_opex` 300 → 30 $/t; `fopex_h2elec` → 3 % of capex per year; `fopex_h2re` 15 → 22 $/kW-yr; lives 15 / 25 kept.
+
+**Parameters with no admissible source found: 7.** The plug's decline rule (`h2_firm_capex`), the steel-specific ramp level (`h2_ref_cap`), `h2_peak_rate`, `h2_base_start`, `h2_base_end`, `h2_gauss_sigma` and `h2_peak_lag`. The flat "slow" end-points are a modelling convention rather than a sourced value (S6). Jindal, Shrimali & Tiwary (2024, *Energy Sustain. Dev.* 83:101549) could not be read (paywalled and blocked), so it is not used.
 
 ## A. Electrolyser: capex, fixed O&M, life
 
@@ -74,7 +90,7 @@ The only sourced explicit firming estimate is IECC Fig. 4a (p. 12): a "BESS (15h
 | Parameter | file:line | Current | Proposed | Pessimistic | Flag |
 |---|---|---|---|---|---|
 | `lcoh_2025_target` | definitions.mod:362 | 5,000 $/t | Keep 5,000 only as a reporting check (MoS 2024 anchor, 5.13 in 2025 $); evidence range 3,000–5,130, median 3,600 | upper | NEEDS CALL (#1) |
-| `h2_firm_capex` (plug) | definitions.mod:368–372 | 12,998 $/(t/yr) overnight in 2025, × `h2elec_capex_kw[t]/h2elec_capex_kw[2025]` | **Set to 0 (drop)** once A–C are adopted: the sourced build-up (4,710) already exceeds the tender median, and is 0.29 $/kg short of the MoS anchor. If firming is kept, cost it explicitly as battery storage that follows the battery cost path (125 → 86 → 74 $/kWh in 2025/2030/2035; TA–TERI, IECC Table S-1) and raise electrolyser utilisation to ~0.95 at the same time. No source supports tying the plug to electrolyser capex. | — | NEEDS CALL (#1) |
+| `h2_firm_capex` (plug) | definitions.mod:368–370 | 12,998 $/(t/yr) overnight in 2025, × `h2elec_capex_kw[t]/h2elec_capex_kw[2025]` | **Set to 0 (drop)** once A–C are adopted: the sourced build-up (4,710) already exceeds the tender median, and is 0.29 $/kg short of the MoS anchor. If firming is kept, cost it explicitly as battery storage that follows the battery cost path (125 → 86 → 74 $/kWh in 2025/2030/2035; TA–TERI, IECC Table S-1) and raise electrolyser utilisation to ~0.95 at the same time. No source supports tying the plug to electrolyser capex. | — | NEEDS CALL (#1) |
 | 2050 LCOH at θ = 1 (1.50 $/kg, via the back-solved ends) | definitions.mod:156, 158 | 1,500 $/t | Let it emerge from sourced ends: **≈2,390** (hybrid RE at IEA NZE 695 $/kW, electrolyser 159), or ≈1,850 for a solar-led mix (295 $/kW, cf 0.22). Sources quoting ≤1.5: MoS p. 175 base case "USD 1.5 per kg by 2030-31" (a price assumption from MNRE, not a build-up); NITI–RMI p. 30 "$1.60/kg by 2030 and $0.70/kg by 2050" (best case). IECC p. 12: "$2.5/kg within the mid-term, i.e., by 2035". | upper | NEEDS CALL (#3) |
 | Sampled 2050 range 1.5–5 $/kg (θ_tech 1 → 0) | paper; definitions.mod:155–158 | 1.5–5.0 | Sourced ends give ≈1.9–2.4 (θ = 1) to ≈3.2 (θ = 0 with IRENA 1 TW / IEA STEPS ends), or 4.7 if θ = 0 keeps "no learning". No source projects zero learning to 2050, so 4.7–5 is an explicit pessimistic bound. | upper | NEEDS CALL (#3) |
 
@@ -92,15 +108,27 @@ The ramp caps the **year-on-year increase in steel-sector electrolyser output ca
 
 ## Structural notes (not fixed; code untouched)
 
-- **S1 — One number for two things.** `re_cf` is both the renewables' capacity factor (kW of renewables per t/yr) and the electrolyser's utilisation (line 365 and `v_capacity.mod:285–287`). That ties the electrolyser to the renewable output with no storage. The DRI shaft furnace needs a steady H₂ flow, but the model only balances annual energy, so the cost of firming (storage or oversizing) appears only through the plug. Splitting it into `re_cf` and `elec_util` (with an explicit storage cost when `elec_util` > `re_cf`) would let option (ii) in D3 be represented.
+- **S1 — One number for two things.** `re_cf` is both the renewables' capacity factor (kW of renewables per t/yr) and the electrolyser's utilisation (lines 363 and 372; `v_capacity.mod:285–287`). That ties the electrolyser to the renewable output with no storage. The DRI shaft furnace needs a steady H₂ flow, but the model only balances annual energy, so the cost of firming (storage or oversizing) appears only through the plug. Splitting it into `re_cf` and `elec_util` (with an explicit storage cost when `elec_util` > `re_cf`) would let option (ii) in D3 be represented.
 - **S2 — The plug falls with the wrong cost.** `h2_firm_capex` falls in step with *electrolyser* capex (−88 % by 2050 at θ = 1). If it stands for firming, its cost driver is battery or H₂-storage cost.
 - **S3 — Fixed O&M does not fall.** `fopex_h2elec` (400 $/(t/yr)) and `fopex_h2re` (15 $/kW) stay constant while capex falls. At θ = 1 in 2050, fixed O&M is 669 of the 1,500 $/t LCOH (45 %), and electrolyser O&M (400) is more than twice the electrolyser annuity (185). Expressing O&M as a share of the year's capex (IEA, TA–TERI 3 %; IECC 2 %) would fix this.
 - **S4 — Hard-coded RE capex.** The 2025 RE capex is a literal `800` in two places (line 357). It should be a parameter.
 - **S5 — Discount rate.** The H₂ annuities use the economy-wide `real_discount_rate` = 6 %. IECC and TA–TERI use a 10 % WACC for Indian H₂ projects. At 10 % the sourced build-up is 5.90 $/kg instead of 4.71. This belongs with whoever audits the discount rate, but it affects H₂ more than any other route because H₂ is almost all capex.
 - **S6 — The "slow" ends are not a slow case.** θ_tech = 0 means *no* learning (2050 = 2025). Every source surveyed projects some decline (IEA STEPS solar 710 → 300 $/kW; IRENA electrolyser 307 $/kW at 1 TW). This is a deliberate pessimistic bound, and the paper should say so.
-- **S7 — Year-one electrolyser capacity.** `cap_h2elec` is counted in t/yr of output at `re_cf`, so changing `re_cf` rescales the meaning of the ramp ceiling in kW terms (a lower `re_cf` means more MW of electrolyser per Mt/yr allowed). That is fine, but it should be stated alongside the ramp levels.
+- **S7 — Units of the ramp.** `cap_h2elec` is counted in t/yr of output at `re_cf`, so changing `re_cf` rescales the meaning of the ramp ceiling in kW terms (a lower `re_cf` means more MW of electrolyser per Mt/yr allowed). That is fine, but it should be stated alongside the ramp levels.
 - **S8 — `parameters.mod:18` `H2_cap` 1.5 Mt** is used only in ramp mode 1. The default is mode 2, so it is inert in the default runs.
 
 ## Bibliography
 
-IN PROGRESS
+- Domínguez Bennett, J., Jain, N., Chojkiewicz, E., Abhyankar, N. & Phadke, A. (2026). *Economic Case for Green Steel Production in India*. India Energy & Climate Center, UC Berkeley. Fig. 1, Fig. 4, Tables S-1, S-2, S-5. https://iecc.gspp.berkeley.edu/wp-content/uploads/2026/05/IECC-Economic-Case-for-Green-Steel-Production-in-India-Report-May26.pdf
+- Transition Asia & TERI (2026). *Is Green Steel Within Reach in India?* Model input workbook `india/data/Model_input_India.xlsx` (sheets Tech, Params_H2, Commodities, Params_Finance) and `india/data/renewable/` hourly profiles. https://github.com/transition-asia/green-steel-dri-model
+- IEA (2025). *Global Hydrogen Review 2025*. pp. 9, 39, 46 (Table 2.2), 87, 99 (Fig. 3.10), 107–108, 211, 217. https://iea.blob.core.windows.net/assets/12d92ecc-e960-40f3-aff5-b2de6690ab6b/GlobalHydrogenReview2025.pdf
+- IEA (2025). *Global Hydrogen Review 2025: Assumptions annex*, p. 6. https://iea.blob.core.windows.net/assets/15673ab3-a86a-4434-bff4-490bb42d3563/GlobalHydrogenReview2025AssumptionsAnnex.pdf
+- IEA (2024). *World Energy Outlook 2024*, Annex B, Tables B.4a–c, pp. 333–336. https://iea.blob.core.windows.net/assets/140a0470-5b90-4922-a0e9-838b3ac6918c/WorldEnergyOutlook2024.pdf
+- IRENA (2025). *Renewable Power Generation Costs in 2024*. pp. 31, 71 (Table 2.1), 76 (Table 2.2), 95 (Table 3.1), 100. https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2025/Jul/IRENA_TEC_RPGC_in_2024_2025.pdf
+- IRENA (2020). *Green Hydrogen Cost Reduction: Scaling up Electrolysers to Meet the 1.5°C Climate Goal*. pp. 11, 40, 66. https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2020/Dec/IRENA_Green_hydrogen_cost_2020.pdf
+- MNRE (2023). *National Green Hydrogen Mission*, January 2023. pp. 4, 13, 23. https://cdnbbsr.s3waas.gov.in/s3716e1b8c6cd17b771da77391355749f3/uploads/2023/01/2023012338.pdf
+- PIB / MNRE (2025). "SECI conducts first-ever auction for procurement of Green Ammonia under National Green Hydrogen Mission", Release ID 2153006, 6 Aug 2025. https://pib.gov.in/PressReleasePage.aspx?PRID=2153006
+- Ministry of Steel (2024). *Greening the Steel Sector in India: Roadmap and Action Plan*. pp. 150 (Table 6.21), 175 (§8.4.1, Fig. 8.2), 184 (Fig. 8.10). https://steel.gov.in/green-steel-initiative
+- NITI Aayog & RMI (2022). *Harnessing Green Hydrogen: Opportunities for Deep Decarbonisation in India*. pp. 28–31 (Exhibits 9–11). https://www.niti.gov.in/sites/default/files/2022-06/Harnessing_Green_Hydrogen_V21_DIGITAL_29062022.pdf
+- IEEFA (2024). *India's $2.1bn Leap Towards its Green Hydrogen Vision*, March 2024. pp. 16, 20 (context only). https://ieefa.org/sites/default/files/2024-03/India%E2%80%99s%20$2.1bn%20Leap%20Towards%20its%20Green%20Hydrogen%20Vision_Mar2024.pdf
+- Not used (could not be read): Jindal, A. S., Shrimali, G. & Tiwary, N. (2024). At scale adoption of Green Hydrogen in Indian Industry: Costs, subsidies and policies. *Energy for Sustainable Development* 83, 101549. https://doi.org/10.1016/j.esd.2024.101549
