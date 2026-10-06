@@ -94,15 +94,66 @@ Why util_max matters: the model settles at capacity/demand = 1/0.95 = 1.05 (comm
 
 ## D. Fixed and other opex
 
-IN PROGRESS
+How the model uses these values: `fopex_<route> = labor_cost + maintenance_cost` ($35/t of installed capacity per year, the same for every route, ST-11; `definitions.mod:270–274`, charged on capacity in `v_capacity.mod:240–246`). `other_opex` is charged per tonne produced (`r_cost.mod:138`).
+
+Evidence (company values are standalone FY2024-25, converted with `convert_2025usd.py`: India WPI 2024 → 2025, then ₹87.16/$):
+
+| # | Source | Quote (page) | ₹/t CS | 2025 $/t CS |
+|---|---|---|---|---|
+| O1 | Tata Steel (2025) *Integrated Report 2024-25*, standalone note 27 | "Employee benefits expense … 8,010.08" ₹ crore (PDF p. 352); standalone crude steel "20.72 MT" (Board's report, PDF p. 134) | 3,866 | **44.6** labour |
+| O2 | Tata Steel (2025), standalone note 30 | "Repairs and maintenance 5,857.75 … Relining expenses 204.30"; "Consumption of stores and spares* 6,477.48" ₹ crore (PDF p. 353) | 2,926 (R&M + relining); 3,126 (stores) | **33.8** maintenance; 36.1 stores |
+| O3 | JSW Steel (2025) *Integrated Report 2024-25*, standalone note 33/35 | "Employee benefits expense … Total 2,488"; "Repairs and maintenance — Plant and machinery 1,627; Buildings 79; Others 39"; "Stores and spares consumed 5,261" ₹ crore (Standalone FS, PDF p. 36); "highest ever crude steel production at 22.47 MnT" (Directors' Report, PDF p. 2) | 1,107 (labour); 777 (R&M); 2,341 (stores) | **12.8** labour; **9.0** maintenance; 27.0 stores |
+| O4 | Transition Asia & TERI (2026) model input workbook `Model_input_India.xlsx`, sheet Tech | `om_to_capex` = 0.03 for DRI-SF, DRI-RK, BOF and EAF (fixed O&M, % of capex per year) | — | 3 % × Stage-2 capex: BF-BOF 36, coal-DRI-EAF 26, NG/H₂-DRI-EAF 28, scrap-EAF 12 |
+| O5 | Transition Asia & TERI (2026), sheet Commodities, row Labor | "Fully loaded labour cost … Calibrated to the Indian integrated-mill range of USD 15-30/tcs (employee-benefit lines of JSW, Tata Steel India and SAIL annual reports); yields about USD 12/tcs on the shaft furnace route" | — | 15–30 (integrated); ≈ 12 (DRI-EAF) |
+| O6 | Domínguez Bennett et al. (2026) IECC, Fig. caption | "annual Operational Expenditures (OPEX) estimated as 34 US$/t" for H₂-DRI-EAF (p. 24) | — | 34 (non-energy opex, all items) |
+
+SAIL's report (sail.co.in) could not be fetched: the host is blocked by this session's network policy. O5 says SAIL is within its 15–30 range.
+
+| Parameter | file:line | Current | Sources | Value in model units | Proposed | Pessimistic direction | Flag |
+|---|---|---|---|---|---|---|---|
+| labor_cost | `definitions.mod:216` | 20 $/tCS | O1 (44.6), O3 (12.8), O5 (15–30 integrated; ≈12 DRI-EAF) | median of 44.6, 12.8, 22.5 (O5 midpoint) = 22.5 | **20 → 22** (median; route-neutral as coded) | higher = harder | default |
+| maintenance_cost | `definitions.mod:217` | 15 $/tCS | O2 (33.8), O3 (9.0), O4 (3 % of capex: 12–36 by route) | median of 33.8, 9.0 and O4 for the route ≈ 26 (DRI routes) to 34 (BF-BOF) | **route-specific, 3 % of up-front capex** (BF-BOF 36, coal-DRI 26, NG-DRI 28, H₂-DRI 28, scrap-EAF 12) via `fopex_<route>`; uniform alternative: **26** | higher = harder | **NEEDS CALL** (also settles ST-11) |
+| other_opex | `definitions.mod:218` | 10 $/tCS (variable) | Company insurance + rates & taxes + rent: Tata ₹(229.35 + 1,884.44 + 462.45) cr / 20.72 Mt = 14.4 $/t; JSW ₹(240 + 97 + 40) cr / 22.47 Mt = 1.9 $/t (O2, O3) | 2–14 | **10** (keep; no source matches the boundary "other opex") | higher = harder | default; counted as **no admissible source** |
+
+Notes. (1) The O1/O2 Tata values include captive iron-ore and coal mining and downstream mills, so they are upper bounds for steelmaking alone. (2) IECC's $34/t (O6) for all non-energy opex of H₂-DRI-EAF is in line with labour 22 + maintenance 28 = $50/t, once you allow that IECC includes no mining or downstream. (3) Route-specific maintenance changes route economics: it adds about $21/t of capacity to BF-BOF and $11–13/t to the DRI routes, and takes $3/t off scrap-EAF.
 
 ## E. Discount rate
 
-IN PROGRESS
+| # | Source | Quote (page) | Rate |
+|---|---|---|---|
+| R1 | Murty, Panda & Joe (2018) *Reassessment of National Parameters for Project Appraisal in India*, IEG for NITI Aayog | "this study recommends an estimate of 8 per cent for the rate of discount for investment project appraisal"; "discount rates for general economic projects can be 8 per cent, for environmental projects can be 6 per cent and for long term climate change mitigation projects can be even lower than 6 per cent" (exec. summary, PDF pp. 13–14) | social, real: 8 % general, 6 % environmental |
+| R2 | Murty, Panda & Joe (2018), same | "rate of return of capital in the Indian economy is estimated as 10 per cent at 2015-16 prices. Therefore, this study recommends 10 per cent as the rate of return on investment" (PDF p. 15) | private return on capital, real: 10 % |
+| R3 | Murty, Panda & Joe (2020) IEG Working Paper 388 | "Estimates of social time preference rates for India are obtained as 8 percent and 6 percent respectively with original Ramsey rule and generalized Ramsey rule" (p. 1) | social: 6–8 % |
+| R4 | Domínguez Bennett et al. (2026) IECC | "Real WACC 10% [8%-12%]" (Fig. 4c, p. 12); LCOS "at a nominal WACC of 10%" (p. 25) | private: 10 % |
+| R5 | Transition Asia & TERI (2026) workbook, sheet Params_Finance | IN: WACC 0.1, "applied as a capital-recovery factor over each asset's life" | private: 10 % |
+| R6 | Planning Commission recommendation (2007 IEG study), quoted in R1 | "Discount rate of 10% may be applied for calculating Net Present Value (NPV) in financial and economic terms" (PDF p. 19) | official appraisal: 10 % |
+
+| Parameter | file:line | Current | Sources | Value | Proposed | Pessimistic direction | Flag |
+|---|---|---|---|---|---|---|---|
+| real_discount_rate | `definitions.mod:6` | 0.06 | Social: R1, R3 (6–8 %). Private / financial: R2, R4, R5, R6 (10 %; IECC range 8–12 %) | social 6 %; private median 10 % | **0.06** if the model is a social planner (state it in the paper); **0.10** if it stands in for investors' route choice. Sensitivity 0.06 / 0.08 / 0.10 either way | higher = harder (penalises capex-heavy H₂ and CCS) | **NEEDS CALL** |
+
+Note: 6 % is Murty's rate for *environmental* projects, not his general (8 %) or financial (10 %) rate. A cost-minimising sector model that claims to describe what firms will build normally uses a private WACC.
 
 ## F. Coking-coal availability
 
-IN PROGRESS
+| # | Source | Quote / data (page) | Year |
+|---|---|---|---|
+| C1 | Ministry of Coal, *Production and Supplies* page (coal.gov.in, accessed 2026-10-06) | Import of coal, "Coking Coal 57.16 [2021-22] 56.05 [2022-23] 58.81 [2023-24] 57.58 [2024-25] 66.33 [2025-26]" Mt; "Coke … 4.88 [2024-25] 2.12 [2025-26]" | FY22–FY26 |
+| C2 | Ministry of Coal, *Monthly Statistical Report*, March 2025, Table 8.1 (source ICMW) | Imports "Upto Mar … Coking 54.08 [FY25] 57.22 [FY24]"; "PCI Coal 19.16"; "Met Coke 4.93" (PDF p. 87) | FY2024-25 |
+| C3 | Ministry of Coal (2025) *Coal Directory of India 2024-25*, Statement 8.1 | "Coking 57.576" Mt imported (Section 8); Table 4.23: All-India coking-coal "Washed Coal … Total Offtake 5.856" Mt (p. 113) | FY2024-25 |
+| C4 | Ministry of Coal, MSR March 2025, Tables 1.1(b), 4.1(BA), 1.4B | Raw coking-coal production FY25 "66.49" Mt; CIL washed coking coal "2.42" Mt; CIL coking-coal despatch to steel "3.38" Mt of 54.06 (most goes to power) (PDF pp. 7, 10, 57) | FY2024-25 |
+| C5 | Srikanth (2024) *Enhancing Domestic Coking Coal Availability…*, NIAS report to NITI Aayog | "As per the report and action plan published by MoC's report on Mission Coking Coal, raw coal production is expected to reach a level of 140 MT by 2030. After beneficiation, this amount of raw coal is projected to yield 48 MT of washed coking coal … These targets appear to be unrealistic" (PDF p. 17) | target 2030 |
+| C6 | Srikanth (2024), and IECC (2026) p. 1 | "In the NSP, GoI has projected requirements of 161 MT of coking coal and 31 MT of low-ash non-coking coal (for PCI)… by FY 2030-31" (PDF p. 25); IECC: "the NSP projects requirements of 161 million tonnes per annum by 2030–31" | need at 255 Mt steel |
+| C7 | MoS (2024) *Roadmap*, §1.1.5 | "the consumption of coking coal in FY 2022-23 was 56 MT, primarily for blast furnaces" (p. 29) | FY2022-23 |
+
+Reconstruction of the model's 2025 value: imports 54.5 Mt + domestic ≈ 6 Mt = 60.5 Mt. The 54.5 Mt is close to the ICMW figure (C2, 54.08 Mt). The official Ministry of Coal series (C1, C3, DGCI&S basis) gives **57.58 Mt** for FY2024-25. The paper's 66.33 Mt is **FY2025-26**, not the 2025 base year, so the paper and code disagree on the year, not the data. The ≈ 6 Mt domestic washed coal is supported by C3 (5.86 Mt washed coking coal offtake, FY25).
+
+| Parameter | file | Current | Sources | Value | Proposed | Pessimistic direction | Flag |
+|---|---|---|---|---|---|---|---|
+| ccoal_cap[2025] (both axes) | `structural/axes/ccoal_*.mod:4–5` | 60.5 Mt (54.5 import + 6 domestic) | C1/C3 57.58 + C3 5.86; C2 54.08 + 5.86 | 59.9–63.4 Mt | **63.4 Mt** (57.6 import + 5.9 domestic; official MoC series). Note: `coking_coal_bound` skips 2025, so only the trajectory's starting point changes | n/a (scenario axis) | default |
+| ccoal_cap scarce, 2050 | `ccoal_scarce.mod` | 91.1 Mt (imports frozen, domestic +7.5 %/yr) | C1: FY26 imports already 66.33 Mt; C5: Mission target 48 Mt washed by 2030 ("unrealistic", NIAS) | — | rebase on 63.4 Mt; keep the logic (A). Paper should state that FY26 imports (66.3 Mt) already exceed the scarce cap for 2026 (61 Mt) | A | default |
+| ccoal_cap abundant, 2050 | `ccoal_abundant.mod` | 293.6 Mt (imports +6.4 %/yr) | C1: FY22–FY26 import growth 3.8 %/yr; C6: NSP need 161 Mt by 2030-31 | — | keep as the high bound (A); cite C6 as the policy-implied need | A | default |
+| Paper text | — | "66.33 Mt" | C1 | FY2025-26 | Cite 57.58 Mt for FY2024-25 (the base year), or label 66.33 as FY2025-26 | — | default |
 
 ## G. Natural-gas availability
 

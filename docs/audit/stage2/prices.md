@@ -94,7 +94,40 @@ S1 and S2 are the same series in two years, so they count as one estimate (2025 
 
 ## D. Fluxes, biochar, electrodes
 
-IN PROGRESS
+**Lime / limestone.** The model uses one price for "lime" in sinter (0.04 t/t), BF (0.025 t/tHM), BOF (`n3_ls_bof` 0.075, commented "Limestone") and EAF (`n7_ls`/`n8_ls` 0.06, "Limestone"). In practice sinter and BF take raw limestone/dolomite and BOF/EAF take burnt lime, which costs several times more per tonne.
+
+| # | Source | Quote / data | Boundary | 2025 USD/t |
+|---|---|---|---|---|
+| L1 | IBM *Monthly Statistics of Mineral Production*, Table 6(a), India, Limestone, Jan 2025 | "LD Grade (Less Than 1.5% Silica Content) 2,921"; "SMS 614"; "BF 703" (₹/t) | Ex-mine | LD 34; SMS 7; BF 8 |
+| L2 | IBM, same, Dec 2025 | "LD Grade … 3,553"; "SMS 606"; "BF 887" | Ex-mine | LD 41; SMS 7; BF 10 |
+| L3 | Transition Asia & TERI (2026) workbook, Commodities, "Burnt Limestone" 33.5 $/t, "India, Q2 2025 (IMARC Group price report)" | | 2025 | 33.5 (equals IBM LD-grade ex-mine, so probably limestone, not burnt lime) |
+
+No admissible source found for a delivered **burnt-lime** price in India. All admissible values (7–41) are ex-mine limestone and lie below the current $60, which leaves room for freight and some calcination. Keep **60** (it is already the upper bound of the evidence). The burnt-lime/limestone mix is a structural point (below).
+
+**Biochar / biomass.** The parameter is commented "Cost per ton of biomass", but it prices `sinter_biochar_in` (biochar) and `bf_biopci_in` ("Biomass injection"). The quantities are fixed paths (0 in 2025 → 0.022 t/t sinter and 0.053 t/tHM in 2050), so the price changes BF-BOF cost in later years but not route choice directly.
+
+| # | Source | Quote | Boundary | 2025 USD/t |
+|---|---|---|---|---|
+| B1 | Ibitoye et al. (2024) "An overview of biochar production techniques and application in iron and steel industries", *Bioresources and Bioprocessing* 11:65, doi:10.1186/s40643-024-00779-z (text beside Fig. 12, citing Meng et al. 2024) | "Steel-used coke and coal cost about 1322 yuan/t in China, while wood-based and straw-based biochar cost 3500 yuan/t and 3787 yuan/t, respectively." | China, ~2023, biochar | **520–563** (CNY at 2023 FRED AEXCHUS 7.0809, then US GDP deflator) — global fallback |
+
+No admissible Indian source found for biochar or pulverised biomass for injection. With one (non-Indian) source the pessimistic rule gives about **$520/t** for biochar. $60 is plausible only for raw biomass, which cannot be injected or sintered as is.
+
+**Graphite electrodes.**
+
+| # | Source | Quote / data | Boundary | 2025 USD/t |
+|---|---|---|---|---|
+| E1 | DGCIS Export-Import Data Bank, HS 85451100 "ELECTRODES OF A KIND USED FOR FURNACES", **exports** | FY24-25: US$ 217.12 million, 78,328,890 kg ($2,772/t); FY25-26: US$ 252.81 million, 95,013,147 kg ($2,661/t) | FOB unit value of Indian-made electrodes (Graphite India, HEG) | 2,845 / 2,661 → ~2,750 |
+| E2 | DGCIS, same HS code, **imports** | FY24-25: US$ 35.30 million, 14,379,100 kg ($2,455/t); FY25-26: US$ 25.86 million, 10,774,200 kg ($2,400/t) | CIF unit value | 2,520 / 2,400 → ~2,460 |
+| E3 | Transition Asia & TERI (2026) workbook, Commodities, Electrode 2500, "UHP graphite electrode, 2025 (IMARC Group price report)" | | 2025 | 2,500 |
+
+Three estimates (≈2,750, 2,460, 2,500): **median 2,500**. The current 3,000 is above the range; the effect is small (0.003 t/tCS × $500 ≈ $1.5/tCS).
+
+| Parameter | file:line | Current | Evidence (2025 USD/t) | Proposed | Pessimistic direction | Flag |
+|---|---|---|---|---|---|---|
+| ng_cost_lime | definitions.mod:184 | 60 | L1/L2 ex-mine limestone 7–41; L3 33.5; no burnt-lime source | keep **60** | upper | default |
+| ng_cost_biochar | definitions.mod:185 | 60 | B1 520–563 (China, biochar); no Indian source | **520** if the input is biochar; keep 60 only if it is raw biomass | upper | NEEDS CALL |
+| n7_cost_electrode | definitions.mod:206 | 3,000 | E1 ~2,750, E2 ~2,460, E3 2,500 | **2,500** | upper | default |
+| n8_cost_electrode | definitions.mod:208 | 3,000 | same | **2,500** | upper | default |
 
 ## E. By-product credits
 

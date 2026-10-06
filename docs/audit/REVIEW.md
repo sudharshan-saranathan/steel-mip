@@ -23,6 +23,10 @@ Benchmark cell: EF 1.8, mid ramp, H₂ from 2030 (paper Fig. 3: LCOP 524 $/t, H�
 | 3 | `65467a7` | ST-02 pellet ore ÷ → × (plain bug) | 479.8 | 26.5 % | 2.795 |
 | 4 | `79a79c6` | ST-16 salvage credit (agreed in principle; design ⚑ below) | 455.9 | 36.6 % | 2.795 |
 | 5 | `62b8214` | DRI, EAF/IF, scrap coefficients ⚑ | 428.8 | 28.5 % | 2.718 |
+| – | `c2c90e7` | Comment corrections (ST-14, build budget); no effect | – | – | – |
+| 6 | `3f225f8` | ST-13 emission factors as sourced parameters ⚑ | 420.7 | 24.2 % | 2.555 |
+| 7 | `9fcfdb8` | ST-03 pellet fuel, ST-04 purchased breeze carbon ⚑ | 424.3 | 26.6 % | 2.620 |
+| 8 | `9d70a87` | BF-BOF coefficients (fuel rate etc.) ⚑ | 409.9 | 17.6 % | 2.442 |
 
 ## 2. Decisions I made on your behalf (⚑)
 
@@ -37,6 +41,18 @@ Straight-line credit for life remaining after 2050, valued at the start of 2051 
 | Kiln waste-heat power | **Left out** (pessimistic) | CEEW finds 350–380 kWh/t DRI on 65 % of capacity; including it would make coal-DRI cheaper |
 | Scrap-route power | **590 kWh/t, costed as EAF** | median of four for 100 %-scrap charges; consistent with the EAF capex already adopted |
 | Scrap supply | **Seed kept at 37 Mt; default growth 6 % → 5 %** (125 Mt in 2050 = NITI lower case) | A 33.4 Mt seed (FY24) contradicts the model's own 2025 scrap use of 37 Mt. **Study templates still use 6 % as central**; I did not change the paper's study design. Your call |
+
+### BF-BOF coefficients and emission factors (sheet: `stage2/bfbof_coefficients.md`)
+Verified in the source: Ministry of Steel 2024 Table 5.4 (BF fuel rate 505–579 kg/tHM; coke 350–480; PCI 60–199) and the BF-BOF route range 2.2–2.6 tCO₂/tCS.
+| Call | My choice | Why |
+|---|---|---|
+| Coking-coal factor | **2.67** (IPCC 2006) | Pessimistic bound; supply ~76 % imported. India BUR-4 gives 2.22 for domestic coal |
+| BF fuel rate 2025 | **coke 0.47 + PCI 0.11 = 0.58 t/tHM** | Top of the national range; the old 0.68 was ~100 kg above the worst plant |
+| Non-coking coal factor | **2.32 t/t** (differs from the sheet's 1.76) | The DRI step kept coal mass on the 24 GJ/t basis, so the factor must be on the same basis: 24 GJ × 96.8 kg/GJ (India BUR-4 carbon content, the highest of BUR-2, BUR-4 and IPCC). 2.64 implied 110 kg/GJ, above every source |
+| Pellets (ST-03) | **70 kWh/t + 1.6 GJ/t coal-fired induration** | Pessimistic: Indian fuel mix unsourced |
+| Breeze (ST-04) | **2025 sinter breeze 0.05 t/t; purchased breeze carbon counted at 3.04 t/t** | Own breeze carbon is already counted in coking coal, so only the excess is added |
+
+Not changed (noted for later): carbon in sold tar is counted as emitted (small over-count); whether "lime" flows mean limestone or burnt lime; BF slag kept at 0.30 although Indian ore suggests ~0.40 (slag earns a credit, so the lower value is pessimistic). 18 of 61 parameters in this group have no admissible source and keep their current values (sheet §H). SAIL's annual report could not be opened (incomplete TLS chain); I did not bypass certificate checks.
 
 Deferred to the 2025-calibration step (with the demand/fleet sheet): `init_f_cdri` 0.902 → 0.84 and `cap0_cdri` 104.1 → 91.
 
