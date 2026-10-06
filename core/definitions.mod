@@ -7,8 +7,8 @@ param growth_rate default 0.05;
 #     approaching the saturation level dem_sat (plateau around/after 2050).
 #     Logistic rate k and midpoint t0 follow from D(2025) = base_demand and
 #     dD/dt / D at 2025 = dem_g0.
-param dem_profile default 0;
-param dem_sat     default 500e6;   # t/yr crude steel at saturation (set from sourced per-capita x population)
+param dem_profile default 1;       # [audit] S-curve is the central case; 0 restores the paper's 5 %/yr
+param dem_sat     default 680e6;   # [audit] 400 kg crude steel/capita x 1,701 M (UN WPP 2024 medium peak, 2061). Between Germany and Japan today (worldsteel 2025); NITI 2026 uses ~450 kg (-> 816 Mt, pessimistic case); low case 300 kg (EU/US, 510 Mt). See stage2/demand_saturation.md
 param dem_g0      default 0.082;   # 2025 growth: FY22-FY25 CAGR of crude steel, 120.29 -> 152.18 Mt (JPC, MoS AR 2025-26)
 param dem_k  := dem_g0 / (1 - base_demand/dem_sat);
 param dem_t0 := 2025 + log(dem_sat/base_demand - 1) / dem_k;
