@@ -163,8 +163,8 @@ param h2elec_capex_end_fast default 159;
 param re_capex_end_slow   default 835;
 param re_capex_end_fast   default 695;
 param theta_ccs default 0;                 # capture-plant learning speed
-param ccs_capex_fall_slow default 0.3165;  # 2050 overnight-capex decline vs 2025, slow (theta_ccs=0 -> 2050 all-in cost = $100/tCO2)
-param ccs_capex_fall_fast default 0.8435;  # 2050 overnight-capex decline vs 2025, fast (theta_ccs=1 -> 2050 all-in cost = $60/tCO2)
+param ccs_capex_fall_slow default 0.27;    # [audit CCS] NITI 2022 / MoS 2024 outlook. Was 0.3165 (back-solved)
+param ccs_capex_fall_fast default 0.60;    # [audit CCS] Was 0.8435 (back-solved to $60/t, unreachable once energy + T&S ~ $55/t)
 
 # Waste Heat Recovery
 param n9_eta default 0.15;                              # WHRS efficiency including losses
@@ -214,7 +214,7 @@ param n9_whr_capex default 0.009;         # CAPEX of WHR system per kWh of power
 param n9_whr_opex default 0.003;          # OPEX of WHR system per kWh of power generated
 # CCS anchor price ($/tCO2), INCLUSIVE of capex, O&M, energy
 # (electricity + steam), solvent, and transport & storage. 
-param n10_ccs_cost_start default 125;
+param n10_ccs_cost_start default 75;  # [audit CCS] India all-in 2025: NITI 2022 45-59 (Rs 2,900-3,600 + T&S), MoS 2024 64 (41-92), Tata pilot + T&S 66-72; rounded up. Was 125
 param n10_ccs_cost_end default 75;   # CCS 2050 axis = theta_ccs
 param carbon_tax default 0; 
 param labor_cost default 20;              # Labor cost per tCS
@@ -321,30 +321,30 @@ param ramp_frac default 0.15;  #Use only in mode 1
 param sunk default 1;
 
 # CCS retrofit 
-param life_ccs default 15;                       # retrofit asset life (yr)
+param life_ccs default 25;            # [audit CCS] Was 15                       # retrofit asset life (yr)
 param crf_ccs := real_discount_rate*(1+real_discount_rate)^life_ccs/((1+real_discount_rate)^life_ccs-1);
-param ccs_fom_pct default 0.04;                  # fixed O&M as fraction of overnight capex, /yr
-param ccs_vopex_solvent default 5;               # solvent makeup, $/tCO2 (placeholder)
-param ccs_ts_cost default 20;                    # transport + storage, $/tCO2 (volume cost, NOT %capex)
+param ccs_fom_pct default 0.05;       # [audit CCS] Was 0.04                  # fixed O&M as fraction of overnight capex, /yr
+param ccs_vopex_solvent default 2;    # [audit CCS] Was 5 (placeholder)               # solvent makeup, $/tCO2 (placeholder)
+param ccs_ts_cost default 25;         # [audit CCS] India: no characterised storage; NITI +10-15, MoS 7+20. Was 20                    # transport + storage, $/tCO2 (volume cost, NOT %capex)
 param ccs_mult_bf    default 1.0;    # baseline (concentrated BFG ~20-25% CO2)
 param ccs_mult_cdri  default 1.2;    # leaner coal kiln off-gas -> a bit dearer than BFG
-param ccs_kwh_bf     default 130;    # kWh/tCO2, compression + auxiliaries
-param ccs_kwh_cdri   default 150;    # leaner -> more blower/aux power
+param ccs_kwh_bf     default 190;   # [audit CCS] Was 130    # kWh/tCO2, compression + auxiliaries
+param ccs_kwh_cdri   default 300;   # [audit CCS] Was 150    # leaner -> more blower/aux power
 param ccs_steam_bf   default 3.0;    # GJ regen steam per tCO2 (amine, BFG stream)
 param ccs_steam_cdri default 3.3;    # leaner -> more regen steam
 param ccs_ngdri_proc_share default 0.6;   # share of NG-DRI capturable CO2 in the process stream
 param ccs_kwh_ng_proc   default 110;      # process stream: mostly compression
-param ccs_kwh_ng_flue   default 170;      # NG flue (~4-8% CO2): leanest -> most aux power
-param ccs_steam_ng_proc default 0.3;      # process stream: negligible regen
+param ccs_kwh_ng_flue   default 300;  # [audit CCS] Was 170      # NG flue (~4-8% CO2): leanest -> most aux power
+param ccs_steam_ng_proc default 3.7;  # [audit CCS] Indian DRI capture units (JSW, JSPL) ~1.7 t steam/tCO2. Was 0.3      # process stream: negligible regen
 param ccs_steam_ng_flue default 3.6;      # NG flue: most regen steam per tCO2
-param ccs_mult_ng_proc  default 0.5;      # process stream: cheap retrofit
+param ccs_mult_ng_proc  default 1.0;  # [audit CCS] Was 0.5      # process stream: cheap retrofit
 param ccs_mult_ng_flue  default 1.3;      # NG flue: dearest capture plant per tCO2
 param ccs_kwh_ngdri   := ccs_ngdri_proc_share*ccs_kwh_ng_proc   + (1-ccs_ngdri_proc_share)*ccs_kwh_ng_flue;
 param ccs_steam_ngdri := ccs_ngdri_proc_share*ccs_steam_ng_proc + (1-ccs_ngdri_proc_share)*ccs_steam_ng_flue;
 param ccs_mult_ngdri  := ccs_ngdri_proc_share*ccs_mult_ng_proc  + (1-ccs_ngdri_proc_share)*ccs_mult_ng_flue;
 param ccs_ref_elec  default 0.07;    # $/kWh used only to back out capex from the anchor
 param ccs_ref_steam default 5;       # $/GJ  ditto (~waste-heat steam opportunity cost)
-param ccs_boiler_eff default 0.85;   # backup boiler efficiency (GJ steam / GJ NG fuel)
+param ccs_boiler_eff default 0.89;  # [audit CCS] Was 0.85   # backup boiler efficiency (GJ steam / GJ NG fuel)
 param ng_gj_per_mmbtu := 1.055;      # GJ per MMBtu (NG price unit conversion)
 param ng_co2_gj default 0.0561;      # [audit ST-13] tCO2 per GJ NG (IPCC 2006 56.1 kg/GJ). Was 0.0521
 

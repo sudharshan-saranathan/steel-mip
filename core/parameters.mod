@@ -29,7 +29,7 @@ let n8_scrap_seed := 37000000;  # scrap availability in 2025, t/yr
 # n8_scrap_limit is derived in definitions.mod from the seed and the rate.
 
 # CCS
-let n10_ccs_cost_start := 125;   # CCS anchor 2025 (capex+O&M+energy+solvent+T&S)
+let n10_ccs_cost_start := 75;    # [audit CCS] India all-in 2025 (see definitions.mod). Was 125
 
 # NG cap (Shock case)
 let n5_ng_cap[2025] := 5348550;
