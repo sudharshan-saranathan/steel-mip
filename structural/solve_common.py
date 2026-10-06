@@ -2,7 +2,7 @@
 
 Deliberately small: only the mechanics that are IDENTICAL across every
 solve regardless of which study is running (fresh AMPL instance, per-worker
-scratch dir, Threads=1, drop the bilinear monotonicity constraint, solve).
+scratch dir, Threads=1, solve; emission_monotonic is linear now and kept).
 Everything study-specific (which axes vary, what gets extracted, output
 shape) stays in each study's own run_*.py -- duplicating that here would
 just be a different flavor of the copy-paste risk this file exists to avoid.

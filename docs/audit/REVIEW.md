@@ -117,3 +117,11 @@ Each sheet lists parameters with no admissible source; they keep their current v
 - CCS: 3 plus 2 new capturable shares.
 - Power: 2.
 - Demand/opex: 2.
+
+## 7. Follow-up checks (requested after the overnight run)
+
+**Build budget (`cap_add_common`).** Historical pace from JPC (MoS Annual Report 2025-26, p. 16): capacity 154.1 (FY22) → 161.3 → 179.5 → 200.3 Mt (FY25), i.e. +18.2 and +20.8 Mt in the last two years, and +18.0 Mt in Apr–Dec FY26 (provisional). **20 Mt/yr is today's pace, not "double the historical 8–10 Mt/yr"** as the paper states; 30 Mt/yr is ~1.5×. Fig. 3 at 20 / 30 / 40 Mt/yr: **the same 7 cells are infeasible in all three**; LCOP +2–4 $/t at 20. The build budget is not what sets the feasibility frontier.
+
+**Monotonic emission intensity.** The paper (§2.2) says it is enforced, but every study driver dropped it as "bilinear". Since total steel = demand, it is linear when written with `dem[t]`; now done and enforced in the structural and Monte Carlo drivers (commit `3ffb9e3`; still dropped in the regret study, whose demand is elastic). Effect on Fig. 3: **no feasibility change; LCOP +0–1 $/t.**
+
+**Demand profile (next).** Constant 5 %/yr puts the largest increments in the 2040s; evidence (FY22–FY26 actual growth 8–10 %/yr; 2050 projections 374 / 444 / 624 Mt) points to fast-then-slowing growth. Plan: logistic profile from FY25/FY26 actuals to a sourced saturation level (per-capita saturation × UN WPP 2024 population), 2–3 variants bracketing the 2050 projections, exponential kept as a sensitivity; then re-run the frontier.
