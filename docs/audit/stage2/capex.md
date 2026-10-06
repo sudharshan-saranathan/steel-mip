@@ -26,14 +26,38 @@ The input data are in this folder: `wpi_cal.xls` (Office of the Economic Adviser
 
 Sensitivity: brownfield values ($530–700/t) give a low-capex case.
 
-## Other routes (evidence so far; no values adopted yet)
+## DRI and scrap routes (decisions 2026-10-06)
 
-| Route | Model before fix | Evidence (2025 USD/t) |
-|---|---|---|
-| NG-DRI-EAF | 1,950 | IEA 2020: 630–1,620 (global) |
-| H₂-DRI-EAF | 2,557 (2025) | IECC 2026: 670; CEEW 2021: 510 (shaft furnace + EAF, from IEA 2010 data) |
-| Scrap-EAF | 680 | IEA 2020: 405–690 (global) |
-| Coal-DRI-EAF/IF | 2,179 | none found yet |
+Node evidence (2025 USD):
+
+| Node | Unit | Transition Asia & TERI (2026), India¹ | Vogl, Åhman & Nilsson (2018)² | Yadav et al. (2021), CEEW³ | Pick |
+|---|---|---|---|---|---|
+| Shaft furnace (NG, H₂) | $/t DRI-yr | 345 (414 with 1.2× owner's cost) | 415 | 328 | 415 |
+| Rotary kiln (coal) | $/t DRI-yr | 300 (360 with owner's cost) | — | — | 360 (single source) |
+| EAF incl. casting | $/t CS-yr | 337 (404 with owner's cost) | 332 | 183 | 400 |
+
+¹ *Is Green Steel Within Reach in India?* (Transition Asia & TERI, 2026); input workbook `india/data/Model_input_India.xlsx`, sheet Tech, real 2025 USD. Owner's-cost factor `CAPEX_OVERFACTOR = 1.2` (`model/config.py`). Economic life 40 yr for all four units.
+² *J. Cleaner Production* 203:736–745. Euro values from Wörtler et al. (2013), converted at the 2013 USD/EUR rate (1.328) and the US GDP deflator (factor 1.806). The same paper gives greenfield BF-BOF at €442/t ≈ $800, consistent with IECC.
+³ Values from IEA (2010), USD 2010.
+
+Decisions: include the owner's-cost factor (yes); give H₂-DRI the **same** shaft-furnace cost as NG-DRI (no premium; Vogl and Transition Asia–TERI treat the two as the same unit); cost scrap-EAF at the same EAF unit cost as in the DRI routes, because scrap collection and processing is charged separately through `ocapex_scrapchain`.
+
+Converted to per tonne of crude steel at 1.1 t DRI per tCS (the metallic charge `n7_dri_ratio`, assuming no scrap):
+
+| Parameter | Node | Before (treated as annualised) | Adopted (2025 USD per t CS-yr, up-front) |
+|---|---|---|---|
+| `n4_capex_coal` | coal rotary kiln | 110 | **400** |
+| `n5_capex_ng` | NG shaft furnace | 90 | **460** |
+| `n6_capex_h2` | H₂ shaft furnace | 120 → 90 (2025 → 2050) | **460**, constant |
+| `n7_capex` | EAF (DRI routes) | 70 | **400** |
+| `n8_capex` | EAF (scrap route) | 70 | **400** |
+| `ng_capex_pell` | pellet | 10 | **60** (see BF-BOF split) |
+
+Resulting route capex (2025 USD/t CS-yr): coal-DRI-EAF **860**, NG-DRI-EAF **920**, H₂-DRI-EAF **920** (plant only; the electrolyser and renewables are costed separately), scrap-EAF **400**, plus scrap-chain capex. Before the fix: 2,179 / 1,950 / 2,557 / 680.
+
+Route-level checks: IEA (2020) NG-DRI-EAF 630–1,620 and scrap-EAF 405–690 (global); IECC (2026) H₂-DRI-EAF 670; Vogl (2018) H₂-DRI-EAF without electrolyser ≈ 750.
+
+Caveat: Indian coal-DRI is mostly paired with induction furnaces, which cost less than EAFs. Costing it with an EAF is pessimistic, in line with the selection rule.
 
 ## BF-BOF node split (decision 2026-10-06)
 
