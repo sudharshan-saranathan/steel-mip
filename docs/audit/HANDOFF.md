@@ -66,6 +66,13 @@ Everything is done; the user is reviewing `REVIEW.md`.
 - Open calls for the user are in REVIEW.md §4: the NG-availability basis, the discount rate, study centrals and Monte Carlo levels, the H₂ ramp axis, and conflicting fleet values.
 - If the user rejects a decision: revert that one commit on `fix-wave-01` (each is self-contained), rerun `tools/benchmark.py` and `tools/rerun_fig3.py`, and update REVIEW.md.
 
+## 6b. After the overnight run (same session)
+
+- NG share of national gas 10 % → 3.5 % (commit `0dc91be`): the paper's infeasibility frontier is reproduced.
+- Monotonic emission intensity linearised and enforced in the studies (`3ffb9e3`); the build budget at 20/30/40 doesn't change feasibility.
+- **Demand is now an S-curve by default** (`6b8ff9a`): saturation 680 Mt, sensitivities 510/816; 17 of 36 Fig. 3 cells are infeasible. All later results must use this default (or state `dem_profile = 0`).
+- REVIEW.md §7 has the details.
+
 ## 7. Environment notes
 
 - Network access is set to **Full**. Use **curl** to download; the WebFetch tool was still blocked for many domains. ieefa.org sits behind a Cloudflare challenge (403). `environmentclearance.nic.in` fails TLS verification through the proxy: do **not** bypass verification; say so instead.
