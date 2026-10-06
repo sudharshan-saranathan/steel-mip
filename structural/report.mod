@@ -31,7 +31,7 @@ param m_ccoal_bind;
 param m_ng_bind;
 
 let m_cum_ccoal_bill   := sum{t in T} max(0, coking_coal_in[t] - ccoal_domestic[t]) * ng_cost_ccoal;
-let m_cum_ng_bill      := sum{t in T} max(0, ngdri_ng_in[t] - ng_domestic) * n5_cost_NG[t] * 50;
+let m_cum_ng_bill      := sum{t in T} max(0, ngdri_ng_in[t] - ng_domestic) * n5_cost_NG[t] * ng_mmbtu_per_t;
 let m_cum_ng_import    := sum{t in T} max(0, ngdri_ng_in[t] - ng_domestic);
 let m_cum_ccoal_import := sum{t in T} max(0, coking_coal_in[t] - ccoal_domestic[t]);
 

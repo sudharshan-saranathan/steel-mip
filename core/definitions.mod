@@ -146,8 +146,8 @@ param n8_scrap_limit{t in T} :=
 #Technology Learning
 param theta_tech default 0;              # global tech learning speed (H2 axis)
 param theta_grid default 0;              # India grid outcome speed (EF + tariff)
-param grid_price_start    default 0.07;    # 2025 grid tariff, $/kWh (fixed anchor)
-param grid_price_end_fast default 0.055;   # 2050 grid tariff at theta_grid=1 (improved)
+param grid_price_start    default 0.08;    # [audit] blended 2025 power cost: 64 % captive ($0.071) + 36 % state HT tariff ($0.096, CEA tariff book 2025), matching the blended EF. Was 0.07
+param grid_price_end_fast default 0.063;   # [audit] keeps the original -21 % at theta_grid = 1. Was 0.055   # 2050 grid tariff at theta_grid=1 (improved)
                                              # theta_grid=0 holds tariff flat at grid_price_start (no "slow" endpoint anymore)
 # theta_tech=0 means NO learning: electrolyser/RE capex hold flat at their
 # 2025 anchors through 2050 (slow endpoint = start value, mirrors theta_grid's
@@ -181,22 +181,22 @@ param n10_ccs_eta default 0.85;                        # Carbon capture efficien
 
 # COST PARAMETERS 
 # All costs are in $
-param ng_cost_ccoal default 184;          # Cost per ton of coking coal
+param ng_cost_ccoal default 200;          # [audit] 2025 median of 3: MoC National Coal Index 193, Coal Directory import unit value 207, IECC 2026 200. Was 184
 param ng_cost_power{t in T} :=
     grid_price_start
     + theta_grid * (grid_price_end_fast - grid_price_start) * (t - 2025)/25;   # theta_grid=0 -> flat at grid_price_start; theta_grid=1 -> linear to grid_price_end_fast
 param ng_credit_power default 0.03;       # Selling cost per kWh of generated power
 param ng_cost_fineore default 65;         # Cost per ton of fineore
 param ng_cost_lime default 60;            # Cost per ton of lime
-param ng_cost_biochar default 60;         # Cost per ton of biomass
+param ng_cost_biochar default 520;        # [audit] biochar (Ibitoye et al. 2024, only admissible source; China). Was 60 (a raw-biomass price)
 param ng_capex_pell default 60;           # Pellet plant: up-front capex, 2025 USD per (tCS/yr) [audit ST-01; share of BF-BOF 1200]
-param ng_cost_lumpore default 70;         # Cost per ton of lumpore
+param ng_cost_lumpore default 80;         # [audit] IBM ex-mine 77. Was 70         # Cost per ton of lumpore
 param ng_cost_pcoal default 110;          # Cost per ton of PCI coal
-param ng_credit_slag default 15;          # Selling cost per ton of slag
-param ng_cost_scrap default 350;          # Cost per ton of scrap
+param ng_credit_slag default 10;          # [audit] granulated slag 9-15. Was 15          # Selling cost per ton of slag
+param ng_cost_scrap default 400;          # [audit] HMS import unit value 379-426; TA-TERI 402. Was 350          # Cost per ton of scrap
 param ng_cost_ncoal default 98;          # Cost per ton of non coking coal
 param n0_credit_breeze default 55;        # Selling cost per ton of breeze
-param n0_credit_tar default 20;           # Selling cost per ton of tar
+param n0_credit_tar default 430;          # [audit] Indian trade unit value 430-603. Was 20           # Selling cost per ton of tar
 param n0_capex default 240;               # Coke oven: up-front capex, 2025 USD per (tCS/yr) [audit ST-01]
 param n1_cost_breeze default 85;          # Cost per ton of breeze                         
 param n1_capex default 180;               # Sinter plant: up-front capex, 2025 USD per (tCS/yr) [audit ST-01]
@@ -204,12 +204,13 @@ param n2_capex default 480;              # Blast furnace: up-front capex, 2025 U
 param n3_capex default 240;               # BOF: up-front capex, 2025 USD per (tCS/yr) [audit ST-01; BF-BOF total 1200, greenfield upper bound]                              
 param n4_capex_coal default 400;          # Coal rotary kiln: up-front, 2025 USD per (tCS/yr) [audit ST-01; TA-TERI 2026 300 $/tDRI x1.2 owner's cost x1.1 tDRI/tCS]
 param n5_capex_ng := 460;                 # NG shaft furnace: up-front, 2025 USD per (tCS/yr) [audit ST-01; Vogl 2018 / TA-TERI 2026 ~415 $/tDRI x1.1]
-param n5_cost_NG {t in T} default 10;     # Cost of natural gas per MMBtu
+param n5_cost_NG {t in T} default 12;     # [audit] delivered RLNG $/MMBtu, median (TA-TERI 11.8, MoS 10, CEEW 15.8). Was 10
+param ng_mmbtu_per_t default 52.6;        # [audit] PPAC conversion; replaces a hard-coded 50 in r_cost.mod
 param n6_capex_h2{t in T} := n5_capex_ng; # H2 shaft furnace = NG shaft furnace (Vogl 2018; TA-TERI 2026) [audit ST-01; was 120->90]
 param n7_capex default 400;               # EAF incl. casting: up-front, 2025 USD per (tCS/yr) [audit ST-01; TA-TERI 2026 337 x1.2; Vogl 2018 332]
-param n7_cost_electrode default 3000;     # Cost per ton of electrode (corrected 2026-08-21, was 600 -- well below realistic UHP graphite electrode market levels)
+param n7_cost_electrode default 2500;     # [audit] trade data and TA-TERI 2,460-2,750. Was 3000. Earlier note:     # Cost per ton of electrode (corrected 2026-08-21, was 600 -- well below realistic UHP graphite electrode market levels)
 param n8_capex default 400;               # Scrap EAF: same unit as n7; scrap handling via ocapex_scrapchain [audit ST-01]     
-param n8_cost_electrode default 3000;     # Cost per ton of electrode (corrected 2026-08-21, was 600 -- well below realistic UHP graphite electrode market levels)
+param n8_cost_electrode default 2500;     # [audit] as n7. Was 3000. Earlier note:     # Cost per ton of electrode (corrected 2026-08-21, was 600 -- well below realistic UHP graphite electrode market levels)
 param n9_whr_capex default 0.009;         # CAPEX of WHR system per kWh of power generated
 param n9_whr_opex default 0.003;          # OPEX of WHR system per kWh of power generated
 # CCS anchor price ($/tCO2), INCLUSIVE of capex, O&M, energy

@@ -9,7 +9,7 @@ let growth_rate := 0.05;
 param avg_emi   default 1.8;  # cumulative average CO2-intensity CAP, tCO2/tCS
 
 # NG DRI
-let {t in T} n5_cost_NG[t] := 10;
+let {t in T} n5_cost_NG[t] := 12;   # [audit] was 10
 # Shock period (2035–2040): only for shock case it is 1.5 times
 # let {t in 2035..2040} n5_cost_NG[t] := 22.5;
 
@@ -24,7 +24,7 @@ s.t. No_H2_Before{t in T: t < ng_h2_start_year}:
 
 # Scrap
 let n8_scrap_rate := 0.06;      # Assumed annual growth rate of scrap
-let ng_cost_scrap :=350;        # Assumed scrap cost
+let ng_cost_scrap :=400;        # [audit] was 350
 let n8_scrap_seed := 37000000;  # scrap availability in 2025, t/yr
 # n8_scrap_limit is derived in definitions.mod from the seed and the rate.
 

@@ -77,7 +77,7 @@ s.t. cost_coaldri_def{t in T}:
 s.t. cost_ngdri_def{t in T}:
     ng_cost_power[t]  * ngdri_power_in[t]
   + ng_cost_lumpore * ngdri_lumpore_in[t]
-  + n5_cost_NG[t] *50     * ngdri_ng_in[t]
+  + n5_cost_NG[t] * ng_mmbtu_per_t * ngdri_ng_in[t]   # [audit] was *50
   - cost_ngdri[t] = 0;                               # eq98
 
 # H2 DRI
