@@ -62,7 +62,35 @@ The evidence supports **neither study central exactly**: core $10 is about the L
 
 ## C. Ores and scrap
 
-IN PROGRESS
+**Iron ore.** IBM's Average Sale Price (ASP) is the ex-mine price that royalty is charged on. Royalty and other levies, rail freight and GST come on top, so a delivered plant-gate price is higher than the ASP.
+
+| # | Source | Quote / data | Boundary | 2025 USD/t |
+|---|---|---|---|---|
+| O1 | Indian Bureau of Mines, *Monthly Statistics of Mineral Production*, Table 6(a) "State wise Average Sale Price of minerals by Grades", India, Iron Ore, January 2025 issue (p. 2–3) | "62% To Below 65% Fe,Lumps 6,714"; "65% And Above Fe,Lumps 6,714"; "62% To Below 65% Fe,Fines 4,805"; "58% To Below 60% Fe,Fines 3,786"; "65% And Above Fe,Fines 5,605" (₹/t) | Jan 2025, all-India, ex-mine | lumps 77; fines 62–65 % 55; 58–60 % 43; ≥65 % 64 |
+| O2 | IBM, same table, December 2025 issue | "62% To Below 65% Fe,Lumps 6,705"; "62% To Below 65% Fe,Fines 4,883"; "58% To Below 60% Fe,Fines 3,935"; "65% And Above Fe,Fines 5,125" | Dec 2025, all-India, ex-mine | lumps 77; fines 62–65 % 56; 58–60 % 45; ≥65 % 59 |
+| O3 | Domínguez Bennett et al. (2026), IECC, pdf p. 15: "Iron ore fines 80 US$/t" (citing Pellet Manufacturers Association of India market prices, Sep 2025); international reference "101 US$/t for 62%Fe" | | 2025, India, purchased fines | **80** |
+| O4 | Transition Asia & TERI (2026) workbook, sheet Ore_Price, Fines-Low: "CEIC, Odisha fines 58% Fe (about Rs 3,800/t) plus USD 10/t for grinding"; 53.52 | | 2025, low-grade fines, ex-mine + grinding | 54 |
+| O5 | IEA (2020) *Iron and Steel Technology Roadmap*, pdf pp. 32 and 109 (figure notes): "Iron ore = USD 60-100/t" | | 2019, global | 74–124 (global context) |
+
+Fine ore: three India estimates (O1/O2 IBM 55–56 for 62–65 % Fe, O3 80, O4 54) → median **56** ex-mine, but O1/O2/O4 exclude royalty, levies and freight while O3 is a market (purchase) price. The model value should be at the plant gate. The current **65** sits between the ex-mine median and IECC's purchase price — **keep 65**.
+Lump ore: one source (IBM, 62 %+ Fe lumps ₹6,705–6,714 = **$77 ex-mine**, stable through 2025). The current $70 is below the ex-mine price alone. Pessimistic (upper) with one source: **$80** (ex-mine price rounded up; delivered would be higher still).
+
+**Scrap.**
+
+| # | Source | Quote / data | Boundary | 2025 USD/t |
+|---|---|---|---|---|
+| S1 | Ministry of Commerce, DGCIS Export-Import Data Bank (tradestat.commerce.gov.in), commodity-wise import, HS 72044900 "OTHER WASTE AND SCRAP" | FY 2024-25: US$ 3,060.79 million, 7,373,530,112 kg → $415/t | Import CIF unit value (heavy melting / shredded) | **426** (US GDP deflator 2024→25) |
+| S2 | Same, FY 2025-26 | US$ 2,407.79 million, 6,360,790,016 kg → $379/t | Import CIF | **379** |
+| S3 | Transition Asia & TERI (2026) workbook, sheet Commodities, Scrap: price_ref 402, "JPC and BigMint price assessments, 2025" | | 2025, India, delivered steel scrap | **402** |
+| S4 | IEA (2020), pdf pp. 32 and 109: "Scrap = USD 200-300/t" | | 2019, global | 248–372 (global context) |
+
+S1 and S2 are the same series in two years, so they count as one estimate (2025 ≈ $400). Median of S1/S2 average (~400) and S3 (402): **400**. Domestic heavy-melting scrap in India trades at about import parity, so the import value is a fair proxy. Range for Monte Carlo: **300 / 400 / 500** (the S1–S3 spread is 379–426; 2022 was higher).
+
+| Parameter | file:line | Current | Evidence (2025 USD/t) | Proposed | Pessimistic direction | Flag |
+|---|---|---|---|---|---|---|
+| ng_cost_fineore | definitions.mod:183 | 65 | O1/O2 55–56 ex-mine; O3 80; O4 54 | keep **65** | upper | default |
+| ng_cost_lumpore | definitions.mod:187 | 70 | O1/O2 77 ex-mine | **80** | upper | default |
+| ng_cost_scrap | definitions.mod:190 | 350 (MC 250/350/450) | S1 426, S2 379, S3 402 | **400**; MC **300 / 400 / 500** | upper (costlier scrap hurts scrap-EAF) | NEEDS CALL (moves scrap-EAF economics and the Monte Carlo) |
 
 ## D. Fluxes, biochar, electrodes
 
