@@ -55,10 +55,18 @@ These are errors in equations, units or accounting, not in parameter values. The
 | ST-13 | `s_emissions.mod` | **Emission factors.** Coking coal uses 0.1116 tCO₂/GJ (IPCC default 0.0946; India's national inventory ~0.094). Electrodes use 6 tCO₂/t (burning pure carbon gives 3.67). Non-coking coal uses 2.64 tCO₂/t, which implies 24 GJ/t; Indian thermal coal is ~15–20 GJ/t, so DRI coal use and the emission factor per tonne of coal are inconsistent. | Emissions. |
 | ST-14 | `v_capacity.mod` comment vs code | The comment says electrolyser build-up is not tied to the H₂ debut year, but `h2elec_predebut` forces electrolyser capacity to 0 before debut. | Documentation; the intent needs confirming. |
 | ST-15 | `core/parameters.mod:35–60` | The default `n5_ng_cap` is the **shock** trajectory. All the studies override it, but a bare `core` run uses the shock case. | Default runs. |
+| ST-16 | `v_capacity.mod` (capex_cost_def) | **No end-of-horizon credit.** A build in year t pays its full up-front capex but serves only 2050 − t + 1 years inside the horizon; the life remaining after 2050 earns nothing. This discourages builds in the 2040s. | Late-horizon route mix, LCOP. |
 
 ¹ Capital recovery factor (CRF): converts a one-off investment into an equal yearly payment over the asset's life at the discount rate.
 
 ---
+
+### Decisions agreed with the user
+
+| ID | Decision (2026-10-06) |
+|---|---|
+| ST-01 | Capex is **up-front**: `n*_capex` = instant cost of 1 t/yr of crude-steel capacity, multiplied directly by `build_*[t]`. Remove the division by the CRF (`definitions.mod:284–295`). The current values were set as yearly charges, so they are replaced with Stage 2 up-front values in the **same** commit. If the `sunk = 0` branch is kept, derive `acapex = ocapex × CRF`. Plant lifetimes stay in use: builds retire after `life_*` and must be rebuilt (`cap_def_*`). |
+| ST-16 | Add a salvage credit for the life remaining after 2050 (straight-line), discounted to 2050. |
 
 ## 3. Parameter register
 
@@ -250,7 +258,7 @@ These are errors in equations, units or accounting, not in parameter values. The
 
 ## 4. Summary counts
 
-- **Structural issues:** 15 (ST-01 to ST-15). ST-01, ST-03, ST-04, ST-05, ST-07, ST-10 and ST-13 directly affect the headline results.
+- **Structural issues:** 16 (ST-01 to ST-16). ST-01, ST-03, ST-04, ST-05, ST-07, ST-10 and ST-13 directly affect the headline results.
 - **Unsubstantiated parameters** (U-NS, U-GL or U-RG): about 120 of the roughly 150 independent inputs. Only base_demand, real_discount_rate, n3_e_bof, n5_e_dri, n7_e_eaf, cap0_scrap, the limestone factor, the coking-coal price and grid tariff anchors, and the availability trajectories carry any citation.
 - **Inconsistencies (X):** 8.
 
