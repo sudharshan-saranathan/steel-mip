@@ -117,7 +117,7 @@ def solve_cell(cell, solver="gurobi"):
     ampl.eval(f"option solver {solver};")
     if solver == "gurobi":
         ampl.eval("option gurobi_options 'Threads=1';")
-    ampl.eval("drop emission_monotonic;")
+    # [audit] emission_monotonic is now linear and kept active (paper s2.2); was dropped here
     ampl.eval("solve;")
 
     status = ampl.get_value("solve_result")

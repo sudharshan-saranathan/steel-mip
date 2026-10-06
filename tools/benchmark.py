@@ -51,7 +51,7 @@ def solve_cell(ef, ramp, h2):
     a.eval("include structural/h2_delay/template_h2delay.mod;")
     a.eval(f"let avg_emi := {ef}; let h2_ref_cap := {ramp}; "
            f"let ng_h2_start_year := {h2};")
-    a.eval("drop emission_monotonic;")
+    a.eval("drop emission_monotonic;")  # kept dropped for continuity with earlier benchmark tags
     status, _ = solve_bridge(a)
     row = {"avg_emi": ef, "h2_ref_cap": ramp, "h2_start": h2, "status": status}
     if status == "solved":

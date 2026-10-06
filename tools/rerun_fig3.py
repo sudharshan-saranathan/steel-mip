@@ -4,9 +4,11 @@
 
 MODEL_ROOT is a checkout of the model (e.g. this branch, or a worktree of the
 unchanged import). Uses the study's own template; drops emission_monotonic as
-the study driver does.
+the study driver does, unless KEEP_MONO=1. Extra AMPL statements (e.g.
+"let cap_add_common := 20000000;") are applied after the template.
 """
 import csv
+import os
 import sys
 import pathlib
 
@@ -26,7 +28,8 @@ for ef in (1.6, 1.8, 2.0):
             a.eval(f"let avg_emi := {ef}; let h2_ref_cap := {ramp}; let ng_h2_start_year := {h2};")
             if extra:
                 a.eval(extra)
-            a.eval("drop emission_monotonic;")
+            if os.environ.get("KEEP_MONO") != "1":
+                a.eval("drop emission_monotonic;")
             st, _ = solve_bridge(a)
             r = {"EF": ef, "H2 supply": label, "H2 start": h2, "status": st}
             if st == "solved":

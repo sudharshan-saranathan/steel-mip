@@ -27,7 +27,11 @@ s.t. coking_coal_bound{t in T: t > first(T)}:
 s.t. avg_emis_cap_total:
     (sum {t in T} total_emissions[t]) <= avg_emi * (sum {t in T} total_steel[t]);
 
+# [audit] Emission intensity may not rise year on year. Written with the
+# exogenous demand dem[t] (= total_steel[t] via meet_demand), which makes it
+# LINEAR. The original form multiplied two variables, which is why every study
+# driver dropped it, although the paper (s2.2) states it is enforced.
 s.t. emission_monotonic {t in T: t > first(T)}:
-    total_emissions[t] * total_steel[t-1]
+    total_emissions[t] * dem[t-1]
     <=
-    total_emissions[t-1] * total_steel[t];
+    total_emissions[t-1] * dem[t];
