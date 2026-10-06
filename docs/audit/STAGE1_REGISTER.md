@@ -66,6 +66,7 @@ These are errors in equations, units or accounting, not in parameter values. The
 | ID | Decision (2026-10-06) |
 |---|---|
 | ST-01 | Capex is **up-front**: `n*_capex` = instant cost of 1 t/yr of crude-steel capacity, multiplied directly by `build_*[t]`. Remove the division by the CRF (`definitions.mod:284–295`). The current values were set as yearly charges, so they are replaced with Stage 2 up-front values in the **same** commit. If the `sunk = 0` branch is kept, derive `acapex = ocapex × CRF`. Plant lifetimes stay in use: builds retire after `life_*` and must be rebuilt (`cap_def_*`). |
+| ST-01a | New capacity is costed as **greenfield** for all routes and all years (decision 2026-10-06). The paper states this as a conservative upper bound on investment cost; brownfield values are kept as a sensitivity case. |
 | ST-16 | Add a salvage credit for the life remaining after 2050 (straight-line), discounted to 2050. |
 
 ## 3. Parameter register
