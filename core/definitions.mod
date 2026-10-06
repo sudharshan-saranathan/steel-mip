@@ -217,8 +217,9 @@ param n9_whr_opex default 0.003;          # OPEX of WHR system per kWh of power 
 param n10_ccs_cost_start default 75;  # [audit CCS] India all-in 2025: NITI 2022 45-59 (Rs 2,900-3,600 + T&S), MoS 2024 64 (41-92), Tata pilot + T&S 66-72; rounded up. Was 125
 param n10_ccs_cost_end default 75;   # CCS 2050 axis = theta_ccs
 param carbon_tax default 0; 
-param labor_cost default 20;              # Labor cost per tCS
-param maintenance_cost default 15;        # Maintenance cost per tCS
+param labor_cost default 22;     # [audit ST-11] $/t capacity/yr (Tata/JSW FY25 reports bracket 13-45). Was 20              # Labor cost per tCS
+param maintenance_cost default 15;   # [audit ST-11] no longer used; maintenance = maint_pct x up-front capex
+param maint_pct default 0.03;        # [audit ST-11] TA-TERI 2026 om_to_capex 3 %        # Maintenance cost per tCS
 param other_opex default 10;              # Other opex per tCS
 
 # OTHER PARAMETERS
@@ -275,19 +276,14 @@ param legacy_life default 25;
 param cap_add_common default 20e6;   # shared annual capacity addition budget (t/yr)
 
 # Capacity utilisation 
-param util_min_bof   default 0.85;
-param util_min_cdri  default 0.75;
+param util_min_bof   default 0.70;   # [audit ST-07] FY25 BOF ran at ~0.69 of 90 Mt. Was 0.85
+param util_min_cdri  default 0.70;   # [audit] Was 0.75
 param util_min_ngdri default 0.70;
 param util_min_h2dri default 0.70;
 param util_min_scrap default 0.60;
-param util_max default 0.95;
+param util_max default 0.85;   # [audit] sector utilisation 76-80 % in FY22-25 (JPC); 0.95 was unsourced. Was 0.95
 
 # Fixed opex per unit 
-param fopex_bof   default labor_cost + maintenance_cost;
-param fopex_cdri  default labor_cost + maintenance_cost;
-param fopex_ngdri default labor_cost + maintenance_cost;
-param fopex_h2dri default labor_cost + maintenance_cost;
-param fopex_scrap default labor_cost + maintenance_cost;
 
 # Capital recovery factor CRF(L) at the real discount rate.
 param crf_bof   := real_discount_rate*(1+real_discount_rate)^life_bof  /((1+real_discount_rate)^life_bof  -1);
@@ -312,6 +308,13 @@ param acapex_cdri  := ocapex_cdri  * crf_cdri;
 param acapex_ngdri := ocapex_ngdri * crf_ngdri;
 param acapex_h2dri {t in T} := ocapex_h2dri[t] * crf_h2dri;
 param acapex_scrap := ocapex_scrap * crf_scrap;
+
+# Fixed opex per unit capacity [audit ST-11: labour + 3 % of up-front capex, by route]
+param fopex_bof   default labor_cost + maint_pct * ocapex_bof;      # [audit ST-11] route-specific
+param fopex_cdri  default labor_cost + maint_pct * ocapex_cdri;
+param fopex_ngdri default labor_cost + maint_pct * ocapex_ngdri;
+param fopex_h2dri default labor_cost + maint_pct * ocapex_h2dri[first(T)];
+param fopex_scrap default labor_cost + maint_pct * ocapex_scrap;
 param ocapex_scrapchain default 100;  #collection,  shredding, sorting, processing/prurification
 param ocapex_coalchain default 0;     # $/(t-coal/yr);  coal mines/transport; already included in fuel cost so remains zero for now
 param ocapex_ngchain   default 0;     # $/(t-NG/yr);  NG pipelines/terminals; if there has to be new mined built or something the model can be edited

@@ -282,7 +282,7 @@ def solve_case(world, h2ready, tstar, committed):
         if status != "solved":
             return False, {"status": status}, {}
 
-        IMPORT_REPORT = 650.0
+        IMPORT_REPORT = 760.0   # [audit] DGTR HRC reference ~675 CIF + 12 % safeguard duty. Was 650
         pv_cost = ampl.get_value(
             "sum {t in T} discount_factor[t] * (total_cost[t] "
             "+ ocapex_h2elec[t]*pay_h2elec_extra[t] + ocapex_h2re[t]*pay_h2re_extra[t] "
