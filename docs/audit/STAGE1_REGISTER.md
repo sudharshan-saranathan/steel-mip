@@ -141,7 +141,7 @@ These are errors in equations, units or accounting, not in parameter values. The
 | grid_price_end_fast | 149 | $0.055 | U-NS | 2050 tariff at θ_grid = 1. |
 | n9_grid_ef_start | 167 | 0.886 tCO₂/MWh | U-NS | CEA CO₂ Baseline Database; source for the CPP share (ST-06). |
 | n9_grid_ef_end | 168 | 0.886 × (1 − θ) | A | θ_grid 0.25 / 0.5 / 0.75: the paper cites [32,37] for ~50 %. |
-| ng_credit_power | 182 | $0.03/kWh | U-NS | **Unused?** Check in Stage 3. |
+| ng_credit_power | 182 | $0.03/kWh | U-NS | **Unused**: declared but referenced nowhere in `core`. |
 | n9_eta | 164 | 0.15 | U-NS, U-RG | See ST-05. |
 | n9_whr | 165 | 0.05 → 0.30 | U-NS | |
 | hard-coded 0.3 pool factor | o_waste_heat:13 | 0.3 | U-NS | See ST-05. |
