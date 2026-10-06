@@ -69,10 +69,8 @@ s.t. cap_def_scrap{t in T}:
 # Under legacy_phaseout = 0, capacity existing in 2025 is assumed installed in
 # 2025, so it stands until life_<route> expires:
 #
-#   BOF   life 25 -> stands through 2050 (whole horizon)
-#   cDRI  life 20 -> through 2045
-#   ngDRI life 20 -> through 2045
-#   scrap life 15 -> through 2040
+#   [audit lifetimes] all routes: legacy_life = 25 -> through 2050 (whole
+#   horizon). Previously life_<route>: BOF 25, cDRI/ngDRI 20, scrap 15.
 #
 # This is a CEILING, not an equality, and idle capacity still pays fixed opex
 # (see the cost block below), so the optimizer remains free to retire early
@@ -91,15 +89,15 @@ s.t. cap_def_scrap{t in T}:
 # below with a legacy_life{route} parameter; nothing else changes.
 
 s.t. legacy_ceil_bof  {t in T}: legacy_bof[t]   <= cap0_bof   *
-    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + life_bof   then 1 else 0));
+    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + legacy_life then 1 else 0));
 s.t. legacy_ceil_cdri {t in T}: legacy_cdri[t]  <= cap0_cdri  *
-    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + life_cdri  then 1 else 0));
+    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + legacy_life then 1 else 0));
 s.t. legacy_ceil_ngdri{t in T}: legacy_ngdri[t] <= cap0_ngdri *
-    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + life_ngdri then 1 else 0));
+    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + legacy_life then 1 else 0));
 s.t. legacy_ceil_h2dri{t in T}: legacy_h2dri[t] <= cap0_h2dri *
-    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + life_h2dri then 1 else 0));
+    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + legacy_life then 1 else 0));
 s.t. legacy_ceil_scrap{t in T}: legacy_scrap[t] <= cap0_scrap *
-    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + life_scrap then 1 else 0));
+    (if legacy_phaseout = 1 then (2050 - t)/25 else (if t <= 2025 + legacy_life then 1 else 0));
 
 s.t. legacy_noninc_bof  {t in T: ord(t)>1}: legacy_bof[t]   <= legacy_bof[prev(t)];
 s.t. legacy_noninc_cdri {t in T: ord(t)>1}: legacy_cdri[t]  <= legacy_cdri[prev(t)];

@@ -245,11 +245,21 @@ param legacy_phaseout default 0;
 # 2025 surplus to consolidate faster than the optimizer would choose.
 param cap_buffer default 0.40;
 
-param life_bof   default 25;
-param life_cdri  default 20;
-param life_ngdri default 20;
-param life_h2dri default 25;
-param life_scrap default 15;
+# [audit lifetimes] New-build economic life, 40 yr for all routes: IEA (2020)
+# Iron & Steel Technology Roadmap ('40-year typical average lifetimes');
+# Transition Asia & TERI (2026) 40 yr for shaft furnace, kiln, BOF, EAF;
+# UC Berkeley IECC (2026) '40+-year life' of BF-BOF. Was 25/20/20/25/15.
+param life_bof   default 40;
+param life_cdri  default 40;
+param life_ngdri default 40;
+param life_h2dri default 40;
+param life_scrap default 40;
+
+# [audit lifetimes] Run-life case: years from 2025 the 2025 fleet may keep
+# running. No vintage data exist; with a 40-yr life and Indian blast furnaces
+# ~15 yr old on average (IEA 2020), the fleet outlasts the horizon, so the
+# default keeps it available through 2050. Decoupled from life_* (new builds).
+param legacy_life default 25;
 
 # Capacity-addition ceiling
 # limits across routes. 10 Mt/yr for now
