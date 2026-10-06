@@ -35,6 +35,17 @@ Sensitivity: brownfield values ($530–700/t) give a low-capex case.
 | Scrap-EAF | 680 | IEA 2020: 405–690 (global) |
 | Coal-DRI-EAF/IF | 2,179 | none found yet |
 
-## Open item
+## BF-BOF node split (decision 2026-10-06)
 
-The node split for BF-BOF (`n0` coke, `n1` sinter, `ng` pellet, `n2` BF, `n3` BOF) is still to be decided. IEA (2020, p. 46) puts the blast furnace alone at USD 200–300 million per Mt, which is 20–25 % of its full-plant figure. The current model gives the BF 40 % (80 of 200).
+The current proportions (40 : 30 : 10 : 80 : 40) are kept, scaled to $1,200:
+
+| Parameter | Node | Before | Adopted (2025 USD/t-capacity, up-front) |
+|---|---|---|---|
+| `n0_capex` | coke oven | 40 | **240** |
+| `n1_capex` | sinter | 30 | **180** |
+| `ng_capex_pell` | pellet (shared with the DRI routes) | 10 | **60** |
+| `n2_capex` | blast furnace | 80 | **480** |
+| `n3_capex` | BOF | 40 | **240** |
+| | **total** | 200 (treated as annualised) | **1,200** |
+
+Note: IEA (2020, p. 46) puts the blast furnace alone at USD 200–300 million per Mt (≈ $250–370/t in 2025 USD), below the $480 here. Only the total affects route choice. The pellet node also enters the DRI routes.
