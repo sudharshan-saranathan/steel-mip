@@ -1,104 +1,141 @@
-# Model Framework
+# Steel Decarbonization Model
 
-## Technology Learning
+AMPL–Python framework for analyzing decarbonization pathways in the **Indian steel sector, 2025–2050**. The repository contains the core optimization model and computational pipelines used to generate the study results.
 
-Future technology development is represented using three independent learning parameters, each ranging from **0** (slow progress) to **1** (fast progress). All technologies are calibrated to fixed 2025 values, while only the future (2050) performance changes.
+Current studies include **H2 Delay, Fuel Availability, Feasibility Drivers, Sectoral Synergy, Monte Carlo, Violin, and Adaptive Planning (Regret)**.
 
-- **`theta_tech`** controls global learning in green hydrogen technologies, including electrolyser and dedicated renewable costs.
-- **`theta_grid`** controls the evolution of the Indian power system, affecting grid electricity prices, grid emission factors, electric steelmaking, waste heat recovery, and CCS operating costs.
-- **`theta_ccs`** controls improvements in carbon capture technology by reducing CCS capital costs. The total capture cost is calculated from capital, electricity, steam, solvent, and transport & storage costs.
+## Requirements
 
-The three learning parameters are independent and can be combined to represent different future scenarios.
+* AMPL with a licensed Gurobi installation, both available on `PATH`
+* Python 3
 
----
+```bash
+pip install amplpy pandas openpyxl numpy matplotlib
+```
 
-## Steel Demand
+## Repository Structure
 
-Future steel demand is exogenously specified using an annual growth rate. The optimizer must satisfy demand in every year by selecting the least-cost combination of production routes.
+```text
+Steel-sector-decarbonization/
+│
+├── core/                              # Core AMPL model
+│
+├── structural/                       # Deterministic studies
+│   ├── axes/
+│   ├── report.mod
+│   ├── solve_common.py
+│   ├── h2_delay/
+│   ├── fuel_availability/
+│   └── feasibility_and_synergy/
+│       ├── feasibility_drivers/
+│       └── sectoral_synergy/
+│
+├── monte_carlo/                       # Uncertainty studies
+│   ├── template_montecarlo.mod
+│   ├── run_montecarlo.py
+│   ├── data/
+│   ├── uncertainty/
+│   │   ├── shares/
+│   │   ├── cost_risk/
+│   │   ├── cost_distribution/
+│   │   ├── coking_coal_stochasticity/
+│   │   └── plot_uncertainty.py
+│   └── violin/
+│
+└── adaptive_planning/                 # Adaptive planning and regret analysis
+    ├── run_regret.py
+    ├── plot_regret.py
+    └── data/
+```
 
----
+## Running the Studies
 
-## Capacity Expansion
+Each study can be run from its own directory.
 
-The model explicitly tracks installed capacity for every steelmaking route. Building new capacity requires capital investment, incurs fixed operating costs, and remains available throughout its lifetime.
+### H2 Delay
 
-Capacity expansion is represented using two different mechanisms:
+```bash
+cd structural/h2_delay
+python run_h2delay.py
+python plot_h2delay.py
+```
 
-- **Conventional technologies** (BF-BOF, Coal DRI, NG-DRI, and Scrap-EAF) share a common annual capacity addition limit (`cap_add_common`), representing realistic construction and industrial deployment constraints.
+### Fuel Availability
 
-- **Hydrogen technologies** are constrained separately through an electrolyser deployment model that captures manufacturing and supply-chain limitations. By default, hydrogen deployment follows a **Gaussian transition**, representing slow initial deployment, rapid scale-up, and gradual stabilization.
+```bash
+cd structural/fuel_availability
+python run_fuelavailability.py
+python plot_fuelavailability.py
+```
 
-Note: Alternative linear and unconstrained deployment modes are also available for sensitivity analysis.
+### Feasibility Drivers & Sectoral Synergy
 
----
+```bash
+cd structural/feasibility_and_synergy
 
-## Capacity Utilization
+python feasibility_drivers/run_feasibilitydrivers.py
+python sectoral_synergy/run_sectoralsynergy.py
+python plot_feasibility_and_synergy.py
+```
 
-Each production route operates within minimum and maximum utilization limits.
+### Monte Carlo
 
-Minimum utilization represents the economic requirement for plants to operate above break-even levels, while maximum utilization accounts for maintenance shutdowns and operational limitations.
+The Monte Carlo solve must be completed before running the downstream uncertainty and violin analyses.
 
----
+```bash
+cd monte_carlo
+python run_montecarlo.py -j 6
+```
 
-## Green Hydrogen Supply
+Then:
 
-Rather than prescribing a fixed hydrogen price, the model explicitly represents the complete green hydrogen supply chain.
+```bash
+cd uncertainty
 
-This includes:
+python shares/run_shares.py
+python cost_risk/run_costrisk.py
+python coking_coal_stochasticity/run_cokingcoal.py
+python cost_distribution/run_costdistribution.py
+python plot_uncertainty.py
 
-- Electrolyser capacity
-- Dedicated renewable generation
-- Hydrogen firming and storage
-- Operating costs
+cd ../violin
+python run_violin.py
+python plot_violin.py
+```
 
-Dedicated renewable electricity supplies hydrogen production independently of the grid, allowing hydrogen costs to evolve separately from electricity prices. Hydrogen investments are treated as physical assets that can later become underutilized or stranded.
+### Adaptive Planning (Regret)
 
----
+The regret analysis studies the cost of committing to an H2-investment program before the true hydrogen arrival year is known, relative to perfect foresight.
 
-## Carbon Capture and Storage (CCS)
+Regret uses **1,000 sampled worlds** (50 worlds/year × 20 arrival years, 2030–2049). Each world is solved **10 ways**: once under **perfect foresight** (the baseline), once with **no recourse** (committed to the initial plan for the full horizon), and once at each of four **review checkpoints** (2030, 2035, 2040, and 2045). Each checkpoint contributes both a **re-planning solve** under the updated belief and a **settle solve** under the realized outcome.
 
-CCS is modeled using a component-based cost framework rather than a fixed cost per tonne of CO₂ captured.
+* `run_regret.py` → `data/regret_ladder.csv`
+* `plot_regret.py` → `fig_regret.png/pdf`
 
-The total capture cost is calculated from:
 
-- Capture plant capital cost
-- Fixed operating cost
-- Electricity for CO₂ compression
-- Steam for solvent regeneration
-- Solvent consumption
-- Transport and storage
+## Parallel Execution
 
-The model also accounts for differences in CO₂ concentration between process streams. CO₂-rich streams require less energy to capture than dilute flue gases, allowing each steelmaking route to have different CCS costs and energy requirements.
+The computationally intensive pipelines support parallel workers through `-j`:
 
----
+```bash
+python run_feasibilitydrivers.py -j 6
+python run_sectoralsynergy.py -j 6
+python run_montecarlo.py -j 6
+python run_regret.py -j 6
+```
 
-## Waste Heat Recovery
+The default is 6 workers. A value close to the number of available physical CPU cores is recommended.
 
-Waste heat generated throughout the steelmaking process can be recovered and used either to generate electricity or to supply regeneration steam for CCS. The model optimizes this allocation based on system economics.
+The feasibility analysis can be resumed after interruption:
 
----
+```bash
+python run_feasibilitydrivers.py -j 6 --resume
+```
 
-## Scrap Blending
+## Reproducibility
 
-Scrap can be utilized in three ways:
+The `structural/` studies are deterministic and should reproduce the same results across runs, apart from negligible solver and floating-point differences.
 
-- Blended into BF-BOF.
-- Blended into DRI-EAF routes.
-- Used directly in dedicated Scrap-EAF production.
+The Monte Carlo pipeline uses a fixed random seed (`20260824`) and draw sequence. The same uncertainty realizations are therefore generated on every run. Solver execution order may vary across machines, so intermediate files may not be byte-identical, but results for the same structural pathway and draw are reproducible.
 
-Each route has minimum and maximum allowable scrap fractions, and annual changes in blending are limited to represent gradual operational changes.
-
----
-
-## Supply Chain Expansion
-
-The model can also invest in supporting infrastructure, including scrap processing facilities, hydrogen production assets, and optional fossil fuel supply networks, allowing supply-chain expansion costs to be included in transition planning.
-
----
-
-## Sunk Capital
-
-The model supports two investment formulations:
-
-- **`sunk = 1` (default):** Investments are irreversible. Capital costs are incurred when capacity is built, even if the asset is later underutilized or stranded.
-- **`sunk = 0`:** Capital and fixed operating costs are charged only on production. Capacity can be built and abandoned without financial penalty. This counterfactual setting isolates the effect of irreversible investments.
+The `adaptive_planning/` regret analysis uses independently seeded random number generators for each hydrogen arrival year, with the seed defined as `BASE_SEED + year`. This makes the same 1,000 worlds reproducible regardless of parallel solve order. 

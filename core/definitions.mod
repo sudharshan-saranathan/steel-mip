@@ -3,7 +3,7 @@
 param base_demand default 152200000;  # Steel production at year 2025
 param growth_rate default 0.05;
 param dem{t in T} := base_demand * (1 + growth_rate)^(ord(t) - 1);
-param real_discount_rate := 0.06;
+param real_discount_rate default 0.06;   # was `:=` (defined, un-let-able) -- now a mutable input for MC sweeps
 
 # TECHNICAL PARAMETERS 
 # Global parameters
@@ -146,19 +146,19 @@ param n8_scrap_limit{t in T} :=
 param theta_tech default 0;              # global tech learning speed (H2 axis)
 param theta_grid default 0;              # India grid outcome speed (EF + tariff)
 param grid_price_start    default 0.07;    # 2025 grid tariff, $/kWh (fixed anchor)
-param grid_price_end_slow default 0.085;   # 2050 grid tariff, slow (straddles flat)
-param grid_price_end_fast default 0.055;   # 2050 grid tariff, fast
-param grid_ef_end_slow    default 0.0006; # 2050 grid EF, slow (tCO2/kWh)
-param grid_ef_end_fast    default 0.0003; # 2050 grid EF, fast
-# bands: theta_tech = 0 -> ~$3.7/kg (expensive band $3-4), theta_tech = 1 ->
-# ~$1.8/kg (cheap band $1-2). 2050 H2 cost is never specified directly.
-param h2elec_capex_end_slow default 550;   # 2050 electrolyser capex $/kW, slow
-param h2elec_capex_end_fast default 150;   # 2050 electrolyser capex $/kW, fast (DOE optimistic)
-param re_capex_end_slow   default 600;     # 2050 renewable capex $/kW, slow
-param re_capex_end_fast   default 200;     # 2050 renewable capex $/kW, fast (IRENA optimistic solar)
+param grid_price_end_fast default 0.055;   # 2050 grid tariff at theta_grid=1 (improved)
+                                             # theta_grid=0 holds tariff flat at grid_price_start (no "slow" endpoint anymore)
+# theta_tech=0 means NO learning: electrolyser/RE capex hold flat at their
+# 2025 anchors through 2050 (slow endpoint = start value, mirrors theta_grid's
+# convention). theta_tech=1 -> ~$1.8/kg by 2050 (cheap band $1-2/kg).
+# 2050 H2 cost is never specified directly -- it emerges from this build-up.
+param h2elec_capex_end_slow default 850;    # 2050 electrolyser capex $/kW, slow (= 2025 start -> flat)
+param h2elec_capex_end_fast default 100.31; # 2050 electrolyser capex $/kW, fast (scaled x0.6688 off 150 DOE-optimistic; theta_tech=1 -> 2050 LCOH = $1.50/kg)
+param re_capex_end_slow   default 800;      # 2050 renewable capex $/kW, slow (= 2025 start -> flat)
+param re_capex_end_fast   default 133.75;   # 2050 renewable capex $/kW, fast (scaled x0.6688 off 200 IRENA-optimistic; theta_tech=1 -> 2050 LCOH = $1.50/kg)
 param theta_ccs default 0;                 # capture-plant learning speed
-param ccs_capex_fall_slow default 0.30;    # 2050 overnight-capex decline vs 2025, slow
-param ccs_capex_fall_fast default 0.80;    # 2050 overnight-capex decline vs 2025, fast
+param ccs_capex_fall_slow default 0.3165;  # 2050 overnight-capex decline vs 2025, slow (theta_ccs=0 -> 2050 all-in cost = $100/tCO2)
+param ccs_capex_fall_fast default 0.8435;  # 2050 overnight-capex decline vs 2025, fast (theta_ccs=1 -> 2050 all-in cost = $60/tCO2)
 
 # Waste Heat Recovery
 param n9_eta default 0.15;                              # WHRS efficiency including losses
@@ -166,7 +166,7 @@ param n9_whr {t in T} :=
     0.05 +(0.3 - 0.05) * (t - 2025) / 25;               # WHRS penetration level from 5% in 2025 to 30% by 2050
 param n9_grid_ef_start default 0.000886; #0.000757 from grid having 36% share and 0.00096 from CPP having 64% share
 param n9_grid_ef_end default
-    grid_ef_end_slow + theta_grid * (grid_ef_end_fast - grid_ef_end_slow);   # theta_grid-coupled (0.00045 at 0.5)
+    n9_grid_ef_start * (1 - theta_grid);   # theta_grid=0 -> 2050 EF = 2025 EF (persists flat); theta_grid=1 -> 2050 EF = 0
 param n9_grid_ef{t in T} :=
     n9_grid_ef_start + (n9_grid_ef_end - n9_grid_ef_start) * (t - 2025) /25;   # Grid emission factor from 2025 to 2050
 
@@ -178,8 +178,7 @@ param n10_ccs_eta default 0.85;                        # Carbon capture efficien
 param ng_cost_ccoal default 184;          # Cost per ton of coking coal
 param ng_cost_power{t in T} :=
     grid_price_start
-    + ( (grid_price_end_slow + theta_grid*(grid_price_end_fast - grid_price_end_slow))
-        - grid_price_start ) * (t - 2025)/25;
+    + theta_grid * (grid_price_end_fast - grid_price_start) * (t - 2025)/25;   # theta_grid=0 -> flat at grid_price_start; theta_grid=1 -> linear to grid_price_end_fast
 param ng_credit_power default 0.03;       # Selling cost per kWh of generated power
 param ng_cost_fineore default 65;         # Cost per ton of fineore
 param ng_cost_lime default 60;            # Cost per ton of lime
@@ -204,9 +203,9 @@ param n6_capex_h2{t in T} :=
     if t <= 2025 then 120
     else 120+ (90-120) * (t-2025)/25;     # CAPEX of H2-DRI per tCS from 2025 to 2050
 param n7_capex default 70;                # CAPEX of EAF plant (DRI based) per tCS
-param n7_cost_electrode default 600;      # Cost per ton of electrode
+param n7_cost_electrode default 3000;     # Cost per ton of electrode (corrected 2026-08-21, was 600 -- well below realistic UHP graphite electrode market levels)
 param n8_capex default 70;                # CAPEX of EAF plant (Scrap-based) per tCS     
-param n8_cost_electrode default 600;      # Cost per ton of electrode
+param n8_cost_electrode default 3000;     # Cost per ton of electrode (corrected 2026-08-21, was 600 -- well below realistic UHP graphite electrode market levels)
 param n9_whr_capex default 0.009;         # CAPEX of WHR system per kWh of power generated
 param n9_whr_opex default 0.003;          # OPEX of WHR system per kWh of power generated
 # CCS anchor price ($/tCO2), INCLUSIVE of capex, O&M, energy

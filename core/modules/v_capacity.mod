@@ -136,10 +136,11 @@ s.t. cap_lim_h2dri{t in T}: h2dri_output[t]    <= (if h2_ramp_mode = 0 then 1 el
 s.t. cap_lim_scrap{t in T}: steel_scrap_eaf[t] <= (if h2_ramp_mode = 0 then 1 else util_max) * cap_scrap[t];
 
 # Per-route capacity-addition ceiling
-# SHARED annual build budget across the four conventional routes (changed
-# 2026-08-18). `cap_add_common` represents the finance and EPC capacity the
-# sector can deploy in one year, so the routes COMPETE for it -- scrap-EAF
-# expansion has to outbid BF-BOF, coal-DRI and NG-DRI for the same money.
+# SHARED annual build budget across ALL FIVE routes, including H2-DRI (added
+# 2026-08-21; four-route version dated 2026-08-18). `cap_add_common`
+# represents the finance and EPC capacity the sector can deploy in one year,
+# so the routes COMPETE for it -- scrap-EAF expansion has to outbid BF-BOF,
+# coal-DRI, NG-DRI, and now H2-DRI, for the same money.
 #
 # REPLACES four independent per-route caps, each against the same parameter,
 # which let the sector add up to 4 x cap_add_common per year in aggregate and
@@ -147,11 +148,15 @@ s.t. cap_lim_scrap{t in T}: steel_scrap_eaf[t] <= (if h2_ramp_mode = 0 then 1 el
 # share ceiling was set by util_max * life_scrap * cap_add_common / demand[2050]
 # with no competition from other routes -- an artifact, not an economic result.
 #
-# NOTE build_h2dri is NOT in this budget: it has no per-year cap at all, and
-# H2-DRI is throttled indirectly through electrolyser capacity (h2elec_growth).
-# That asymmetry is inherited, not intended -- flag it in any write-up.
+# H2-DRI now competes for this SAME physical-construction budget on top of
+# its own separate electrolyser-growth throttle (h2elec_growth/h2elec_first,
+# scaled by h2_ref_cap / the `ramp` axis) -- the two constraints are not
+# redundant: cap_add_common limits DRI-PLANT construction capacity, the
+# electrolyser ceiling limits H2-SUPPLY buildout; H2-DRI output is bound by
+# whichever binds first. Previously build_h2dri had no construction-rate cap
+# at all, an inherited asymmetry with the other four routes.
 s.t. cap_add_total{t in T: t > first(T)}:
-    build_bof[t] + build_cdri[t] + build_ngdri[t] + build_scrap[t]
+    build_bof[t] + build_cdri[t] + build_ngdri[t] + build_scrap[t] + build_h2dri[t]
         <= (if h2_ramp_mode = 0 then H2_BIGM else cap_add_common);
 
 
@@ -160,6 +165,14 @@ s.t. cap_add_bof0:   build_bof[first(T)]   = 0;
 s.t. cap_add_cdri0:  build_cdri[first(T)]  = 0;
 s.t. cap_add_ngdri0: build_ngdri[first(T)] = 0;
 s.t. cap_add_scrap0: build_scrap[first(T)] = 0;
+
+# No H2-DRI PLANT builds before the debut year (mirrors No_H2_Before in
+# core/parameters.mod, which zeroes H2 fuel input over the same window).
+# Electrolyser/RE buildout is NOT gated on ng_h2_start_year -- h2elec_growth
+# has no such restriction, so the supply chain can ramp ahead of debut in
+# preparation; only the DRI plant itself (which would sit idle with no H2 to
+# run on before debut) is restricted here.
+s.t. cap_add_h2dri0{t in T: t < ng_h2_start_year}: build_h2dri[t] = 0;
 
 # Minimum capacity utilisation
 s.t. min_util_bof  {t in T: t > first(T)}: steel_bof[t]       >= (if h2_ramp_mode = 0 then 0 else util_min_bof)   * cap_bof[t];
