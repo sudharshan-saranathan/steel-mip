@@ -22,8 +22,8 @@ CCOAL = [
 ]
 
 NG = [
-    ("abundant", "ng_policy"),        # national gas -> 32.2 Mm3 by 2050
-    ("scarce",   "ng_bau"),           # -> 10.7 Mm3
+    ("abundant", "ng_policy"),        # steel gas cap -> 11.3 Mt by 2050 (3.5 % share)
+    ("scarce",   "ng_bau"),           # -> 3.7 Mt
 ]
 
 # Integer switch year for No_H2_Before. 5-year spacing, matching the original

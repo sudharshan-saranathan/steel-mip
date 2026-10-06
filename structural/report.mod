@@ -20,7 +20,7 @@
 #     is left exactly as the original studies defined it.
 # =====================================================================
 
-param ng_domestic    := 0.5 * 5348550;                     # flat domestic NG to steel, t/yr
+param ng_domestic    := 0.5 * 1871993;   # [audit] half of the 2025 cap, rescaled with the 3.5 % steel share (was 0.5 * 5348550)                     # flat domestic NG to steel, t/yr
 param ccoal_domestic{t in T} := 6000000 * 1.075^(t-2025);  # domestic coking coal, +7.5%/yr
 
 param m_cum_ccoal_bill;
