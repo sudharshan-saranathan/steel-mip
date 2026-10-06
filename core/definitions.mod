@@ -127,7 +127,8 @@ param n8_eafg default 0;       # [audit DRI] as n7_eafg. Was 3                 #
 #   3. as 100% scrap-based steel via the dedicated Scrap-EAF route (1.1 t/tCS).
 # There is a limit set for blends
 param phi0_bof      default 0.10;    # [audit BF] Was 0.09    # 2025 baseline scrap share of BOF metallic charge
-param phi0_cdri     default 0.382;   # 2025 baseline scrap share, Coal DRI-EAF/IF charge
+param phi0_cdri     default 0.325;  # [audit ST-07] recalibrated so 2025 scrap use = n8_scrap_seed (37 Mt) under the JPC route split (f_eaf 0.589); 0.382 gave 42 Mt. MoS: FY24 scrap 33.4 Mt incl. imports. Was 0.382
+#   # 2025 baseline scrap share, Coal DRI-EAF/IF charge
 param phi0_ngdri    default 0.13;    # 2025 baseline scrap share, NG DRI-EAF charge
 param phi_min_bof   default 0.05;    # min scrap share of BF-BOF charge 
 param phi_min_cdri  default 0;       # min scrap share, Coal DRI-EAF 
