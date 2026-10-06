@@ -1,10 +1,46 @@
 # Stage 2 — Fuel, material and by-product prices (2025, constant real)
 
-Status: IN PROGRESS. Sub-groups are filled in as they are finished.
+Status: complete (2026-10-06). All values are constant 2025 USD. Rupee values: India WPI to 2025, then ₹87.16/$ (2025 average, FRED EXINUS); WPI 2024 = 154.0, 2025 = 155.0, so FY 2024-25 rupee figures are scaled by 1.006. Dollar values: US GDP deflator (2024→2025 factor 1.026). Yuan: FRED AEXCHUS annual rate, then US GDP deflator. All conversions use the functions in `convert_2025usd.py`. Downloaded sources are in the session scratchpad (`prices_dl/`).
+
+Parameters are in `core/definitions.mod` of `nakulneupane/steel-sector-decarbonization` @ b33b88a.
+
+**Parameters with no admissible source found: 3** — `ng_cost_pcoal`, `n0_credit_breeze`, `n1_cost_breeze`. For a fourth, `ng_cost_biochar`, only a non-Indian (China) source was found.
 
 ## Needs your call
 
-IN PROGRESS
+1. **Coking coal central (`ng_cost_ccoal`).** Evidence: 2025 median **$200/t** (range ~175–260). It supports the core value (184), not the regret study's 250.
+   Options: (a) 200 in every study, with MC 150/200/300 *(recommended)*; (b) 200 central but keep MC 100/250/400 as a stress range; (c) keep 184.
+2. **Natural gas central (`n5_cost_NG`).** Evidence: delivered RLNG median **$12/MMBtu** (range 8–16). Core 10 is roughly the LNG import price before delivery costs; regret 15 is high.
+   Options: (a) 12 in every study, with MC 8/12/18 *(recommended)*; (b) 12 central but keep MC 5/15/25; (c) keep 10 (core) and 15 (regret).
+3. **Grid tariff (`grid_price_start`, `grid_price_end_fast`).** Evidence: median **$0.095/kWh** for 2025 (current 0.07). No source projects a real decline by 2050.
+   Options: (a) start 0.095 and fast end 0.075 (same −21 % scenario) *(recommended)*; (b) start 0.095, no decline; (c) keep 0.07 / 0.055.
+4. **Scrap (`ng_cost_scrap`).** Evidence: **$400/t** (import unit values 379–426; Transition Asia–TERI 402).
+   Options: (a) 400 with MC 300/400/500 *(recommended)*; (b) keep 350 with MC 250/350/450.
+5. **Biochar (`ng_cost_biochar`).** $60 is a raw-biomass price; biochar costs ~**$520/t** (China, peer-reviewed; no Indian source).
+   Options: (a) 520 for both sinter biochar and BF injection *(recommended, pessimistic)*; (b) keep 60 and relabel the BF input as raw biomass (needs a check that raw biomass can be injected); (c) split into two parameters.
+
+## Summary of proposals
+
+| Parameter | file:line | Current | Proposed | Flag |
+|---|---|---|---|---|
+| ng_cost_ccoal | definitions.mod:178 | 184 (MC 100/250/400) | 200 (MC 150/200/300) | NEEDS CALL |
+| n5_cost_NG | definitions.mod:201 | 10 (MC 5/15/25) | 12 (MC 8/12/18) | NEEDS CALL |
+| ng_cost_scrap | definitions.mod:190 | 350 (MC 250/350/450) | 400 (MC 300/400/500) | NEEDS CALL |
+| ng_cost_fineore | definitions.mod:183 | 65 | 65 | default |
+| ng_cost_lumpore | definitions.mod:187 | 70 | 80 | default |
+| ng_cost_pcoal | definitions.mod:188 | 110 | 110 (no admissible source) | default |
+| ng_cost_ncoal | definitions.mod:191 | 98 | 98 | default |
+| ng_cost_lime | definitions.mod:184 | 60 | 60 | default |
+| ng_cost_biochar | definitions.mod:185 | 60 | 520 | NEEDS CALL |
+| n7_cost_electrode / n8_cost_electrode | definitions.mod:206, 208 | 3,000 | 2,500 | default |
+| n0_credit_breeze | definitions.mod:192 | 55 | 55 (no admissible source) | default |
+| n1_cost_breeze | definitions.mod:195 | 85 | 85 (no admissible source) | default |
+| n0_credit_tar | definitions.mod:193 | 20 | 430 | default |
+| ng_credit_slag | definitions.mod:189 | 15 | 10 | default |
+| grid_price_start | definitions.mod:148 | 0.07 | 0.095 | NEEDS CALL |
+| grid_price_end_fast | definitions.mod:149 | 0.055 | 0.075 | NEEDS CALL |
+
+Direction note: the brief's rule (upper bound for costs, lower bound for credits) does not always make decarbonisation look harder here. A higher coking-coal price or a lower tar credit penalises BF-BOF, which favours the low-carbon routes. Where the median rule applies (coking coal, gas, scrap, electrodes, grid) this does not matter.
 
 ## A. Coal (coking, PCI, non-coking)
 
@@ -58,7 +94,7 @@ The evidence supports **neither study central exactly**: core $10 is about the L
 
 | Parameter | file:line | Current | Evidence | Proposed | Pessimistic direction | Flag |
 |---|---|---|---|---|---|---|
-| n5_cost_NG | definitions.mod:201 | 10 (MC 5/15/25; regret central 15) | G3 11.8, G4 10.0, G5 15.8; CIF 9.8–10.9 | **12** central; MC levels **8 / 12 / 18** | upper (cost) — but note: higher gas price also makes NG-DRI less attractive vs coal, so "pessimistic for decarbonisation" is upper | NEEDS CALL (central differs between studies) |
+| n5_cost_NG | definitions.mod:201 | 10 (MC 5/15/25; regret central 15) | G3 11.8, G4 10.0, G5 15.8; CIF 9.8–10.9 | **12** central; MC levels **8 / 12 / 18** | upper (cost; also penalises NG-DRI, the lower-carbon DRI route) | NEEDS CALL (central differs between studies) |
 
 ## C. Ores and scrap
 
@@ -172,10 +208,42 @@ Four estimates (P1 0.098, P3 0.072, P4 0.090, P5 0.100): **median 0.094 → 0.09
 | grid_price_start | definitions.mod:148 | 0.07 | P1 0.098, P3 0.072, P4 0.090, P5 0.100 | **0.095** | upper (cost; also penalises the electric routes) | NEEDS CALL |
 | grid_price_end_fast | definitions.mod:149 | 0.055 | no source for a decline; P3 0.077 in 2050 | **0.075** (keeps the −21 % scenario) or = start (no decline) | upper | NEEDS CALL (part of the grid-tariff call) |
 
-## Structural notes
+## Structural notes (not fixed; for Stage 3)
 
-IN PROGRESS
+- **Gas unit conversion.** `r_cost.mod:76` costs NG-DRI gas as `n5_cost_NG[t] * 50 * ngdri_ng_in[t]`, i.e. 50 MMBtu per tonne of gas (`n5_ng_dri` is in t NG/t DRI). Indian gas prices are quoted on a GCV basis. PPAC's own conversions (Ready Reckoner: "1 MMT = 1325 MMSCM"; "1 MMBtu = 25.2 SCM") give 52.6 MMBtu/t, so the hard-coded 50 understates gas cost by ~5 %. The CCS boiler (`r_cost.mod:120`) uses `ng_gj_per_mmbtu` instead, so the two gas-cost terms use different conversions.
+- **One "lime" price for two materials.** `ng_cost_lime` prices sinter and BF flux (raw limestone, ex-mine $7–41/t) and BOF/EAF flux (`n3_ls_bof`, `n7_ls`, `n8_ls`, commented "Limestone", but in practice burnt lime). Burnt lime needs ~1.8 t limestone plus kiln fuel per tonne, and its calcination CO₂ belongs in the emissions. Consider separate limestone and burnt-lime prices.
+- **Biochar vs biomass.** `ng_cost_biochar` is commented "Cost per ton of biomass" but prices both `sinter_biochar_in` and `bf_biopci_in` ("Biomass injection"). $60 fits raw biomass, not char.
+- **Non-coking coal price vs emission factor (links to ST-13).** The import-grade price (~$90–100) is consistent with the 2.64 tCO₂/t factor (≈24 GJ/t). If the DRI coal is meant to be domestic G-grade (~$54–62 ex-mine, 15–20 GJ/t), both the price and the coal quantity per tonne of DRI must change together. The same `ng_cost_ncoal` also prices EAF charge carbon (`eaf_coal_in`).
+- **One slag credit** is applied to BF, BOF and EAF slag. Only granulated BF slag has a clear market ($9–15/t).
+- **Breeze** is bought at $85 and sold at $55, with no source for either. The bought-in breeze also carries no CO₂ (ST-04).
+- **All purchased electricity at the grid tariff.** Integrated plants get most of their power from captive plants (ST-06). A grid HT tariff (~$0.095) overstates BF-BOF power cost in 2025 but is right for new grid-connected electric routes. `ng_credit_power` (0.03 $/kWh, not in this group) is far below any grid tariff, so exported power is valued at about a third of the price paid for imported power.
+- **Monte Carlo ranges** (coking coal 100–400, gas 5–25) extend well beyond 2024–25 observations at the low end. If kept as stress ranges, the paper should say so.
 
 ## Bibliography
 
-IN PROGRESS
+Government of India
+- Ministry of Coal, Office of the Nominated Authority (2026). *National Coal Index with Base year 2017-18 (provisional) for the month of Jan'2026*, OM dated 06.03.2026, incl. Annexure Tables A and B. https://coal.gov.in/sites/default/files/2026-03/06-03-2026a-nci.pdf (also OM 02.01.2026, https://coal.gov.in/sites/default/files/2026-01/02-01-2026a-nci.pdf). Index page: https://coal.gov.in/nominated-authority/national-coal-index
+- Ministry of Coal (2025). *Coal Directory of India 2024-25*, Table 8.7. https://coal.gov.in/sites/default/files/2024-03/28-11-2025a-stc.pdf
+- Ministry of Coal (2025). *Monthly Statistical Report, March 2025*, Tables 8.1, 8.6, 8.8, 8.9. https://coal.gov.in/sites/default/files/2025-05/srn-march-2025.pdf (also October 2024: https://coal.gov.in/sites/default/files/2024-12/srn-oct-2024.pdf)
+- PPAC (2026). *PPAC Ready Reckoner FY 2025-26*, Tables 3.10, 3.10A, 3.11. https://ppac.gov.in/download.php?file=rep_studies/1784899305_The_PPAC_Ready_Reckoner_FY_2025–26_Final.pdf
+- Indian Bureau of Mines (2025). *Monthly Statistics of Mineral Production*, Table 6(a) "State wise Average Sale Price of minerals by Grades", January 2025 and December 2025 issues. https://ibm.gov.in/writereaddata/files/174245379967dbbc27d4001ASPMin__January_2025.pdf ; https://ibm.gov.in/writereaddata/files/17712351216992e73118ab103_ASP_MineralsDec._2025_final.pdf (index: https://ibm.gov.in/IBMPortal/pages/average-sale-price-of-mineral--amp--metals-for-the-year-2025--january-to-december---please-click-here)
+- Ministry of Commerce & Industry, DGCIS. *Export-Import Data Bank*, commodity-wise import/export, ITC-HS 72044900, 85451100, 27060010, 26180000, 27040090; FY 2024-25 and FY 2025-26; queried 2026-10-06. https://tradestat.commerce.gov.in/eidb/commodity_wise_import and …/commodity_wise_export
+- Central Electricity Authority (2026). *Electricity Tariff & Duty and Average Rates of Electricity Supply in India* (as on 31.03.2025), Tables 7(h), 8(a), 8(b). https://cea.nic.in/wp-content/uploads/fs___a/2026/03/Book_2025.pdf
+- Ministry of Steel (2024). *Greening the Steel Sector in India: Roadmap and Action Plan*. (Text read from the copy used for capex.md.)
+- NITI Aayog / NIAS (2024). *Enhancing Domestic Coking Coal Availability to Reduce the Import of Coking Coal* (context only). https://niti.gov.in/sites/default/files/2024-11/Report_Enhancing%20Domestic%20Coking%20Coal%20Availability%20to%20Reduce%20the%20Import%20of%20Coking%20Coal.pdf
+
+Think tanks and universities
+- Domínguez Bennett, J., Jain, N., Chojkiewicz, E., Abhyankar, N., Phadke, A. (2026). *Economic Case for Green Steel Production in India*. India Energy and Climate Center, UC Berkeley. Tables S-1, S-3, S-4; pp. 10, 15.
+- Transition Asia & TERI (2026). *Is Green Steel Within Reach in India?*; input workbook `india/data/Model_input_India.xlsx` (sheets Commodities, Ore_Price, Grid), real 2025 USD.
+- Yadav, D., Guhan, A., Biswas, T. (2021). *Greening Steel: Moving to Clean Steelmaking Using Hydrogen and Renewable Energy*. CEEW, New Delhi.
+- IEA (2020). *Iron and Steel Technology Roadmap*. Paris. (global context)
+- IEEFA (2025). *India's steel sector confronts growing coal risks* (Dec 2025; context, no price used). https://ieefa.org/sites/default/files/2025-12/India's%20growing%20met%20coal%20energy%20security%20risks_Dec25.pdf
+
+Peer-reviewed
+- Ibitoye, S.E., Loha, C., Mahamood, R.M., Jen, T.-C., Alam, M., Sarkar, I., Das, P., Akinlabi, E.T. (2024). An overview of biochar production techniques and application in iron and steel industries. *Bioresources and Bioprocessing* 11:65. https://doi.org/10.1186/s40643-024-00779-z
+- Åhman, M., Arens, M. (2024). Are electricity prices and cross-subsidies a barrier to decarbonising India's steel industry? *Utilities Policy* 91. https://www.sciencedirect.com/science/article/pii/S0957178724001474 (paywalled; not read, no number used)
+
+Exchange-rate series
+- FRED AEXCHUS (China/US annual exchange rate). https://fred.stlouisfed.org/series/AEXCHUS ; EXINUS and GDPDEF as in `convert_2025usd.py`.
+
+Searched but not usable: PCI coal prices (no Indian source; Australian *Resources and Energy Quarterly* blocked by the network proxy); NMDC notified prices (only news reports reachable); JPC scrap prices (site unreachable); Indian biochar prices (only blogs and listings).

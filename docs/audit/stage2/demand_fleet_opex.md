@@ -1,6 +1,6 @@
 # Stage 2 — Demand, 2025 fleet, utilisation, fixed opex, resource availability, study-only values
 
-Status: complete (2026-10-06). Scope: Indian steel sector, 2025 base year. Line numbers refer to the audit target  @ b33b88a. Conversions use  (India WPI, ₹87.16/$).
+Status: complete (2026-10-06). Scope: Indian steel sector, 2025 base year. Line numbers refer to the audit target `nakulneupane/steel-sector-decarbonization` @ b33b88a (`core/definitions.mod` unless another file is named). Money values are in constant 2025 USD via `convert_2025usd.py` (India WPI, then ₹87.16/$).
 
 ## Needs your call
 

@@ -129,5 +129,29 @@ These are applied in the model to **all** coke, hot metal and sinter (100 % pene
 | n1_sintcool_whr | definitions.mod:42 | 30 kWh/t sinter | JISF 22.1; diffusion 8 % | 22.1 × 0.08 = 1.8 | **2 in 2025**, rising to 22 for new sinter plants | lower | default |
 
 Net effect in 2025: unit WHR falls from 112 to 40 kWh/tHM; with the pool fix (§C) total in-plant generation is ≈ 133 kWh/tHM (MoS) instead of ≈ 115 now.
-## E. Structural notes (ST-05 fix, ST-06 boundary) — IN PROGRESS
+## E. Structural notes (ST-05 fix, ST-06 boundary) — DONE
+
+Do not fix code here; these are inputs for Stage 3.
+
+**E1. ST-05 — recommended fix (captive power plant on surplus process gas).**
+
+1. Replace `(…)*0.3 - whr_available_gas = 0` and the `* n9_whr[t]` in `whr_pool_alloc` by one parameter `f_gas_pow[t]` (share of the model's BF-BOF gas surplus that reaches a power plant or the CCS-steam boiler), applied to `wasteheat_bf_bof` only. 2025 value **0.26** (calibrated: MoS ≈ 133 kWh/tHM total in-plant generation − 40 kWh/tHM penetration-weighted CDQ/TRT/sinter = 93 kWh/tHM; ÷ 358 kWh/tHM = surplus 4.30 GJ/tHM × 0.30 × 277.78).
+2. `whr_power_generated = whr_gas_to_power × 277.78 × η_cpp`, with `η_cpp` = `n9_eta` = **0.30**.
+3. Charge `n9_whr_capex` = **0.03** and `n9_whr_opex` = 0.003 $/kWh on this power (§C).
+4. 2050 value of `f_gas_pow`: see Needs-call #1. If it rises above ≈ 0.5 with CDQ/TRT/sinter at full unit values, in-plant generation (≈ 145 + 358 × f kWh/tHM) can exceed BF-BOF demand (≈ 400 kWh/tCS in the model). `grid_power_in` would then need to go negative. Either cap generation at demand or add an export variable credited at `ng_credit_power` (currently unused; MoS's variable cost of existing captive, ₹2.5–3/kWh ≈ $0.03, supports the current 0.03).
+5. EAF off-gas (`n7_eafg`, `n8_eafg` = 3 GJ/tCS) currently feeds the same pool. Indian EAFs rarely recover off-gas power. The pessimistic choice is no EAF-gas power (set its share to 0).
+6. **Missing: coal-DRI kiln WHR.** MoS (2024) Table 5.7 (pdf p. 124): "Waste heat recovery from DRI kiln for power generation … 23.5 million kWh/ year (4 MW plant) (2x100 tpd DRI kiln)" (≈ 320–360 kWh/tDRI at 330–365 operating days), and §5.8 item 13 (pdf p. 129): "A large number of medium and large-sized coal-based DRI plants are yet to install WHR power plants". Top-down: SSI WHR 5,315 MU ÷ coal DRI 30.33 Mt (MoS Tables 6.2, 6.4) ≤ **175 kWh/tDRI** fleet average. The model has no term for this; coal-DRI purchased power is overstated by up to ~175 kWh/tDRI (~190 kWh/tCS). Consider adding `n4_dri_whr` (fleet 2025 ≤ 175 kWh/tDRI).
+7. `yreport.mod:218–266` uses a pool factor of **0.9**, while the constraint uses **0.3**. Reported per-route costs are therefore inconsistent with the optimisation. Align with whatever replaces the 0.3.
+8. Sinter gas `sg_out` is computed and unused (ST-05); consistent with MoS/JISF treating sinter heat as cooler air, not fuel. Leave unused.
+9. CDQ, TRT and sinter-cooler power carry **no capex** and are applied at 100 % penetration from 2025 (§D). Either make the coefficients time-varying (fleet diffusion → full unit value) or tie them to new capacity.
+
+**E2. ST-06 — boundary of the grid emission factor.**
+
+- The 0.886 blend is a purchased-electricity factor *net of WHR* (MoS's 62.7/37.3 split is "net electricity procurement (electricity procurement other than from WHR)"). That boundary is consistent with the model's `grid_power_in` **only once in-plant generation is modelled realistically** (E1). With E1 in place, no further netting is needed.
+- Off-gas power emissions are already in Scope 1 (coking coal and PCI carbon is counted in full in `scope1_def`), so netting gas power out of Scope 2 does not double-count.
+- The grid component should use CEA's **weighted average**, not the combined margin (0.757 in the comment is the FY2023-24 CM).
+- CEA reports 58.1 TWh of iron-and-steel captive generation (MoS Table 6.3), but MoS assigns 48.7 TWh to CPPs in its balance (Table 6.4). The 9.4 TWh gap may be off-gas or co-fired generation classified as "coal" by CEA. Unresolved; it does not change the proposed values.
+- One factor for all routes hides a real split: ISPs 85 % captive (≈ 0.93 tCO₂/MWh), SSIs 60 % grid (≈ 0.81). New H₂-DRI and scrap-EAF plants will mostly buy from the grid. Options in Needs-call #4.
+- θ_grid scales the blend, so it implicitly assumes CPPs decarbonise at the grid's pace. MoS Table ES2 (BAU) keeps CPPs at 0.96 through 2030. Splitting the factor into `ef_grid[t]` (θ_grid) and `ef_cpp[t]` (separate axis or fixed) would make this explicit.
+- CEA factors are at the generator; T&D losses (not quantified here) would raise the factor per delivered kWh for grid purchases. Not proposed as a change.
 ## Bibliography — IN PROGRESS
