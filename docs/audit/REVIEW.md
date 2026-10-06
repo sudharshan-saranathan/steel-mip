@@ -124,4 +124,27 @@ Each sheet lists parameters with no admissible source; they keep their current v
 
 **Monotonic emission intensity.** The paper (§2.2) says it is enforced, but every study driver dropped it as "bilinear". Since total steel = demand, it is linear when written with `dem[t]`; now done and enforced in the structural and Monte Carlo drivers (commit `3ffb9e3`; still dropped in the regret study, whose demand is elastic). Effect on Fig. 3: **no feasibility change; LCOP +0–1 $/t.**
 
-**Demand profile (next).** Constant 5 %/yr puts the largest increments in the 2040s; evidence (FY22–FY26 actual growth 8–10 %/yr; 2050 projections 374 / 444 / 624 Mt) points to fast-then-slowing growth. Plan: logistic profile from FY25/FY26 actuals to a sourced saturation level (per-capita saturation × UN WPP 2024 population), 2–3 variants bracketing the 2050 projections, exponential kept as a sensitivity; then re-run the frontier.
+**Demand profile: S-curve is now the central case (commits `9434f8f`, `6b8ff9a`).** Logistic demand through 152.2 Mt (FY25) with initial growth 8.2 %/yr (FY22–FY25 CAGR, JPC), saturating at **680 Mt** = 400 kg crude steel/capita × 1,701 M (UN WPP 2024 medium peak, 2061). Sensitivities: **510 Mt** (300 kg, EU/US level) and **816 Mt** (NITI 2026's "logistic S-curve with an assumed saturation around 450 kg/capita", verified in the source). Demand 2030/2040/2050: 223/397/545 Mt (exponential: 194/316/515). Sheet: `stage2/demand_saturation.md`. `dem_profile = 0` restores the paper's 5 %/yr.
+
+Fig. 3 grid, monotonic enforced (LCOP $/t / H₂ share %, X = infeasible):
+
+| EF | H₂ supply | 2030 | 2035 | 2040 | 2045 |
+|---|---|---|---|---|---|
+| 1.6 | Low | X | X | X | X |
+| 1.6 | Mid | 506/43 | X | X | X |
+| 1.6 | High | 503/47 | X | X | X |
+| 1.8 | Low | 486/21 | X | X | X |
+| 1.8 | Mid | 483/33 | 484/32 | X | X |
+| 1.8 | High | 483/39 | 483/39 | X | X |
+| 2.0 | all | 466/4–20 | 466 | 466 | 466–467 |
+
+| Demand profile | Infeasible cells (of 36) |
+|---|---|
+| Exponential 5 % (paper) | 7 |
+| S-curve 510 | 13 |
+| **S-curve 680 (central)** | **17** |
+| S-curve 816 (NITI) | 17 |
+
+**What it means:** with fast growth now and slowing growth later, most capacity is built in the late 2020s–2030s. Without H₂ by then, that capacity is fossil and the cumulative target becomes unreachable. At 1.8 tCO₂/t, H₂ must be available by **2030 (low ramp) or 2035 (mid/high ramps)**. The cost of delaying H₂ shows up as **infeasibility** rather than as a gradual LCOP rise. This supports the paper's central message more strongly than the original exponential demand did. Costs are 483–486 $/t at 1.8 where feasible.
+
+Open for you: (i) 680 Mt central (400 kg/capita) vs 816 Mt (NITI's level, pessimistic); (ii) the S-curve anchor: the measured 8.2 %/yr initial growth (used) vs "90 % of saturation by 2060" (the sheet's alternative; 2050 = 524 Mt instead of 545).
