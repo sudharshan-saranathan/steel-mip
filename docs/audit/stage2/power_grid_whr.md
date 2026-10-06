@@ -1,11 +1,16 @@
 # Stage 2 — Electricity, grid emission factor, captive power and waste-heat recovery
 
-Status: **IN PROGRESS** (skeleton written first so work survives a container loss).
+Status: **DONE** (2026-10-06). Prices in constant 2025 USD via `convert_2025usd.py`. Downloads in `scratchpad/src_power/`, scripts in `scratchpad/scripts_power/`.
 
 Files audited: `core/definitions.mod`, `core/modules/o_waste_heat.mod` (target repo @ b33b88a). Register refs: ST-05, ST-06, §3.4. Page numbers for the Ministry of Steel roadmap are PDF page numbers (printed page = PDF page − 14).
 
 ## Needs your call
-IN PROGRESS
+
+1. **ST-05 fix and the 2050 gas-to-power share** (§C, §E1). Proposed: a captive power plant at η_cpp = 0.30 on the BF-BOF gas surplus, with usable share `f_gas_pow` = 0.26 in 2025 (calibrated to the MoS ≈ 133 kWh/tHM in-plant generation). For 2050: (a) **0.26 → 0.5** (recommended: MoS projects majors' WHR share 22 % → 26 % by 2030, plus mandatory BATs; stays below BF-BOF demand); (b) flat 0.26 (most pessimistic); (c) 0.26 → 1.0 (IEA global practice; needs an export variable, §E1 point 4).
+2. **CDQ / TRT / sinter-cooler power** (§D). 2016 diffusion in the major ISPs is CDQ 22 %, TRT 42 %, sinter power 8 % (JISF 2022). Options: (a) 2025 fleet values 33 / 21 / 2, rising linearly to the unit values 150 / 40 / 22 by 2050 (recommended); (b) fleet values flat (pessimistic); (c) keep 80 / 35 / 30 flat (status quo, not sourced as fleet values). #1 and #2 must be decided together: the 0.26 calibration assumes the fleet values.
+3. **grid_price_start** (§B). (a) **$0.08/kWh** = 64 % new captive ($0.071) + 36 % FY25 DISCOM tariff incl. duty (median $0.096, 10 steel states); (b) $0.072 = MoS ISP blend (≈ current 0.07). The grid-only tariff (median $0.096) is the right price for new standalone DRI/EAF plants (see #4).
+4. **One emission factor or two** (§A, §E2). (a) Keep one blended factor, start **0.88** (CEA WA FY25 + coal 0.969 at 36/64), and state that θ_grid scales the grid+CPP blend (θ = 0.25 ≈ grid −80 % with CPPs unchanged); (b) split into grid (0.71 → θ_grid) and CPP (0.97, own axis or fixed), with route shares ISP 15/85 and SSI/new-DRI 60/40 (ISP ≈ 0.93, SSI ≈ 0.81 in 2025).
+5. **Coal-DRI kiln WHR is missing** (§E1 point 6). Add a coal-DRI WHR credit of ≤ 175 kWh/tDRI (MoS top-down fleet average), or leave out (pessimistic for coal-DRI, i.e. it overstates coal-DRI purchased power).
 
 ## A. Grid emission factor (n9_grid_ef_start, θ_grid trajectory) — DONE
 
@@ -154,4 +159,21 @@ Do not fix code here; these are inputs for Stage 3.
 - One factor for all routes hides a real split: ISPs 85 % captive (≈ 0.93 tCO₂/MWh), SSIs 60 % grid (≈ 0.81). New H₂-DRI and scrap-EAF plants will mostly buy from the grid. Options in Needs-call #4.
 - θ_grid scales the blend, so it implicitly assumes CPPs decarbonise at the grid's pace. MoS Table ES2 (BAU) keeps CPPs at 0.96 through 2030. Splitting the factor into `ef_grid[t]` (θ_grid) and `ef_cpp[t]` (separate axis or fixed) would make this explicit.
 - CEA factors are at the generator; T&D losses (not quantified here) would raise the factor per delivered kWh for grid purchases. Not proposed as a change.
-## Bibliography — IN PROGRESS
+## Bibliography
+
+- Central Electricity Authority (2026). *CO₂ Baseline Database for the Indian Power Sector, Version 22.0, User Guide* (FY2025-26). Table S, Table 4, Table 5, Appendix C Tables A–B. https://cea.nic.in/wp-content/uploads/baseline/2026/09/User_Guide__Version_22.0.pdf (database: https://cea.nic.in/cdm-co2-baseline-database/)
+- Central Electricity Authority (2025). *CO₂ Baseline Database, Version 21.0, User Guide* (FY2024-25). Table S, Table 5. https://cea.nic.in/wp-content/uploads/baseline/2025/12/User_Guide_V_21.0.pdf
+- Central Electricity Authority (2023). *National Electricity Plan (Volume I) Generation*, notified 31.05.2023. Exhibit 10.4 (pdf p. 266). https://cdnbbsr.s3waas.gov.in/s3716e1b8c6cd17b771da77391355749f3/uploads/2023/10/202310051100247622.pdf
+- Central Electricity Authority (2025). *Electricity Tariff & Duty and Average Rates of Electricity Supply in India* (as on 31 March 2025). Tables 7(h), 8(a), 8(b) (pdf pp. 231–232). https://cea.nic.in/wp-content/uploads/fs___a/2026/03/Book_2025.pdf
+- Ministry of Steel (2024). *Greening the Steel Sector in India: Roadmap and Action Plan*. Table ES2 (pdf p. 22); Table 5.6 (p. 122); Fig. 5.4 (p. 125); Table 5.7 (p. 124); §5.8 (pp. 127–129); Tables 6.2–6.4 (pp. 136–138); §6.10 (p. 140); Table 6.10 (p. 146); Tables 6.15–6.18 (pp. 152–156); §6.12.2 (p. 163). PDF page numbers (printed = PDF − 14). https://steel.gov.in/green-steel-initiative
+- TERI (2024). *India's Electricity Transition Pathways to 2050: Scenarios and Insights*. Table 16 (p. 53), Executive summary (p. 4). https://www.teriin.org/sites/default/files/2024-02/Power%20Sector%202050%20Report.pdf
+- Agarwal, V., Chakrabarty, S., Biju, D. & Swamy, D. (2024). *Long-term emissions scenarios for India's power sector: An analysis using the India Energy Policy Simulator*. WRI India Working Paper. Fig. 11, pp. 15–16. https://doi.org/10.46830/wriwp.23.00030 ; https://wri-india.org/sites/default/files/Long-term-emissions-scenarios-Indias-power-sector-An-analysis-using-India-Energy-Policy-Simulator.pdf
+- Transition Asia & TERI (2026). *Is Green Steel Within Reach in India?* Model input workbook `india/data/Model_input_India.xlsx`, sheet Grid (copy in `scratchpad/src_capex/ta_model`).
+- Domínguez Bennett, J., Jain, N., Chojkiewicz, E., Abhyankar, N. & Phadke, A. (2026). *Economic Case for Green Steel Production in India*. India Energy & Climate Center, UC Berkeley. Fig. 5 caption (pdf p. 16), p. 13. https://iecc.gspp.berkeley.edu/wp-content/uploads/2026/05/IECC-Economic-Case-for-Green-Steel-Production-in-India-Report-May26.pdf
+- Morrow, W.R., Hasanbeigi, A., Sathaye, J. & Xu, T. (2013). *Assessment of Energy Efficiency Improvement and CO₂ Emission Reduction Potentials in India's Iron and Steel Industry*. LBNL-6338E. Table 1 (pdf pp. 16–19). https://www.osti.gov/servlets/purl/1172248
+- Japan Iron and Steel Federation (2022). *Technologies Customized List for Indian Steel Industry, 2022 version part-1: BF-BOF (v.5.0)*. List (pdf p. 8), sheets A-4 (p. 13), A-6 (p. 15). https://www.jisf.or.jp/en/activity/climate/Technologies/documents/India_TCL_2022ver_part1_BF-BOF_v.5.0.pdf
+- JSW Steel (2024). *Climate Action Report 2024* (company). pdf pp. 32, 42. https://www.jswsteel.in/sites/default/files/assets/industry/steel/IR/CSR/Sustainability%20Reports/JSW-Climate-Action-Report-2024-23052024.pdf
+- Tikadar, B., Swami, D. & Chowdhary, V. (2025). Process-level emission analysis and decarbonization pathway for BF-BOF route in Indian iron and steel industry. *Journal of Environmental Management* 373:123483. pdf p. 7. https://doi.org/10.1016/j.jenvman.2024.123483 (copy read: `scratchpad/src_bfbof/tikadar.pdf`)
+- IEA (2020). *Iron and Steel Technology Roadmap*. pp. 37, 72–73. https://www.iea.org/reports/iron-and-steel-technology-roadmap
+- Collis, J., Strunge, T., Steubing, B., Zimmermann, A. & Schomäcker, R. (2021). Deriving economic potential and GHG emissions of steel mill gas for chemical industry. *Frontiers in Energy Research* 9:642162. pp. 4, 7. https://doi.org/10.3389/fenrg.2021.642162
+- Not accessed: Åhman, M. & Arens, M. (2024). Are electricity prices and cross-subsidies a barrier to decarbonising India's steel industry? *Utilities Policy* 91:101853. https://doi.org/10.1016/j.jup.2024.101853 (cited by the model; ScienceDirect blocked by the egress proxy, no repository copy). SAIL Annual Report 2023-24 and CAG Report 38/2025 could not be downloaded (TLS/connection failures). EU BREF Iron & Steel (2013) blocked.

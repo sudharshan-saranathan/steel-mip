@@ -16,7 +16,7 @@ Parameters are in `core/definitions.mod` of `nakulneupane/steel-sector-decarboni
    Options: (a) start 0.095 and fast end 0.075 (same −21 % scenario) *(recommended)*; (b) start 0.095, no decline; (c) keep 0.07 / 0.055.
 4. **Scrap (`ng_cost_scrap`).** Evidence: **$400/t** (import unit values 379–426; Transition Asia–TERI 402).
    Options: (a) 400 with MC 300/400/500 *(recommended)*; (b) keep 350 with MC 250/350/450.
-5. **Biochar (`ng_cost_biochar`).** $60 is a raw-biomass price; biochar costs ~**$520/t** (China, peer-reviewed; no Indian source).
+5. **Biochar (`ng_cost_biochar`).** $60 could only be a raw-biomass price (no source for that either); biochar costs ~**$520/t** (China, peer-reviewed; no Indian source).
    Options: (a) 520 for both sinter biochar and BF injection *(recommended, pessimistic)*; (b) keep 60 and relabel the BF input as raw biomass (needs a check that raw biomass can be injected); (c) split into two parameters.
 
 ## Summary of proposals
@@ -88,7 +88,7 @@ Steel plants do not get APM gas (the government-priced domestic gas goes to city
 | G4 | Ministry of Steel (2024) *Greening the Steel Sector*, Executive summary (pdf p. 26, printed p. 12) | "the average landed price of liquefied natural gas (LNG) in India is between 6-16 USD/MMBtu; the delivered price will be significantly higher"; pdf p. 24: "incumbent natural gas at 9.5 USD/MMBtu" | Landed LNG range; 9.5 = incumbent gas in their H₂ analysis (taken as USD 2023) | **10.0** (9.5 inflated); range 6–16 landed |
 | G5 | Yadav, Guhan & Biswas (2021) *Greening Steel*, CEEW, pdf p. 16: "We consider an NG price of 13.5 USD/MMBtu"; pdf p. 37: "variation of NG price (6.7 to 13.5 $/MMBtu)" | | Delivered to plant (Karnataka case), USD 2021 | **15.8** (range 7.8–15.8) |
 
-Three independent delivered estimates (G3 11.8, G4 10.0, G5 15.8): **median 11.8 → 12**. G1 (CIF ≈ 10–11) plus regasification and pipeline tariff supports a delivered price a little above 11. Range: **8–16** (low: domestic HP-HT gas at ~10 less a discount; high: G4 landed upper bound and G5).
+Three delivered estimates (G3 11.8, G4 10.0, G5 15.8): **median 11.8 → 12**. G4 and G5 share CEEW authors (the Ministry of Steel roadmap was co-written by CEEW and TERI), so they are not fully independent; they are different analyses and years. G1 (CIF ≈ 10–11) plus regasification and pipeline tariff supports a delivered price a little above 11. Range: **8–16** (low: domestic HP-HT gas at ~10 less a discount; high: G4 landed upper bound and G5).
 
 The evidence supports **neither study central exactly**: core $10 is about the LNG import price *before* delivery costs; the regret study's $15 is in the upper part of the range. Proposed central **$12**. The Monte Carlo low of $5 is below any price an Indian steel plant pays (below even APM gas at $6.75, which steel cannot get); $25 is above anything in 2024–25 data.
 
@@ -229,13 +229,13 @@ Government of India
 - Indian Bureau of Mines (2025). *Monthly Statistics of Mineral Production*, Table 6(a) "State wise Average Sale Price of minerals by Grades", January 2025 and December 2025 issues. https://ibm.gov.in/writereaddata/files/174245379967dbbc27d4001ASPMin__January_2025.pdf ; https://ibm.gov.in/writereaddata/files/17712351216992e73118ab103_ASP_MineralsDec._2025_final.pdf (index: https://ibm.gov.in/IBMPortal/pages/average-sale-price-of-mineral--amp--metals-for-the-year-2025--january-to-december---please-click-here)
 - Ministry of Commerce & Industry, DGCIS. *Export-Import Data Bank*, commodity-wise import/export, ITC-HS 72044900, 85451100, 27060010, 26180000, 27040090; FY 2024-25 and FY 2025-26; queried 2026-10-06. https://tradestat.commerce.gov.in/eidb/commodity_wise_import and …/commodity_wise_export
 - Central Electricity Authority (2026). *Electricity Tariff & Duty and Average Rates of Electricity Supply in India* (as on 31.03.2025), Tables 7(h), 8(a), 8(b). https://cea.nic.in/wp-content/uploads/fs___a/2026/03/Book_2025.pdf
-- Ministry of Steel (2024). *Greening the Steel Sector in India: Roadmap and Action Plan*. (Text read from the copy used for capex.md.)
+- Ministry of Steel (2024). *Greening the Steel Sector in India: Roadmap and Action Plan* (September 2024; authors from MoS, CEEW and TERI). https://steel.gov.in/green-steel-initiative
 - NITI Aayog / NIAS (2024). *Enhancing Domestic Coking Coal Availability to Reduce the Import of Coking Coal* (context only). https://niti.gov.in/sites/default/files/2024-11/Report_Enhancing%20Domestic%20Coking%20Coal%20Availability%20to%20Reduce%20the%20Import%20of%20Coking%20Coal.pdf
 
 Think tanks and universities
-- Domínguez Bennett, J., Jain, N., Chojkiewicz, E., Abhyankar, N., Phadke, A. (2026). *Economic Case for Green Steel Production in India*. India Energy and Climate Center, UC Berkeley. Tables S-1, S-3, S-4; pp. 10, 15.
+- Domínguez Bennett, J., Jain, N., Chojkiewicz, E., Abhyankar, N., Phadke, A. (2026). *Economic Case for Green Steel Production in India*. India Energy and Climate Center, UC Berkeley, May 2026. Tables S-1, S-3, S-4; pp. 10, 15. https://iecc.gspp.berkeley.edu/resources/
 - Transition Asia & TERI (2026). *Is Green Steel Within Reach in India?*; input workbook `india/data/Model_input_India.xlsx` (sheets Commodities, Ore_Price, Grid), real 2025 USD.
-- Yadav, D., Guhan, A., Biswas, T. (2021). *Greening Steel: Moving to Clean Steelmaking Using Hydrogen and Renewable Energy*. CEEW, New Delhi.
+- Yadav, D., Guhan, A., Biswas, T. (2021). *Greening Steel: Moving to Clean Steelmaking Using Hydrogen and Renewable Energy*. CEEW, New Delhi, September 2021. https://www.ceew.in/publications/
 - IEA (2020). *Iron and Steel Technology Roadmap*. Paris. (global context)
 - IEEFA (2025). *India's steel sector confronts growing coal risks* (Dec 2025; context, no price used). https://ieefa.org/sites/default/files/2025-12/India's%20growing%20met%20coal%20energy%20security%20risks_Dec25.pdf
 
