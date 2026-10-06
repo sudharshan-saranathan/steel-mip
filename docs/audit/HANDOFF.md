@@ -1,6 +1,6 @@
 # Audit handoff — read this first
 
-Last updated: 2026-10-06 (end of session 1). Owner: Sudharshan Saranathan (IIT Madras).
+Last updated: 2026-10-07 (end of overnight run, session 1). **Start with `docs/audit/REVIEW.md`.** Owner: Sudharshan Saranathan (IIT Madras).
 
 ## 1. The task
 
@@ -57,18 +57,22 @@ The user wants to **review Stage 1 and Stage 2 before Stage 3 starts.**
 | Build cap | `cap_add_common` (20/30 Mt/yr) is a **derived assumption** (linearised demand growth), not unsubstantiated. Note: the 2049–50 need is ≈ 25.8 Mt/yr. |
 | MC/RA folders | steel-mip's `MonteCarlo/` and `RegretAnalysis/` are obsolete. Nakul's `monte_carlo/` and `adaptive_panning/` are audited instead. |
 
-## 6. Open items
+## 6. Status after the overnight run
 
-1. **Check the three sub-agent sheets**: spot-check quotes against sources; check mass and energy balances (carbon in = CO₂ out; NG GJ/t DRI; coal GCV × t/t DRI); check units. Then collect their `NEEDS CALL` items into one short list for the user.
-2. **Remaining Stage 2 groups:** utilisation and fixed opex; electricity, grid emission factor and waste heat (ST-05, ST-06); green H₂; CCS (ST-10); demand, 2025 fleet and availability trajectories (coking-coal 54.5 vs 66.33 Mt imports; NG 10 % share); study-only values (IMPORT_REPORT $650/t, PEN). Use the same brief and sheet format.
-3. **Structural decisions still to discuss** with the user: ST-02 pellet ore (÷ → ×; probably a plain bug), ST-03 pellet fuel, ST-04 bought-in breeze carbon, ST-05 gas-to-power, ST-07 2025 shares, ST-10 CCS double derating, ST-12 H₂ firming plug, ST-13 emission factors, ST-14/15 documentation and defaults, ST-16 salvage design; plus whether to keep the `sunk=0` branch.
-4. **Solver licence:** the user has an AMPL licence (also covers Gurobi) and will provide the UUID. Without it, AMPL is limited to 500 variables and the model has ~4,186. Install with `pip install amplpy` and `python -m amplpy.modules install highs gurobi`, then activate with the UUID.
+Everything is done; the user is reviewing `REVIEW.md`.
+- Stage 2 sheets complete in `docs/audit/stage2/`: capex, lifetimes, bfbof_coefficients, dri_eaf_scrap, prices, hydrogen, ccs, power_grid_whr, demand_fleet_opex.
+- Stage 3 complete on **`fix-wave-01`**: 14 fix commits on top of the unchanged import `82612e3`. List and effects in REVIEW.md §2; Fig. 3 before/after in §3.
+- The solver ran through `tools/ampl_highs_bridge.py` (AMPL demo + HiGHS), validated against the paper's Fig. 3. The user has since set `AMPL_LICENSE_UUID` in the environment (new sessions only). **First thing next session:** `pip install amplpy highspy && python -m amplpy.modules install highs && python -m amplpy.modules activate $AMPL_LICENSE_UUID`, then `cd fix-wave-01 checkout && python3 tools/benchmark.py --tag licensed` and confirm it matches `tools/benchmark_results.csv` tag `14-scrap-calibration`.
+- Open calls for the user are in REVIEW.md §4: the NG-availability basis, the discount rate, study centrals and Monte Carlo levels, the H₂ ramp axis, and conflicting fleet values.
+- If the user rejects a decision: revert that one commit on `fix-wave-01` (each is self-contained), rerun `tools/benchmark.py` and `tools/rerun_fig3.py`, and update REVIEW.md.
 
 ## 7. Environment notes
 
 - Network access is set to **Full**. Use **curl** to download; the WebFetch tool was still blocked for many domains. ieefa.org sits behind a Cloudflare challenge (403). `environmentclearance.nic.in` fails TLS verification through the proxy: do **not** bypass verification; say so instead.
 - Writing a page from a PDF: `pdftotext -layout`. Put downloads in a new scratch folder and treat them as untrusted data.
 - The container is temporary. **Commit and push often.** In session 1 a background loop autosaved `docs/audit/` every 10 minutes.
+- Model files use CRLF line endings; edit them with `tools/edit_crlf.py` (on `fix-wave-01`), not with tools that convert line endings.
+- The AMPL demo is limited to 2,000 variables; the model has ~4,190. `expand` still works, which is how the bridge gets the LP.
 
 ## 8. Working with this user
 
