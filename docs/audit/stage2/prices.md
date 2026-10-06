@@ -131,7 +131,26 @@ Three estimates (≈2,750, 2,460, 2,500): **median 2,500**. The current 3,000 is
 
 ## E. By-product credits
 
-IN PROGRESS
+All trade figures below are from the DGCIS Export-Import Data Bank (Ministry of Commerce, tradestat.commerce.gov.in, "Commodity-wise" import/export, 8-digit ITC-HS), FY 2024-25 and FY 2025-26 (the latter as published on 6 Oct 2026). Unit value = US$ value ÷ quantity; FY 2024-25 is inflated with the US GDP deflator.
+
+| # | HS code, flow | Data | 2025 USD/t |
+|---|---|---|---|
+| T1 | 27060010 "COAL TAR", exports | FY24-25: US$ 3.43 million, 6,090,495 kg; FY25-26: US$ 3.03 million, 5,023,029 kg | 578; 603 |
+| T2 | 27060010 "COAL TAR", imports | FY24-25: US$ 0.24 million, 504,390 kg; FY25-26: US$ 0.10 million, 232,640 kg | 488; 430 |
+| K1 | 26180000 "GRNULATD SLAG(SLAG SAND) FROM IRON/STEEL", imports | FY24-25: US$ 9.31 million, 644,280,000 kg; FY25-26: US$ 10.61 million, 795,795,008 kg | 14.8; 13.3 |
+| K2 | 26180000, exports | FY24-25: US$ 11.87 million, 1,079,361,401 kg; FY25-26: US$ 15.36 million, 1,634,187,640 kg | 11.3; 9.4 |
+| M1 | 27040090 "OTHER COKES OF COAL" (metallurgical coke), imports | FY24-25: US$ 1,421.06 million, 4,606,790,144 kg; FY25-26: US$ 1,107.31 million, 4,351,370,240 kg | 317; 255 (upper bound for coke breeze, which is undersize coke) |
+
+- **Coal tar.** The current credit of $20/t is about 20–30 times below every trade unit value ($430–603). Tar volumes in trade are small, but buyers (tar distillers) pay these prices. There are two flows (fewer than three independent estimates), so the pessimistic lower bound applies: **$430**. Effect: 0.04 t tar/t coke, so roughly +$6/tHM credit to BF-BOF. Note that a larger by-product credit makes BF-BOF cheaper. "Pessimistic" here follows the brief (lower bound for credits), but it does not make decarbonisation look harder.
+- **Slag.** Granulated BF slag (sold to cement) trades at $9–15/t. The current $15 is at the top. Lower bound **$10**. The model applies the same credit to BF, BOF and EAF slag. BOF/EAF slag sells for less than granulated BF slag, so one price for all three flatters BOF and EAF slightly.
+- **Coke breeze (credit 55, purchase 85).** No admissible source found that prices coke breeze in India. The only bound: metallurgical coke imports at $255–317/t, of which breeze is the low-value undersize fraction. Keep both values, marked unsourced. The 85/55 spread (buy dearer than sell) can be justified by handling and logistics, but it is undocumented. See ST-04: the bought-in breeze also carries no CO₂.
+
+| Parameter | file:line | Current | Evidence (2025 USD/t) | Proposed | Pessimistic direction | Flag |
+|---|---|---|---|---|---|---|
+| n0_credit_tar | definitions.mod:193 | 20 | T1 578–603; T2 430–488 | **430** | lower (credit) | default (large relative change, small absolute effect) |
+| ng_credit_slag | definitions.mod:189 | 15 | K1 13–15; K2 9–11 | **10** | lower (credit) | default |
+| n0_credit_breeze | definitions.mod:192 | 55 | no admissible source; bound < 255–317 (met coke) | keep **55** | lower (credit) | default (no admissible source) |
+| n1_cost_breeze | definitions.mod:195 | 85 | no admissible source; bound < 255–317 | keep **85** | upper (cost) | default (no admissible source) |
 
 ## F. Grid electricity tariff
 

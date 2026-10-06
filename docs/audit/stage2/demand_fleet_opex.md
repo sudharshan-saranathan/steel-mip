@@ -157,15 +157,62 @@ Reconstruction of the model's 2025 value: imports 54.5 Mt + domestic ≈ 6 Mt = 
 
 ## G. Natural-gas availability
 
-IN PROGRESS
+The model caps NG use in NG-DRI at `n5_ng_cap[t]`, in **tonnes** of NG (`t_additional_constraints.mod:17`; cost is `n5_cost_NG × 50 MMBtu/t`). 2025 = 5.35 Mt; BAU 10.66 Mt and policy 32.2 Mt in 2050 (`structural/axes/ng_*.mod`). At PPAC's 1 MMT = 1,325 MMSCM, 5.35 Mt = 7.09 bcm, which is 9.9 % of India's FY2024-25 consumption (71.3 bcm). That reproduces the "10 % steel share".
 
-## H. Emission-intensity targets vs Green Steel Taxonomy
+| # | Source | Quote / data (page) | Value (Mt NG/yr) |
+|---|---|---|---|
+| G1 | PPAC (2026) *India's Oil & Gas Ready Reckoner FY2025-26*, Table 3.4 and chart | Total consumption "71.3 [2024-25] 68.8 [2025-26]" bcm and "1MMT=1325 MMSCM" (PDF p. 35); "Sectoral Consumption of Natural gas (in %) FY 2025-26 … Sponge iron 0.98%" (PDF p. 59) | 0.98 % × 68.8 bcm = 0.67 bcm = **0.51 Mt** (FY26) |
+| G2 | MoS (2024) *Roadmap*, Table 1.1 and §1.1.5 | "Natural gas (million standard cubic meters) (MMSCM) 1177" consumed by the steel industry in FY24 (p. 28); "the steel sector in India consumes approximately 1 billion cubic meters (BCM) of natural gas in FY 2023-24" (p. 29) | 1.18 bcm = **0.89 Mt** (1.7 % of 67.5 bcm) |
+| G3 | PNGRB (2024) *Rapid Assessment: Natural Gas Demand – 2040 Projections for India* (Deloitte for PNGRB), Steel 2/2 | "Natural Gas Demand Projection in Steel (Sponge Iron) (mmscmd)": 3.2 (FY24), 8 (2030 base case), 2040: 18 (pessimistic) / 20 (BAU) / 24 (optimistic); "Gas consumption is projected to grow to 8 mmscmd considering historical growth, however accelerated growth of 3x as per NSP 2017 can be targeted" (PDF p. 19) | 0.88 (FY24), **2.2 (2030)**, **5.0 / 5.5 / 6.6 (2040)** |
+| G4 | PNGRB (2024), Steel 1/2 | "1 tonnes of DRI requires 280 scm of NG or 1100 kg of coal" (PDF p. 18) | 0.21 t NG/t DRI (model `n5_ng_dri` = 0.35) |
+| G5 | PNGRB (2024), methodology | "BAU CASE @7.5% SHARE -2030"; 2040 "overall decrease in share of NG @ 6.3% in PE mix" (PDF p. 10) | national gas-share context |
+| G6 | PIB (18 Dec 2023), MoPNG *Share of Natural Gas in Total Energy Mix* | "Presently in India the share of natural gas in energy basket is 6.7%. The Government has set a target to raise the share of natural gas in energy mix to 15% in 2030." | policy target (basis of the model's policy axis) |
+| G7 | MoS (2024) *Roadmap*, Exec. summary | "the industry has an appetite to consume 10 BCM of natural gas for a price of 4 USD/MMBtu, reducing to 0.53 BCM for a gas price of 9 USD/MMBtu" (p. 12) | 7.5 Mt at $4; 0.40 Mt at $9 |
 
-IN PROGRESS
+Comparison (Mt NG/yr):
+
+| Year | Observed / PNGRB steel | Model BAU | Model policy |
+|---|---|---|---|
+| 2025 | 0.5–0.9 (G1, G2, G3) | 5.35 | 5.35 |
+| 2030 | 2.2 (G3 base) | 6.26 | 8.07 |
+| 2040 | 5.0–6.6 (G3) | 8.19 | 16.0 |
+| 2050 | no source | 10.66 | 32.2 |
+
+Findings. (1) The steel sector's actual share of national gas is **1–1.7 %** (G1, G2), not 10 %; the 10 % is an allocation assumption and must be labelled as one. (2) In absolute terms, the model's caps are 6–10× today's steel gas use and 1.5–3× PNGRB's 2040 steel projection. In *growth* terms the model is slower than PNGRB (BAU 1.5× by 2040 against PNGRB's 5.6–7.5×). (3) The 2025 cap cannot simply be set to observed use. The model's NG-DRI intensity (0.35 t/t DRI, against PNGRB's 0.21) and its 2025 gas-route output (≈ 8 Mt CS) need ≈ 2.8–3.1 Mt NG in 2025, while India's "gas-based" DRI partly runs on syngas and COG (G2, F5). That belongs to the DRI group (`n5_ng_dri`). (4) PNGRB's own BAU puts the national gas share at 7.5 % in 2030 and 6.3 % in 2040 (G5), far from the 15 % target (G6) that underlies the policy axis.
+
+| Parameter | file | Current | Sources | Value | Proposed | Pessimistic direction | Flag |
+|---|---|---|---|---|---|---|---|
+| n5_ng_cap BAU | `structural/axes/ng_bau.mod` | 5.35 → 10.66 Mt | G1–G3 | PNGRB steel: 0.9 (FY24), 2.2 (2030), 5.5 (2040 BAU) | Option A: keep the 2025 point (calibration, see finding 3) and grow it at PNGRB's 2040 pessimistic/BAU multiple. Option B: rebase to PNGRB absolute values once `n5_ng_dri` is fixed. Either way, relabel "10 % of national gas" as an assumption and cite G1/G2 for the actual 1–1.7 % | lower = harder | **NEEDS CALL** |
+| n5_ng_cap policy | `structural/axes/ng_policy.mod` | 5.35 → 32.2 Mt | G3 optimistic 6.6 Mt (2040); G6 target 15 % | — | keep as the high bound (A); cite G3/G6 | — | default |
+| n5_ng_cap default | `core/parameters.mod:35–60` | shock trajectory | ST-15 | — | set to BAU | — | default |
+| comment units | `ng_*.mod`, `parameters.mod` | some say "Mm3" | values are t | — | relabel "t NG/yr" | — | default |
+
+## H. Emission-intensity targets vs India's Green Steel Taxonomy
+
+| # | Source | Quote (page) |
+|---|---|---|
+| T1 | PIB (12 Dec 2024), Ministry of Steel, *Union Minister … Releases India's Green Steel Taxonomy* | "Five-star green-rated steel: Steel with emission intensity lower than 1.6 t-CO2e/tfs. Four-star green-rated steel: Steel with emission intensity between 1.6 and 2.0 t-CO2e/tfs. Three-star green-rated steel: Steel with emission intensity between 2.0 and 2.2 t-CO2e/tfs."; "The scope of emissions shall include Scope 1, Scope 2, and limited Scope 3, up to finished steel production … agglomeration (including sintering, pellet making, coke making), beneficiation, and embodied emissions in purchased raw materials"; "The threshold limit … shall be reviewed every three years." |
+| T2 | PIB (5 May 2026) | Green steel = "less than 2.2 tonnes of CO2e per tonne of finished steel. As of 31 March 2026, 89 steel units have been awarded green steel certification, covering a production volume of 12.34 MT." (p. 9) |
+| T3 | NITI Aayog (2026) Industry, §3.2.1 | "In CPS, emission intensity reduces by 44% in 2050 and 62% by 2070 over 2.54 tonnes CO2/tonne of crude steel in 2025 … in Net Zero Scenario, emission intensity declines by 74% by 2050" (PDF p. 96), i.e. 1.42 (CPS) and 0.66 (NZS) tCO₂/tCS in 2050 |
+| T4 | MoS *Annual Report 2025-26* | FY25 crude steel 152.180 Mt; finished steel 146.688 Mt (PDF p. 9) ⇒ 1.037 t crude per t finished |
+
+Mapping of `avg_emi` (tCO₂/tCS, cumulative 2025–2050 average; `parameters.mod:9`) onto taxonomy units (× 1.037 tCS/tfs):
+
+| avg_emi (tCO₂/tCS) | ≈ tCO₂/tfs | Taxonomy band |
+|---|---|---|
+| 1.6 | 1.66 | just inside 4-star (5-star < 1.6) |
+| 1.8 | 1.87 | 4-star |
+| 2.0 | 2.07 | 3-star (2.0–2.2) |
+
+Proposed text for the paper (assumption A, flag default): "The three caps correspond roughly to the 3-, 4- and 4/5-star boundaries of India's Green Steel Taxonomy (Ministry of Steel 2024), applied as a 2025–2050 *sector average*." Caveats: (a) the taxonomy is plant-level and per tonne of *finished* steel, with limited Scope 3 (pellets, coke, purchased intermediates), while the model's boundary is per tonne of crude steel and omits pellet induration (ST-03) and bought-in breeze (ST-04); (b) the taxonomy has no target year; (c) by NITI's CPS (T3) the 2050 intensity is 1.42, below all three caps.
 
 ## I. Study-only values
 
-IN PROGRESS
+| Parameter | file:line | Current | Sources | Value in model units | Proposed | Pessimistic direction | Flag |
+|---|---|---|---|---|---|---|---|
+| IMPORT_REPORT | `adaptive_panning/run_regret.py:285` | 650 $/t | I1: MoS *Annual Report 2025-26* "import of finished steel was 4.649 million tonnes … total value of these imports was Rs. 42,837.4 crores" (Apr–Dec 2025, PDF p. 8) ⇒ ₹92,143/t = **$1,057/t** (all grades incl. alloy/stainless, CIF). I2: DGTR (2025) safeguard final findings, CIF reference price "Hot Rolled coils, sheets and plates 675 … Cold Rolled Coils and Sheets 824" USD/MT (PDF p. 141), with 12 % safeguard duty ⇒ HRC landed ≥ **$756/t**. I3: same, a recorded submission: "The global export price of HR Coils in May 2025 was USD 450 per MT" (PDF p. 13) | 650 is below the HRC CIF reference price before any duty | **760 $/t** (HRC CIF reference + 12 % safeguard; basic customs duty not added because not verified); sensitivity 650–1,060 | higher = harder (shortfall costs more) | default |
+| IMPORT_P | `run_regret.py:239` | 20,000 $/t | numerical penalty (A) | — | keep; report in the paper that imports are priced at IMPORT_REPORT only when the regret is reported | — | default (no source needed) |
+| PEN | `run_regret.py:247` | 5,000 $/tCO₂ | numerical penalty (A) | — | keep; report `emis_slack` = 0 for all reported cells, or list the cells where it is positive (not checked here, because the model was not run) | — | default (no source needed) |
 
 ## Structural notes
 
