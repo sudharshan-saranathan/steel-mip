@@ -298,3 +298,27 @@ s.t. h2elec_first{t in T: t = first(T)}:
         ( if   h2_ramp_mode = 0 then H2_BIGM
           else if h2_ramp_mode = 1 then ramp_frac * H2_cap
           else h2_growth_ceiling[t] );
+
+# [audit ST-16] End-of-horizon salvage credit.
+# Up-front capex is booked in full in the build year, but a plant built in year
+# j serves years j .. j+L-1 and the horizon ends in 2050. Without a credit, late
+# builds pay for life they never deliver inside the model. The unused life is
+# credited at straight-line value, received at the start of 2051 and expressed
+# in year-j money so it can be netted in total_cost_def[j]:
+#   credit_j = ocapex * build_j * max(0, j+L-1-2050)/L * (1+r)^-(2051-j)
+param salv_frac{j in T, L in 1..100} :=
+    max(0, j + L - 1 - last(T)) / L * (1 + real_discount_rate)^(-(last(T) + 1 - j));
+
+var salvage_credit{T} >= 0;
+s.t. salvage_credit_def{t in T}:
+    salvage_credit[t] = sunk * (
+        ocapex_bof      * build_bof[t]   * salv_frac[t, life_bof]
+      + ocapex_cdri     * build_cdri[t]  * salv_frac[t, life_cdri]
+      + ocapex_ngdri    * build_ngdri[t] * salv_frac[t, life_ngdri]
+      + ocapex_h2dri[t] * build_h2dri[t] * salv_frac[t, life_h2dri]
+      + ocapex_scrap    * build_scrap[t] * salv_frac[t, life_scrap]
+      + ocapex_h2elec[t]* build_h2elec[t]* salv_frac[t, life_h2elec]
+      + ocapex_h2re[t]  * build_h2re[t]  * salv_frac[t, life_re]
+      + ocapex_ccs[t] * salv_frac[t, life_ccs]
+          * (ccs_mult_bf*build_ccs_bf[t] + ccs_mult_cdri*build_ccs_cdri[t]
+             + ccs_mult_ngdri*build_ccs_ngdri[t]) );

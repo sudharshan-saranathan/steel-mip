@@ -137,6 +137,7 @@ s.t. total_cost_def{t in T}:
     + cost_ccs[t]
     + other_opex * total_steel[t]                                    # variable other-opex (labour+maint now fixed)
     + capex_cost[t]                                                  # overnight capex on builds
+    - salvage_credit[t]                                              # [audit ST-16] unused life after 2050
     + fixopex_cost[t]                                                # fixed opex (labour+maintenance) on capacity
     + whr_cost[t]
     - ng_cost_power[t] * whr_power_generated[t]    # WHR power offsets grid draw at avoided cost (credit here; whr_cost is >=0)
