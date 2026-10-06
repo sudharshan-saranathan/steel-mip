@@ -340,7 +340,18 @@ param ccs_ref_elec  default 0.07;    # $/kWh used only to back out capex from th
 param ccs_ref_steam default 5;       # $/GJ  ditto (~waste-heat steam opportunity cost)
 param ccs_boiler_eff default 0.85;   # backup boiler efficiency (GJ steam / GJ NG fuel)
 param ng_gj_per_mmbtu := 1.055;      # GJ per MMBtu (NG price unit conversion)
-param ng_co2_gj default 0.0521;      # tCO2 per GJ NG fuel (= 0.055 t/MMBtu)
+param ng_co2_gj default 0.0561;      # [audit ST-13] tCO2 per GJ NG (IPCC 2006 56.1 kg/GJ). Was 0.0521
+
+# [audit ST-13] Emission factors, tCO2 per tonne of fuel/material. Previously
+# hard-coded (twice) in s_emissions.mod and q_carbon_capture.mod.
+# Sources: docs/audit/stage2/bfbof_coefficients.md.
+param ef_ccoal  default 2.67;   # coking coal: IPCC 2006 (28.2 GJ/t x 94.6 kg/GJ); ~76% imported. Was 2.79
+param ef_pci    default 2.46;   # PCI coal. Was 2.756
+param ef_ncoal  default 2.32;   # non-coking coal on the model's 24 GJ/t basis x 96.8 kg/GJ (India BUR-4, 26.39 tC/TJ). Was 2.64
+param ef_ng     default 2.69;   # natural gas: 48.0 GJ/t x 56.1 kg/GJ (IPCC 2006). Was 2.75
+param ef_lime   default 0.44;   # CaCO3 calcination (IPCC 2006). Unchanged
+param ef_eltrd  default 3.67;   # graphite electrode, full oxidation (44/12). Was 6
+param ef_breeze default 3.04;   # coke breeze (purchased share only, see s_emissions)
 param whr_steam_eff default 0.85;    # waste-heat pool gas (GJ) -> LP steam (GJ)
 param ocapex_ccs_2025 :=
     max( n10_ccs_cost_start

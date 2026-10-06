@@ -13,18 +13,18 @@ param fc_max := 0.9;   # max physical capture rate per stream
 # Physical capturable CO2 base per route
 s.t. co2_capturable_bf_def{t in T}:
     co2_capturable_bf[t] =
-        coking_coal_in[t] * 0.1116 * 25 + bf_coalpci_in[t] * 0.106 * 26
-      + (sinter_lime_in[t] + bf_lime_in[t] + bof_lime_in[t]) * 0.44;        # base for eq84
+        coking_coal_in[t] * ef_ccoal + bf_coalpci_in[t] * ef_pci
+      + (sinter_lime_in[t] + bf_lime_in[t] + bof_lime_in[t]) * ef_lime;        # base for eq84
 
 s.t. co2_capturable_cdri_def{t in T}:
     co2_capturable_cdri[t] =
-        coaldri_coal_in[t] * 0.110 * 24 + (n7_cs*coaldri_output[t]) * 0.110 * 24
-      + (n7_ls*coaldri_output[t]) * 0.44;                     # base for eq85
+        coaldri_coal_in[t] * ef_ncoal + (n7_cs*coaldri_output[t]) * ef_ncoal
+      + (n7_ls*coaldri_output[t]) * ef_lime;                     # base for eq85
 
 s.t. co2_capturable_ngdri_def{t in T}:
     co2_capturable_ngdri[t] =
-        ngdri_ng_in[t] * 0.055 * 50 + (n7_cs*ngdri_output[t]) * 0.110 * 24
-      + (n7_ls*ngdri_output[t]) * 0.44;                       # base for eq86
+        ngdri_ng_in[t] * ef_ng + (n7_cs*ngdri_output[t]) * ef_ncoal
+      + (n7_ls*ngdri_output[t]) * ef_lime;                       # base for eq86
 
 # Per-route physical capture limit (cannot capture more than eta*fc_max of base)
 s.t. ccs_bf_cap{t in T}:

@@ -312,7 +312,7 @@ for {t in T} {
 
         # H2 DRI-EAF 
         if t >= ng_h2_start_year && steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]) > 0 then
-            (( eaf_coal_in[t] * (1- f_cdri[t]-f_ngdri[t]) * 0.110*24+ eaf_lime_in[t] * (1- f_cdri[t]-f_ngdri[t]) * 0.44 + eaf_electrode_in[t] *  (1- f_cdri[t]-f_ngdri[t]) * 6)
+            (( eaf_coal_in[t] * (1- f_cdri[t]-f_ngdri[t]) * ef_ncoal+ eaf_lime_in[t] * (1- f_cdri[t]-f_ngdri[t]) * ef_lime + eaf_electrode_in[t] *  (1- f_cdri[t]-f_ngdri[t]) * ef_eltrd)
              + n9_grid_ef[t] * ((1-f_cdri[t]-f_ngdri[t])*eaf_power_in[t] + pellets_power_h2dri[t] + h2dri_power_in[t]))
             / (steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]))
         else 0,

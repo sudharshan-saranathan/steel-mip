@@ -1,38 +1,38 @@
 # Scope 1 Emissions (Blast furnace)
 s.t. scope1_blastf{t in T}:
-    (coking_coal_in[t] * 0.1116* 25 + bf_coalpci_in[t] * 0.106 * 26
-     + (sinter_lime_in[t] + bf_lime_in[t] + bof_lime_in[t]) * 0.44)
+    (coking_coal_in[t] * ef_ccoal + bf_coalpci_in[t] * ef_pci
+     + (sinter_lime_in[t] + bf_lime_in[t] + bof_lime_in[t]) * ef_lime)
     - scope1_bf[t] = 0;                      # eq105
 
 
 # Scope 1 Emissions (Coal DRI)
 s.t. scope1_coaldri{t in T}:
-      (coaldri_coal_in[t] * 0.110* 24 + (n7_cs*coaldri_output[t]) * 0.110* 24
-      + (n7_ls*coaldri_output[t]) * 0.44)  - scope1_cdri[t] = 0;         # eq106
+      (coaldri_coal_in[t] * ef_ncoal + (n7_cs*coaldri_output[t]) * ef_ncoal
+      + (n7_ls*coaldri_output[t]) * ef_lime)  - scope1_cdri[t] = 0;         # eq106
 
 
 # Scope 1 Emissions (NG DRI)
 s.t. scope1_natgasdri{t in T}:
-      (ngdri_ng_in[t] * 0.055 * 50 + (n7_cs*ngdri_output[t]) * 0.110*24
-      + (n7_ls*ngdri_output[t]) * 0.44) - scope1_ngdri[t] = 0;         # eq107
+      (ngdri_ng_in[t] * ef_ng + (n7_cs*ngdri_output[t]) * ef_ncoal
+      + (n7_ls*ngdri_output[t]) * ef_lime) - scope1_ngdri[t] = 0;         # eq107
 
 # Scope 1 Emissions (H2 DRI)
 s.t. scope1_h2dri_{t in T}:
-      ( (n7_cs*h2dri_output[t]) * 0.110*24
-      + (n7_ls*h2dri_output[t]) * 0.44) - scope1_h2dri[t] = 0;        # eq108
+      ( (n7_cs*h2dri_output[t]) * ef_ncoal
+      + (n7_ls*h2dri_output[t]) * ef_lime) - scope1_h2dri[t] = 0;        # eq108
 
 # Scope 1 Emissions (scrap EAF)
 s.t. scope1_scrapeaf_{t in T}:
-      ( scrap_eaf_coal_in[t] *2.64 + scrap_eaf_lime_in[t] * 0.44) - scope1_scrapeaf[t] = 0;   #eq109
+      ( scrap_eaf_coal_in[t] * ef_ncoal + scrap_eaf_lime_in[t] * ef_lime) - scope1_scrapeaf[t] = 0;   #eq109
 
 
 # Scope 1 Emissions (Total)
 s.t. scope1_def{t in T}:
-    (coking_coal_in[t] * 2.79 + bf_coalpci_in[t]*2.756
-        + (coaldri_coal_in[t] + eaf_coal_in[t]+ scrap_eaf_coal_in[t]) * 2.64
-        + ngdri_ng_in[t] * 2.75
-        + (sinter_lime_in[t] + bf_lime_in[t] + bof_lime_in[t] + eaf_lime_in[t] + scrap_eaf_lime_in[t]) * 0.44)
-        + (eaf_electrode_in[t]+ scrap_eaf_electrode_in[t])*6
+    (coking_coal_in[t] * ef_ccoal + bf_coalpci_in[t] * ef_pci
+        + (coaldri_coal_in[t] + eaf_coal_in[t]+ scrap_eaf_coal_in[t]) * ef_ncoal
+        + ngdri_ng_in[t] * ef_ng
+        + (sinter_lime_in[t] + bf_lime_in[t] + bof_lime_in[t] + eaf_lime_in[t] + scrap_eaf_lime_in[t]) * ef_lime)
+        + (eaf_electrode_in[t]+ scrap_eaf_electrode_in[t]) * ef_eltrd
         + (ccs_steam_boiler[t]/ccs_boiler_eff) * ng_co2_gj
         - scope1_emissions[t] = 0;                         # eq110
 
