@@ -28,7 +28,7 @@ s.t. bfg_bf_out{t in T}:
     n2_bfg_hm * ng_bfg_cv * bf_hot_metal[t] - bfg_out[t] = 0;          # eq26
 
 s.t. trt_power_out{t in T}:
-    n2_trt_whr * bf_hot_metal[t] - bf_trt_out[t] = 0;                     # eq27
+    n2_trt_whr[t] * bf_hot_metal[t] - bf_trt_out[t] = 0;                     # eq27
 
 s.t. bf_coal_pci_balance {t in T}:
    (n2_coalpci_hm_25 + (n2_coalpci_hm_50 - n2_coalpci_hm_25) * (t - 2025) / 25) * bf_hot_metal[t] -  bf_coalpci_in[t] = 0;   # eq28

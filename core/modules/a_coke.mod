@@ -17,7 +17,7 @@ s.t. coke_cog_out_balance{t in T}:
     n0_cog_c * ng_cog_cv * bf_coke_in[t] - cog_out[t] = 0;             # eq5
 
 s.t. coke_dry_quenching{t in T}:
-    n0_cdq_whr * bf_coke_in[t] - cdq_power_out[t] = 0;       # eq6
+    n0_cdq_whr[t] * bf_coke_in[t] - cdq_power_out[t] = 0;       # eq6
 
 s.t. coke_cog_recovered{t in T}:
     n0_rec_cog * ng_cog_cv* bf_coke_in[t] - cokeov_cog_in[t] = 0;        # eq7

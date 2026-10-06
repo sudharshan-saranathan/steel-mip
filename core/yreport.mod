@@ -215,7 +215,7 @@ for {t in T} {
            + carbon_tax*scope1_bf[t]
            + (ocapex_ccs[t]*crf_ccs + fom_ccs[t])*ccs_mult_bf*ccs_cap_bf[t]
            + (ng_cost_power[t]*ccs_kwh_bf + ccs_steam_bf*ccs_ref_steam + ccs_vopex_solvent + ccs_ts_cost)*ccs_bf[t]
-           - wasteheat_bf_bof[t]*0.9*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex))
+           - wasteheat_bf_bof[t]*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex))
            / steel_bof[t]
         else 0,
 
@@ -227,7 +227,7 @@ for {t in T} {
            + carbon_tax*scope1_cdri[t]
            + (ocapex_ccs[t]*crf_ccs + fom_ccs[t])*ccs_mult_cdri*ccs_cap_cdri[t]
            + (ng_cost_power[t]*ccs_kwh_cdri + ccs_steam_cdri*ccs_ref_steam + ccs_vopex_solvent + ccs_ts_cost)*ccs_cdri[t]
-           - wasteheat_eaf[t]*0.9*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex)*f_cdri[t] )
+           - wasteheat_eaf[t]*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex)*f_cdri[t] )
            / (steel_eaf[t]*f_cdri[t])
         else 0,
 
@@ -239,7 +239,7 @@ for {t in T} {
            + carbon_tax*scope1_ngdri[t]
            + (ocapex_ccs[t]*crf_ccs + fom_ccs[t])*ccs_mult_ngdri*ccs_cap_ngdri[t]
            + (ng_cost_power[t]*ccs_kwh_ngdri + ccs_steam_ngdri*ccs_ref_steam + ccs_vopex_solvent + ccs_ts_cost)*ccs_ngdri[t]
-           - wasteheat_eaf[t]*0.9*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex)*f_ngdri[t] )
+           - wasteheat_eaf[t]*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex)*f_ngdri[t] )
            / (steel_eaf[t]*f_ngdri[t])
         else 0,
 
@@ -253,7 +253,7 @@ for {t in T} {
            + cost_h2dri[t] + (1-f_cdri[t]-f_ngdri[t])*cost_eaf[t] + cost_pellet_h2dri[t]
            + other_opex*(steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]))
            + carbon_tax*scope1_h2dri[t]
-           - wasteheat_eaf[t]*0.9*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex)*(1-f_cdri[t]-f_ngdri[t]) )
+           - wasteheat_eaf[t]*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex)*(1-f_cdri[t]-f_ngdri[t]) )
            / (steel_eaf[t]*(1-f_cdri[t]-f_ngdri[t]))
         else 0,
 
@@ -263,7 +263,7 @@ for {t in T} {
            + cost_scrap_eaf[t]
            + other_opex*steel_scrap_eaf[t]
            + carbon_tax*scope1_scrapeaf[t]
-           - scrap_eaf_wasteheat[t]*0.9*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex))
+           - scrap_eaf_wasteheat[t]*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex))
            / steel_scrap_eaf[t]
         else 0;
 }

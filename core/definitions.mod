@@ -26,7 +26,8 @@ param n0_e_c default 75;             # Electricity (kWh) per ton of coke
 param n0_cf default 1.47;            # Coal (ton) required per ton of coke      
 param n0_br_c default 0.056;         # Breeze produced (ton) per ton of coke                
 param n0_tar_c default 0.04;         # Tar produced (ton) per ton of coke  
-param n0_cdq_whr default 80;        # Waste heat power (kWh)produced per ton of coke from CDQ
+param n0_cdq_whr{t in T} := 33 + (150 - 33)*(t - 2025)/25;  # [audit ST-05] kWh/t coke: CDQ unit 150 x 22 % penetration (JISF 2022 via MoS 2024) in 2025 -> full by 2050. Was 80 flat (implied full penetration)
+#        # Waste heat power (kWh)produced per ton of coke from CDQ
 param n0_cog_c default 440;          # Coke Oven Gas (Nm3) formed per ton of coke (mass eqv gas- 0.2 tons)
 param n0_rec_cog default 190;        # Recovered COG as fuel(energy) (Nm3/t coke)
 param n0_rec_bfg default 270;        # Recovered BFG as fuel (energy) (Nm3/t coke)
@@ -40,7 +41,8 @@ param n1_brz_sint_25 default 0.05;  # [audit ST-04] upper of India range. Was 0.
 param n1_bio_sint_25 default 0;      # Biochar (ton) per ton sinter in 2025  
 param n1_brz_sint_50 default 0.04;  # [audit] Was 0.058  # Breeze (ton) per ton sinter by 2050                   
 param n1_bio_sint_50 default 0.01;  # [audit] was 0.022 (27.5% of fuel, above 20-25% ceiling)  # Biochar (ton) per ton sinter by 2050
-param n1_sintcool_whr default 30;    # Waste heat power (kWh) produced per ton of sinter from sinter cooler and sinter machine    
+param n1_sintcool_whr{t in T} := 2 + (22 - 2)*(t - 2025)/25;  # [audit ST-05] kWh/t sinter: unit 22 x 8 % penetration in 2025 -> full by 2050. Was 30 flat
+#    # Waste heat power (kWh) produced per ton of sinter from sinter cooler and sinter machine    
 param n1_sintgas_sint default 1800;  # Sinter gas (Nm3) per ton sinter
 #Remaining sinter gas is waste with very low energy value
 #Biochar replacement is limited to 20%
@@ -55,7 +57,8 @@ param n2_ore_hm default 0.15;        # Lump ore (ton) per thm
 param n2_bfg_hm default 1500;        # BFG (Nm3) per thm            
 param n2_rec_bfg default 690;        # [audit BF] BFG used in stoves etc. Was 500        # Recovered BFG as fuel (Nm3/thm)   
 param n2_rec_cog default 30;         # Recovered COG as fuel (Nm3/thm) 
-param n2_trt_whr default 35;         # Top pressure recovery turbine (kWh/thm)   
+param n2_trt_whr{t in T} := 21 + (40 - 21)*(t - 2025)/25;   # [audit ST-05] kWh/tHM: TRT unit 40-50 x 42 % penetration in 2025 -> full by 2050. Was 35 flat
+#         # Top pressure recovery turbine (kWh/thm)   
 param n2_coalpci_hm_25 default 0.11; # [audit BF] fuel rate 0.58 = top of MoS 2024 Table 5.4 (505-579 kg/tHM). Was 0.15 # PCI (ton) per thm in 2025 
 param n2_biopci_hm_25 default 0;     # Biomass injection (ton) per thm in 2025
 param n2_coalpci_hm_50 default 0.15; # [audit BF] Was 0.16 # PCI (ton) per thm by 2050
@@ -167,10 +170,18 @@ param ccs_capex_fall_slow default 0.27;    # [audit CCS] NITI 2022 / MoS 2024 ou
 param ccs_capex_fall_fast default 0.60;    # [audit CCS] Was 0.8435 (back-solved to $60/t, unreachable once energy + T&S ~ $55/t)
 
 # Waste Heat Recovery
-param n9_eta default 0.15;                              # WHRS efficiency including losses
+param n9_eta default 0.30;   # [audit ST-05] captive power plant on surplus process gas: old Indian CPPs 2800-3000 kcal/kWh (MoS 2024) -> 0.30. Was 0.15
+#                              # WHRS efficiency including losses
+# [audit ST-05] n9_whr is now the share of the surplus BF/BOF/coke-oven gas fired in
+# captive power plants (the hard-coded 0.3 pool factor in o_waste_heat.mod is
+# removed). 0.33 in 2025 is calibrated so total in-plant generation (CDQ + TRT +
+# sinter cooler + gas-fired CPP) equals MoS 2024's ~133 kWh/tHM; rises to 0.5 by 2050
+# (kept below the level at which in-plant generation could exceed BF-route demand,
+# since the model has no power export). Was 0.05 -> 0.30 multiplied by 0.3.
 param n9_whr {t in T} :=
-    0.05 +(0.3 - 0.05) * (t - 2025) / 25;               # WHRS penetration level from 5% in 2025 to 30% by 2050
-param n9_grid_ef_start default 0.000886; #0.000757 from grid having 36% share and 0.00096 from CPP having 64% share
+    0.33 + (0.5 - 0.33) * (t - 2025) / 25;               # WHRS penetration level from 5% in 2025 to 30% by 2050
+param n9_grid_ef_start default 0.000880; # [audit ST-06] blended: 36 % grid (CEA weighted average 0.710, FY2024-25) + 64 % captive coal (0.97). theta_grid scales this blend. Was 0.000886
+# #0.000757 from grid having 36% share and 0.00096 from CPP having 64% share
 param n9_grid_ef_end default
     n9_grid_ef_start * (1 - theta_grid);   # theta_grid=0 -> 2050 EF = 2025 EF (persists flat); theta_grid=1 -> 2050 EF = 0
 param n9_grid_ef{t in T} :=
@@ -211,7 +222,7 @@ param n7_capex default 400;               # EAF incl. casting: up-front, 2025 US
 param n7_cost_electrode default 2500;     # [audit] trade data and TA-TERI 2,460-2,750. Was 3000. Earlier note:     # Cost per ton of electrode (corrected 2026-08-21, was 600 -- well below realistic UHP graphite electrode market levels)
 param n8_capex default 400;               # Scrap EAF: same unit as n7; scrap handling via ocapex_scrapchain [audit ST-01]     
 param n8_cost_electrode default 2500;     # [audit] as n7. Was 3000. Earlier note:     # Cost per ton of electrode (corrected 2026-08-21, was 600 -- well below realistic UHP graphite electrode market levels)
-param n9_whr_capex default 0.009;         # CAPEX of WHR system per kWh of power generated
+param n9_whr_capex default 0.03;          # [audit] $/kWh generated. Was 0.009         # CAPEX of WHR system per kWh of power generated
 param n9_whr_opex default 0.003;          # OPEX of WHR system per kWh of power generated
 # CCS anchor price ($/tCO2), INCLUSIVE of capex, O&M, energy
 # (electricity + steam), solvent, and transport & storage. 

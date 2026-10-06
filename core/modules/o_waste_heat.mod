@@ -23,7 +23,7 @@ s.t. scrap_eaf_wasteheat_balance{t in T}:
 # Available waste stream after accounting for losses and unrecoverable wastes
 s.t. available_waste_stream{t in T}:
     (wasteheat_bf_bof[t] + wasteheat_eaf[t]
-      + scrap_eaf_wasteheat[t])*0.3  - whr_available_gas[t] = 0;  #eq81
+      + scrap_eaf_wasteheat[t])  - whr_available_gas[t] = 0;   # [audit ST-05] hard-coded 0.3 removed; the share fired is n9_whr[t]  #eq81
 
 # CCS-steam competition
 s.t. whr_pool_alloc{t in T}:

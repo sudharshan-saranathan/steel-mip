@@ -22,7 +22,7 @@ s.t. sinter_biochar_balance {t in T}:
 
 # Sinter waste heat recovery
 s.t. sinter_whr_balance{t in T}:
-    n1_sintcool_whr * bf_sinter_in[t] - sinterwaste_power_out[t] = 0;               # eq14
+    n1_sintcool_whr[t] * bf_sinter_in[t] - sinterwaste_power_out[t] = 0;               # eq14
 
 # Sinter gas (SG) output
 s.t. sinter_gas_balance{t in T}:
