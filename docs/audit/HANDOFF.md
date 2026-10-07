@@ -1,6 +1,6 @@
 # Audit handoff — read this first
 
-Last updated: 2026-10-07 (end of overnight run, session 1). **Start with `docs/audit/REVIEW.md`.** Owner: Sudharshan Saranathan (IIT Madras).
+Last updated: 2026-10-07, after the S-curve reruns (session 1). **Start with `docs/audit/REVIEW.md`.** Owner: Sudharshan Saranathan (IIT Madras).
 
 ## 1. The task
 
@@ -72,6 +72,14 @@ Everything is done; the user is reviewing `REVIEW.md`.
 - Monotonic emission intensity linearised and enforced in the studies (`3ffb9e3`); the build budget at 20/30/40 doesn't change feasibility.
 - **Demand is now an S-curve by default** (`6b8ff9a`): saturation 680 Mt, sensitivities 510/816; 17 of 36 Fig. 3 cells are infeasible. All later results must use this default (or state `dem_profile = 0`).
 - REVIEW.md §7 has the details.
+
+## 6c. Reruns under S-curve demand (REVIEW.md §8)
+
+- Licence active (env `AMPL_LICENSE_UUID`); every study now runs through its own driver with AMPL + Gurobi. The bridge is only needed without a licence.
+- Done and committed on `fix-wave-01` (data + figures): H₂ delay and fuel availability (`1776ffa`), feasibility drivers (`8ab9fc5`, superseded by `17f4210`), synergy after the θ_grid = 1 fix (`3656c00`, `96adcf4`), Figs. 3/4/5 (`634308d`), Monte Carlo + downstream (`2cc9e22`), CCS ceiling as ninth axis and the λ index (`17f4210`). Regret: see §8 / next commit.
+- Cite results by commit hash. `raw_matrix.csv` holds all 34,560 cells.
+- The container restarts without warning (files survive, processes do not). `run_feasibilitydrivers.py --resume` continues a partial run; `run_montecarlo.py` and `run_regret.py` cannot resume (MC ≈ 2 h, regret ≈ 8 min at -j 4).
+- Open calls: REVIEW.md §4 and §8.3 (template scrap 6 % vs 5 %, 2050 demand vs published median, CCS central level, MC at low CCS).
 
 ## 7. Environment notes
 
