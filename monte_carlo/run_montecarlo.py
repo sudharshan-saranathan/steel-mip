@@ -70,7 +70,7 @@ MC_LEVELS = {
 
 CCOAL_FILE = {"abundant": "ccoal_abundant", "scarce": "ccoal_scarce"}
 NG_FILE = {"abundant": "ng_policy", "scarce": "ng_bau"}
-RAMP_H2REF = {"low": 2_000_000, "medium": 4_000_000, "high": 6_000_000}
+RAMP_H2REF = {"low": 1_000_000, "medium": 2_000_000, "high": 3_000_000}  # [audit] re-anchored
 BUILD_CAP_VAL = {"tight": 20_000_000, "mid": 30_000_000}
 LEGACY_FLAG = {"run-life": 0, "mandated-phaseout": 1}
 

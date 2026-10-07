@@ -20,7 +20,7 @@ include structural/axes/ng_policy.mod;
 
 let avg_emi              := 1.8;
 let cap_add_common       := 30000000;   # build_cap = mid
-let h2_ref_cap           := 4000000;    # ramp = medium
+let h2_ref_cap           := 2000000;    # ramp = medium
 let legacy_phaseout      := 0;          # run-life
 let theta_tech           := 0.5;
 let theta_ccs            := 0.5;

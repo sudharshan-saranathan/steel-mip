@@ -1,11 +1,12 @@
+# [audit] Floored at the SCARCE path each year (imports >= FY26 66.33 Mt).
 # Coking-coal availability: ABUNDANT. Imports grow at the
 # 2007-08 to 2022-23 steel-sector trend (+6.4%/yr, 22 -> 56 Mt)
 # from 54.5 Mt; domestic blendable supply +7.5%/yr (FY18-FY25 production CAGR)
 # from the ~6 Mt model basis.
 let ccoal_cap[2025] := 60500000;
-let ccoal_cap[2026] := 64438000;
-let ccoal_cap[2027] := 68632982;
-let ccoal_cap[2028] := 73101764;
+let ccoal_cap[2026] := 72780000;
+let ccoal_cap[2027] := 73263750;
+let ccoal_cap[2028] := 73783781;
 let ccoal_cap[2029] := 77862269;
 let ccoal_cap[2030] := 82933595;
 let ccoal_cap[2031] := 88336096;

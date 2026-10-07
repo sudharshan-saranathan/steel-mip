@@ -56,8 +56,8 @@ RAMP = "medium"
 AVG_EMI = 1.8
 N_BINS = 24
 H2_YEARS = [2030, 2035, 2040, 2045]
-SCRAP_GROUPS = {"Low": [0.02, 0.04], "Mid": [0.06], "High": [0.08, 0.10]}
-GRANGE = {"Low": "2% & 4%/yr", "Mid": "6%/yr", "High": "8% & 10%/yr"}
+SCRAP_GROUPS = {"Low": [0.04], "Mid": [0.05], "High": [0.06, 0.07]}   # [audit] re-anchored axis
+GRANGE = {"Low": "4%/yr", "Mid": "5%/yr", "High": "6% & 7%/yr"}
 ROUTE_COLS = [("share_scrap", "Scrap-EAF"), ("share_h2", "H2-DRI"),
               ("share_ngdri", "NG-DRI"), ("share_cdri", "Coal-DRI"),
               ("share_bof", "BF-BOF")]

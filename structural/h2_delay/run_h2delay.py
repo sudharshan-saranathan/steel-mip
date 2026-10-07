@@ -24,7 +24,7 @@ import solve_common as SC  # noqa: E402
 OUT = HERE / "data" / "h2_delay.xlsx"
 
 AVG_EMI = [1.6, 1.8, 2.0]
-RAMP = [("Low", 2_000_000), ("Mid", 4_000_000), ("High", 6_000_000)]
+RAMP = [("Low", 1_000_000), ("Mid", 2_000_000), ("High", 3_000_000)]
 H2_START = [2030, 2035, 2040, 2045]
 
 

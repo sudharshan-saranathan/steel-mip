@@ -435,7 +435,7 @@ param ocapex_h2re{t in T} := h2_capex_mult * re_capex_kw[t];    # overnight $/kW
 param acapex_h2re{t in T} := ocapex_h2re[t] * crf_re;           # annualized $/kW/yr (for the 1-sunk branch)
 param h2_ramp_mode  default 2;          # 0 none (inf ceiling) | 1 linear | 2 gaussian (default, realistic)
 param H2_BIGM       := 1e10;            # deactivates whichever limiter is off (~300x max cap)
-param h2_ref_cap    default 4000000;
+param h2_ref_cap    default 2000000;   # [audit] medium ramp re-anchored (was 4e6)
 param h2_peak_rate  := 0.25;            # the pinned mode-2 peak rate (base(peak)+surge = 25%)
 param h2_base_start := 0.00;            # mode 2 baseline coeff at 2025 (x h2_ref_cap, per yr)
 param h2_base_end   := 0.05;            # mode 2 baseline coeff at 2050 (rising -> capital efficiency)

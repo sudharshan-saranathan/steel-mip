@@ -20,7 +20,7 @@ root, out = sys.argv[1], sys.argv[2]
 extra = " ".join(sys.argv[3:])
 rows = []
 for ef in (1.6, 1.8, 2.0):
-    for label, ramp in (("Low", 2_000_000), ("Mid", 4_000_000), ("High", 6_000_000)):
+    for label, ramp in (("Low", 1_000_000), ("Mid", 2_000_000), ("High", 3_000_000)):
         for h2 in (2030, 2035, 2040, 2045):
             a = AMPL()
             a.cd(root)

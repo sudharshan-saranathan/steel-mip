@@ -34,7 +34,9 @@ H2_START = [2030, 2035, 2040, 2045]
 # 0.10 added 2026-08-21: scrap-pool-limited ceiling on Scrap-EAF's 2050 share
 # is 44.7% at 0.08, 70.7% at 0.10 (exclusive-claim upper bound, ignoring BOF's
 # 5% floor and build-budget competition -- see core/definitions.mod n8_phi_eaf).
-SCRAP_RATE = [0.02, 0.04, 0.06, 0.08, 0.10]
+# [audit] Re-anchored to evidence: 5 % and 6.7 % reach NITI 2026's 2050 scrap-use
+# cases (125 / 187 Mt, 20-30 % of 624 Mt); 4 % is the pessimistic case. Was 2-10 %.
+SCRAP_RATE = [0.04, 0.05, 0.06, 0.07]
 
 # Grid/power-system learning rate, swept DIRECTLY (theta_grid in [0,1]; no
 # back-solve from a target EF -- see core/definitions.mod:165-179). theta_grid=0
@@ -62,7 +64,10 @@ THETA_GRID = [0.25, 0.5, 0.75]
 #     but leaves real headroom for scrap-EAF/BOF+CCS rather than crowding
 #     them out mechanically. These are CEILINGS the optimizer may not choose
 #     to reach, not forced outcomes.
-RAMP = [("low", 2_000_000), ("medium", 4_000_000), ("high", 6_000_000)]
+# [audit] Peak steel H2 additions 0.25 / 0.5 / 0.75 Mt/yr (x h2_peak_rate 0.25).
+# High = the whole NGHM national pace (~0.71 Mt/yr, all sectors); low ~3x the
+# MoS steel path (+0.09 Mt/yr to 2030). Was 2/4/6 Mt (0.5-1.5 Mt/yr).
+RAMP = [("low", 1_000_000), ("medium", 2_000_000), ("high", 3_000_000)]
 
 # Shared annual build budget across the four conventional routes (Mt/yr).
 # Finance and EPC capacity the sector can deploy in one year -- industrial

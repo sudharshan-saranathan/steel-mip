@@ -37,7 +37,7 @@ DEF_SCRAP = EF_2025 - 0.5  # scrap-EAF: EAF power on today's grid
 
 H2_PER_TCS = 0.07 * 1.1  # t H2 per t DRI x t DRI per tCS (n6_h2_dri, n7_dri_ratio)
 SCRAP_PER_TCS = 1.1     # n8_phi_eaf
-RAMP = {"low": 2e6, "medium": 4e6, "high": 6e6}
+RAMP = {"low": 1e6, "medium": 2e6, "high": 3e6}
 
 
 def demand(d0=152.2e6, d_sat=680e6, g0=0.082):

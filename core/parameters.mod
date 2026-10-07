@@ -23,7 +23,7 @@ s.t. No_H2_Before{t in T: t < ng_h2_start_year}:
 # h2_peak_year is derived in definitions.mod; it follows ng_h2_start_year.
 
 # Scrap
-let n8_scrap_rate := 0.06;      # Assumed annual growth rate of scrap
+let n8_scrap_rate := 0.05;   # [audit] was 0.06      # Assumed annual growth rate of scrap
 let ng_cost_scrap :=400;        # [audit] was 350
 let n8_scrap_seed := 37000000;  # scrap availability in 2025, t/yr
 # n8_scrap_limit is derived in definitions.mod from the seed and the rate.

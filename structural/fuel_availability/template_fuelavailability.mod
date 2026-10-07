@@ -14,9 +14,9 @@
 # =====================================================================
 
 let avg_emi           := 1.8;
-let n8_scrap_rate     := 0.06;
+let n8_scrap_rate     := 0.05;    # [audit] audited central (was 0.06)
 let theta_grid        := 0.5;
-let h2_ref_cap        := 4000000;    # ramp = medium
+let h2_ref_cap        := 2000000;    # ramp = medium
 let cap_add_common    := 30000000;   # build_cap = mid
 let legacy_phaseout   := 0;          # run-life
 let theta_tech        := 0.5;

@@ -15,7 +15,7 @@
 include structural/axes/ccoal_abundant.mod;
 include structural/axes/ng_policy.mod;
 
-let n8_scrap_rate     := 0.06;
+let n8_scrap_rate     := 0.05;    # [audit] audited central (was 0.06)
 let theta_grid        := 0.5;
 let cap_add_common    := 30000000;   # build_cap = mid
 let legacy_phaseout   := 0;          # run-life
