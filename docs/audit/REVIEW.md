@@ -207,7 +207,7 @@ So the claim the model supports is conditional: **India's 2050 intensity targets
 
 ### 8.3 Open calls added
 
-1. **Scrap growth in the study templates is 6 %/yr; the audited central value is 5 %** (`definitions.mod:154`). Results at 6 % lean optimistic (e.g. Fig. 3 at 1.8, mid ramp, H₂ 2035 is feasible at CCS 0.05 with 6 % but not with 5 %). Proposed: set templates to 5 %.
+1. **RESOLVED by `8234f2f` (templates now 5 %; checked 2026-10-07).** ~~Scrap growth in the study templates is 6 %/yr; the audited central value is 5 %~~ (`definitions.mod:154`). Results at 6 % lean optimistic (e.g. Fig. 3 at 1.8, mid ramp, H₂ 2035 is feasible at CCS 0.05 with 6 % but not with 5 %). Proposed: set templates to 5 %.
 2. **2050 demand.** The central S-curve gives 545 Mt, above the median of published projections (≈ 444 Mt: TERI 300, MoS/TERI 374, IEA ≈ 444, NITI 624, TERI-cited 500–760). Option: anchor the S-curve to 444 Mt in 2050 (≈ 500 Mt saturation, close to the 510 sensitivity: 13 infeasible Fig. 3 cells instead of 17).
 3. **CCS central level:** keep 0.25 (median of scenario sources, all ambitious) or use a lower central value; the axis now covers 0–0.25 either way.
 4. **Monte Carlo at low CCS** (0.05 slice, ~1 h) not yet run.

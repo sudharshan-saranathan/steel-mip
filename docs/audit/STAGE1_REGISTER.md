@@ -241,7 +241,7 @@ These are errors in equations, units or accounting, not in parameter values. The
 
 | Parameter | Value | Tags | Note |
 |---|---|---|---|
-| ccoal_cap, abundant / scarce | 60.5 Mt (2025) → 293.6 / 91.1 Mt | S (partial), X | Built from Ministry of Coal data. The comment uses **54.5 Mt** of 2025 imports; the paper cites **66.33 Mt** (FY2025-26). The domestic "~6 Mt model basis" needs a source. |
+| ccoal_cap, abundant / scarce | 60.5 Mt (2025) → 293.6 / 102.9 Mt (2050). **Updated 2026-10-07 (commit `8234f2f`):** scarce 2050 was 91.1 Mt; 2026 is now 72.78 Mt on both paths; abundant is floored at the scarce path each year | S (partial), X | Built from Ministry of Coal data. The comment uses **54.5 Mt** of 2025 imports; the paper cites **66.33 Mt** (FY2025-26). The domestic "~6 Mt model basis" needs a source. |
 | n5_ng_cap, BAU / policy | 5.35 → 10.7 / 32.2 Mt | S (partial), U-NS | PNGRB [46]. The 10 % steel share of national gas is unsourced: PPAC sectoral data shows a smaller share (to verify). The comments give the unit as "Mm3" but the values are in tonnes. |
 | avg_emi | 1.6 / 1.8 / 2.0 | A | Can be linked to India's Green Steel Taxonomy (Ministry of Steel, Dec 2024) star thresholds (to verify). |
 | emission_monotonic | on | A | |

@@ -77,7 +77,7 @@ Everything is done; the user is reviewing `REVIEW.md`.
 
 - Licence active (env `AMPL_LICENSE_UUID`); every study now runs through its own driver with AMPL + Gurobi. The bridge is only needed without a licence.
 - Done and committed on `fix-wave-01` (data + figures): H₂ delay and fuel availability (`1776ffa`), feasibility drivers (`8ab9fc5`, superseded by `17f4210`), synergy after the θ_grid = 1 fix (`3656c00`, `96adcf4`), Figs. 3/4/5 (`634308d`), Monte Carlo + downstream (`2cc9e22`), CCS ceiling as ninth axis and the λ index (`17f4210`). Regret: see §8 / next commit.
-- Cite results by commit hash. `raw_matrix.csv` holds all 34,560 cells.
+- Cite results by commit hash. `raw_matrix.csv` held 34,560 cells when it was generated (before the 2026-10-07 axis re-anchoring); the current axes in `axes.py` give 27,648 cells (scrap rate 4 levels, not 5).
 - The container restarts without warning (files survive, processes do not). `run_feasibilitydrivers.py --resume` continues a partial run; `run_montecarlo.py` and `run_regret.py` cannot resume (MC ≈ 2 h, regret ≈ 8 min at -j 4).
 - Open calls: REVIEW.md §4 and §8.3 (template scrap 6 % vs 5 %, 2050 demand vs published median, CCS central level, MC at low CCS).
 
