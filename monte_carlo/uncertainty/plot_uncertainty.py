@@ -56,13 +56,13 @@ AC_MEDIAN_PLACEHOLDER = {1.6: 25.701126, 1.8: 17.559270, 2.0: 10.413427}
 MC_COLS = ["ccoal_price", "scrap_price", "ng_price", "theta_tech", "theta_ccs"]
 GROUP = ["ccoal", "ng", "h2_start", "scrap_rate", "theta_grid_target",
          "ramp", "build_cap", "legacy"]
-RANGE = {"ccoal_price": 300, "ng_price": 20, "scrap_price": 200,
+RANGE = {"ccoal_price": 150, "ng_price": 10, "scrap_price": 200,   # [audit] evidence-centred levels
          "theta_tech": 1, "theta_ccs": 1}
 NICE = {"ccoal_price": "Coal", "scrap_price": "Scrap",
         "ng_price": "NG", "theta_tech": r"H$_2$",
         "theta_ccs": "CCS"}
 GREEN, NAVY = "#4daf4a", "#313e61"
-COALC = {100: "#a8c9a6", 250: "#4daf4a", 400: "#313e61"}
+COALC = {150: "#a8c9a6", 200: "#4daf4a", 300: "#313e61"}
 EF_COLORS = {1.6: "#264653", 1.8: "#377eb8", 2.0: "#e76f51"}
 
 SHARE_COLS = [("share_bof", "BF-BOF"), ("share_cdri", "Coal DRI-EAF"),
@@ -89,8 +89,8 @@ def panel_drivers(ax, d):
     d["y"] = d.lcop - d.groupby(GROUP).lcop.transform("mean")
 
     PRICE_AT = {
-        "theta_tech": {0.0: "$5.00/kg", 1.0: "$1.50/kg"},
-        "theta_ccs": {0.0: r"\$100/tCO$_2$", 1.0: r"\$60/tCO$_2$"},
+        "theta_tech": {0.0: "$4.72/kg", 1.0: "$2.39/kg"},   # [audit] model 2050 LCOH
+        "theta_ccs": {0.0: r"\$70/tCO$_2$", 1.0: r"\$64/tCO$_2$"},   # [audit] model 2050 all-in
     }
     UNIT = {"ccoal_price": "/t", "scrap_price": "/t", "ng_price": "/MMBtu"}
 
@@ -190,7 +190,7 @@ def panel_coal_delay(ax, d):
                         values="lcop").reset_index()
     piv["coal"] = piv["ccoal_price"]
 
-    lvls = [100, 250, 400]
+    lvls = [150, 200, 300]
     w = 0.26
     for li, lvl in enumerate(lvls):
         sub = piv[piv.coal == lvl]

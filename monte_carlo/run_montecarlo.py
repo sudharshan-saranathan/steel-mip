@@ -60,9 +60,9 @@ DRAW_SEED = 20260824
 CCS_LEVELS = None   # [audit] None = every ccs_phi level in the feasibility matrix
 
 MC_LEVELS = {
-    "ccoal_price": [100, 250, 400],
-    "ng_price": [5, 15, 25],
-    "scrap_price": [250, 350, 450],
+    "ccoal_price": [150, 200, 300],   # [audit] evidence-centred (was 100/250/400)
+    "ng_price": [8, 12, 18],          # [audit] was 5/15/25
+    "scrap_price": [300, 400, 500],   # [audit] was 250/350/450
     "theta_tech": [0, 0.25, 0.5, 0.75, 1.0],
     "theta_ccs": [0, 0.25, 0.5, 0.75, 1.0],
     "discount_rate": [0.06],   # single level; kept to preserve RNG call order

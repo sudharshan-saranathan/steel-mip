@@ -93,17 +93,18 @@ N_PER_YEAR = int(os.environ.get("LADDER_WORLDS_PER_YEAR", "50"))
 
 # study backdrop for the single C-year commitment PLAN (central belief world)
 BACKDROP = {"theta_tech": 0.5, "theta_grid": 0.5, "theta_ccs": 0.5,
-            "scrap_rate": 0.05, "ccoal_price": 250, "ng_price": 15,
-            "scrap_price": 350, "ccoal": "abundant", "ng": "abundant"}
+            "scrap_rate": 0.05, "ccoal_price": 200, "ng_price": 12,
+            "scrap_price": 400,   # [audit] evidence centrals (was 250/15/350)
+            "ccoal": "abundant", "ng": "abundant"}
 
 WORLD_AXES = {
     "theta_tech": [0, 0.25, 0.5, 0.75, 1.0],
     "theta_grid": [0.25, 0.5, 0.75],
     "theta_ccs": [0, 0.25, 0.5, 0.75, 1.0],
     "scrap_rate": [0.04, 0.05, 0.06, 0.07],   # [audit] re-anchored
-    "ccoal_price": [100, 250, 400],
-    "ng_price": [5, 15, 25],
-    "scrap_price": [250, 350, 450],
+    "ccoal_price": [150, 200, 300],   # [audit] evidence-centred (was 100/250/400)
+    "ng_price": [8, 12, 18],          # [audit] was 5/15/25
+    "scrap_price": [300, 400, 500],   # [audit] was 250/350/450
     "ccoal": ["abundant", "scarce"],
     "ng": ["abundant", "scarce"],
 }
