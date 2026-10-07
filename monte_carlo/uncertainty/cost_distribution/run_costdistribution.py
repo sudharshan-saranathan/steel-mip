@@ -23,6 +23,7 @@ import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent.parent
+CCS_CENTRAL = 0.25
 MC_SOLVES = ROOT / "monte_carlo" / "data" / "mc_solves.xlsx"
 OUT = HERE / "data" / "cost_distribution.xlsx"
 
@@ -39,6 +40,9 @@ def main():
     sheets = {ef: pd.read_excel(MC_SOLVES, sheet_name=f"ef{ef}")
               for ef in TARGETS}
     sheets = {ef: df[df.solve_result == "solved"] for ef, df in sheets.items()}
+    # [audit] figures use the central CCS ceiling; other levels are the CCS axis
+    sheets = {ef: df[df.ccs_phi == CCS_CENTRAL] if "ccs_phi" in df else df
+              for ef, df in sheets.items()}
 
     matched_keys = set(map(tuple, sheets[MATCH_EF][STRUCT_COLS].values.tolist()))
 

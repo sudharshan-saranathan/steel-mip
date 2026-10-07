@@ -18,6 +18,7 @@ import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent.parent
+CCS_CENTRAL = 0.25
 MC_SOLVES = ROOT / "monte_carlo" / "data" / "mc_solves.xlsx"
 OUT = HERE / "data" / "shares.xlsx"
 
@@ -31,6 +32,8 @@ COLUMNS = STRUCT_COLS + DRAW_COLS + ["lcop"] + SHARE_COLS
 def main():
     import pandas as pd
     d = pd.read_excel(MC_SOLVES, sheet_name="ef1.8")
+    # [audit] figures use the central CCS ceiling; other levels are the CCS axis
+    d = d[d.ccs_phi == CCS_CENTRAL] if "ccs_phi" in d else d
     d = d[d.solve_result == "solved"][COLUMNS]
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

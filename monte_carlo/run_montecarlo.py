@@ -32,7 +32,7 @@ Every uncertainty/*/run_*.py and violin/run_violin.py is pure filtering
 on top of this one workbook -- no AMPL/Gurobi calls of their own.
 
 Output: data/mc_solves.xlsx, one sheet per target ("ef1.6", "ef1.8",
-"ef2.0") -- cell_id, draw_id, the 8 structural coordinates, avg_emi, the
+"ef2.0") -- cell_id, draw_id, the 9 structural coordinates (incl. ccs_phi), avg_emi, the
 5 cost/tech draw values, solve_result, lcop, the 5 route shares,
 emis2050 (the 2050 snapshot emission intensity, needed by violin's
 right-hand histogram), and cum_co2/cum_captured (cumulative 2025-2050
@@ -57,6 +57,7 @@ OUT = HERE / "data" / "mc_solves.xlsx"
 TARGETS = [1.6, 1.8, 2.0]
 N_DRAWS = 50
 DRAW_SEED = 20260824
+CCS_LEVELS = None   # [audit] None = every ccs_phi level in the feasibility matrix
 
 MC_LEVELS = {
     "ccoal_price": [100, 250, 400],
@@ -74,7 +75,7 @@ BUILD_CAP_VAL = {"tight": 20_000_000, "mid": 30_000_000}
 LEGACY_FLAG = {"run-life": 0, "mandated-phaseout": 1}
 
 STRUCT_COLS = ["ccoal", "ng", "h2_start", "scrap_rate", "theta_grid_target",
-               "ramp", "build_cap", "legacy", "avg_emi"]
+               "ramp", "build_cap", "legacy", "ccs_phi", "avg_emi"]
 DRAW_COLS = ["ccoal_price", "ng_price", "scrap_price", "theta_tech", "theta_ccs"]
 METRIC_COLUMNS = [
     ("lcop", "m_lcop"),
@@ -98,6 +99,8 @@ def feasible_cells(avg_emi):
     import pandas as pd
     df = pd.read_excel(FEAS_XLSX, sheet_name="raw_matrix")
     feas = df[(df.avg_emi == avg_emi) & (df.solve_result == "solved")]
+    if CCS_LEVELS is not None:  # [audit] restrict the CCS-ceiling axis
+        feas = feas[feas.ccs_phi.isin(CCS_LEVELS)]
     return feas.to_dict("records")
 
 
@@ -124,6 +127,7 @@ def solve_cell(cell, draw, solver="gurobi"):
     ampl.eval(f"let legacy_phaseout := {LEGACY_FLAG[cell['legacy']]};")
     ampl.eval(f"let cap_add_common := {BUILD_CAP_VAL[cell['build_cap']]};")
     ampl.eval(f"let theta_grid := {cell['theta_grid_target']};")
+    ampl.eval(f"let phi_2050 := {cell['ccs_phi']};")  # [audit] CCS ceiling axis
     ampl.eval(f"let ng_cost_ccoal := {draw['ccoal_price']};")
     ampl.eval(f"let {{t in T}} n5_cost_NG[t] := {draw['ng_price']};")
     ampl.eval(f"let ng_cost_scrap := {draw['scrap_price']};")
@@ -179,7 +183,11 @@ def run_batch(avg_emi, draws, jobs):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("-j", "--jobs", type=int, default=6)
+    p.add_argument("--ccs", type=float, nargs="+", default=None,
+                   help="CCS-ceiling levels (phi_2050) to solve; default all")
     args = p.parse_args()
+    global CCS_LEVELS
+    CCS_LEVELS = args.ccs
 
     draws = sample_draws()
     OUT.parent.mkdir(parents=True, exist_ok=True)

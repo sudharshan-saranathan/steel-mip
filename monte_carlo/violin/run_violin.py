@@ -46,6 +46,7 @@ import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
+CCS_CENTRAL = 0.25
 MC_SOLVES = ROOT / "monte_carlo" / "data" / "mc_solves.xlsx"
 FEAS_XLSX = (ROOT / "structural" / "feasibility_and_synergy" /
              "feasibility_drivers" / "data" / "feasibility_drivers.xlsx")
@@ -72,6 +73,7 @@ def scrap_group_of(rate):
 def load_population():
     import pandas as pd
     d = pd.read_excel(MC_SOLVES, sheet_name="ef1.8")
+    d = d[d.ccs_phi == CCS_CENTRAL] if "ccs_phi" in d else d  # [audit] central CCS slice
     d = d[(d.solve_result == "solved") & (d.ramp == RAMP)].copy()
     d["scrap_group"] = d.scrap_rate.map(scrap_group_of)
     return d
@@ -80,6 +82,7 @@ def load_population():
 def load_full_structural():
     import pandas as pd
     df = pd.read_excel(FEAS_XLSX, sheet_name="raw_matrix")
+    df = df[df.ccs_phi == CCS_CENTRAL] if "ccs_phi" in df else df  # [audit] central CCS slice
     df = df[(df.avg_emi == AVG_EMI) & (df.ramp == RAMP)].copy()
     df["scrap_group"] = df.scrap_rate.map(scrap_group_of)
     return df
