@@ -78,6 +78,14 @@ BUILD_CAP = [("tight", 20e6), ("mid", 30e6)]
 # differ mainly over the fate of 90 Mt of BOF.
 LEGACY = [("run-life", 0), ("mandated-phaseout", 1)]
 
+# [audit] CCS deployment ceiling in 2050 (phi_2050 in q_carbon_capture.mod):
+# share of fossil-route CO2 the national CCS build-out (pipelines, storage
+# permits, hubs) can take, ramping from 2035. A policy lever. 0.25 = IEA SDS
+# (25 % of steel direct CO2) / NITI 2022 (~26 % of emissions, economy-wide);
+# 0.10 and 0.05 = NITI 2026 Net Zero Scenario rates CCUS "Low" in 2050;
+# 0 = no CCS. The paper's 0.50 has no feasibility-based source.
+CCS_PHI = [0.0, 0.05, 0.10, 0.25]
+
 # ---------------------------------------------------------------- target ---
 # The constraint being tested against, not a lever. Matches EF_LEVELS in the
 # original hydrogen-delay and scrap studies.
@@ -93,5 +101,6 @@ AXES = {
     "ramp":       RAMP,
     "build_cap":  BUILD_CAP,
     "legacy":     LEGACY,
+    "ccs_phi":    CCS_PHI,
     "avg_emi":    AVG_EMI,
 }

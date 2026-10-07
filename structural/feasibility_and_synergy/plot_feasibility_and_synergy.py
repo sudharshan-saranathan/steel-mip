@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Feasibility Drivers + Sectoral Synergy, side by side (1x2).
-  (a) Feasibility drivers                -- octagonal radar, S_T by EF
+  (a) Feasibility drivers                -- radar (9 spokes), S_T by EF
   (b) Sectoral synergy: Power and Steel  -- required grid-offset contour
 
 Reads two separate files -- the outputs of each subfolder's own run
@@ -47,6 +47,7 @@ DRIVER_NICE = {
     "H2 supply ramp": "H$_2$\nsupply\nramp",
     "Legacy retirement": "Legacy\nretirement",
     "NG supply": "NG\nsupply",
+    "CCS deployment": "CCS\ndeploy-\nment",  # [audit] ninth axis
 }
 SOBOL_EFS = [1.6, 1.8, 2.0]
 SOBOL_COLORS = {1.6: "#264653", 1.8: "#377eb8", 2.0: "#e76f51"}

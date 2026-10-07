@@ -3,9 +3,10 @@
 structural axis on feasibility, computed separately within each
 emission target -- the radar-panel data.
 
-Solves the full 8-structural-axis cross product at build_cap 20 and 30
-Mt/yr (tight, mid). 8,640 cells = (2 ccoal x 2 ng x 4 h2_start x
-5 scrap_rate x 3 theta_grid x 3 ramp x 2 build_cap x 2 legacy) x 3 avg_emi.
+Solves the full 9-structural-axis cross product at build_cap 20 and 30
+Mt/yr (tight, mid). 34,560 cells = (2 ccoal x 2 ng x 4 h2_start x
+5 scrap_rate x 3 theta_grid x 3 ramp x 2 build_cap x 2 legacy x
+4 ccs_phi) x 3 avg_emi. [audit] ccs_phi (CCS deployment ceiling) added.
 
 Output: data/feasibility_drivers.xlsx --
   sheet "raw_matrix"   one row per solved cell (coords + solve_result +
@@ -14,7 +15,7 @@ Output: data/feasibility_drivers.xlsx --
                         per (driver, avg_emi), 8 drivers x 3 targets = 24
                         rows
 
-    python run_feasibilitydrivers.py -j 6             # full 8,640-cell sweep
+    python run_feasibilitydrivers.py -j 6             # full 34,560-cell sweep
     python run_feasibilitydrivers.py -j 6 --resume    # continue a partial run
 """
 import argparse
@@ -39,18 +40,19 @@ CSV_OUT = HERE / "data" / "raw_matrix.csv"
 # Same 8 axes as the original panel_sobol -- order fixes the radar spoke
 # order (sorted by mean S_T descending, at plot time, not here).
 SOBOL_AXES = ["build_cap", "scrap_rate", "h2_start", "ccoal",
-              "theta_grid_target", "ramp", "legacy", "ng"]
+              "theta_grid_target", "ramp", "legacy", "ng", "ccs_phi"]
 SOBOL_EFS = [1.6, 1.8, 2.0]
 SOBOL_NICE = {
     "build_cap": "Build budget", "scrap_rate": "Scrap growth",
     "h2_start": "H2 start year", "ccoal": "Coking-coal supply",
     "theta_grid_target": "Grid learning", "ramp": "H2 supply ramp",
     "legacy": "Legacy retirement", "ng": "NG supply",
+    "ccs_phi": "CCS deployment",
 }
 
 COORD_COLUMNS = [
     "ccoal", "ng", "h2_start", "scrap_rate", "theta_grid_target",
-    "ramp", "build_cap", "legacy", "avg_emi",
+    "ramp", "build_cap", "legacy", "ccs_phi", "avg_emi",
 ]
 STATUS_COLUMNS = ["solve_result", "objective", "theta_grid"]
 METRIC_COLUMNS = [
@@ -78,7 +80,8 @@ def cells():
 def coord_key(cell):
     return (cell["ccoal"][0], cell["ng"][0], cell["h2_start"],
             cell["scrap_rate"], cell["theta_grid"], cell["ramp"][0],
-            cell["build_cap"][0], cell["legacy"][0], cell["avg_emi"])
+            cell["build_cap"][0], cell["legacy"][0], cell["ccs_phi"],
+            cell["avg_emi"])
 
 
 def solve_cell(cell, solver="gurobi"):
@@ -113,6 +116,7 @@ def solve_cell(cell, solver="gurobi"):
     ampl.eval(f"let legacy_phaseout := {legacy_flag};")
     ampl.eval(f"let cap_add_common := {build_cap};")
     ampl.eval(f"let theta_grid := {theta_grid_target};")
+    ampl.eval(f"let phi_2050 := {cell['ccs_phi']};")
 
     ampl.eval(f"option solver {solver};")
     if solver == "gurobi":
@@ -132,7 +136,8 @@ def solve_cell(cell, solver="gurobi"):
         "ccoal": ccoal_label, "ng": ng_label, "h2_start": cell["h2_start"],
         "scrap_rate": cell["scrap_rate"], "theta_grid_target": theta_grid_target,
         "ramp": ramp_label, "build_cap": build_label,
-        "legacy": legacy_label, "avg_emi": cell["avg_emi"],
+        "legacy": legacy_label, "ccs_phi": cell["ccs_phi"],
+        "avg_emi": cell["avg_emi"],
         "solve_result": status, "objective": obj,
         "theta_grid": ampl.get_value("theta_grid"),
     }
@@ -155,7 +160,8 @@ def _worker(cell):
             "h2_start": cell["h2_start"], "scrap_rate": cell["scrap_rate"],
             "theta_grid_target": cell["theta_grid"], "ramp": cell["ramp"][0],
             "build_cap": cell["build_cap"][0],
-            "legacy": cell["legacy"][0], "avg_emi": cell["avg_emi"],
+            "legacy": cell["legacy"][0], "ccs_phi": cell["ccs_phi"],
+            "avg_emi": cell["avg_emi"],
             "solve_result": f"ERROR: {type(exc).__name__}: {exc}"[:200],
         })
         return row
@@ -201,7 +207,7 @@ def main():
                 done.add((r["ccoal"], r["ng"], int(r["h2_start"]),
                           float(r["scrap_rate"]), float(r["theta_grid_target"]),
                           r["ramp"], r["build_cap"], r["legacy"],
-                          float(r["avg_emi"])))
+                          float(r["ccs_phi"]), float(r["avg_emi"])))
         todo = [c for c in todo if coord_key(c) not in done]
         print(f"resume: {len(done):,} done, {len(todo):,} remaining")
 
