@@ -148,3 +148,66 @@ Fig. 3 grid, monotonic enforced (LCOP $/t / H₂ share %, X = infeasible):
 **What it means:** with fast growth now and slowing growth later, most capacity is built in the late 2020s–2030s. Without H₂ by then, that capacity is fossil and the cumulative target becomes unreachable. At 1.8 tCO₂/t, H₂ must be available by **2030 (low ramp) or 2035 (mid/high ramps)**. The cost of delaying H₂ shows up as **infeasibility** rather than as a gradual LCOP rise. This supports the paper's central message more strongly than the original exponential demand did. Costs are 483–486 $/t at 1.8 where feasible.
 
 Open for you: (i) 680 Mt central (400 kg/capita) vs 816 Mt (NITI's level, pessimistic); (ii) the S-curve anchor: the measured 8.2 %/yr initial growth (used) vs "90 % of saturation by 2060" (the sheet's alternative; 2050 = 524 Mt instead of 545).
+
+## 8. Reruns under S-curve demand (licensed AMPL + Gurobi, 2026-10-07)
+
+All paper studies rerun on `fix-wave-01` with the S-curve central case (680 Mt saturation, 545 Mt in 2050), monotonic intensity enforced, and the CCS ceiling of 0.25 from 2035 unless stated. Licensed AMPL + HiGHS and AMPL + Gurobi both reproduce the bridge benchmark exactly (LCOP 483.19).
+
+**Bug found and fixed (`3656c00`).** At θ_grid = 1 the 2050 grid factor came out as −0.0; AMPL presolve then forced grid power to zero and reported the model infeasible. The synergy study tests θ_grid = 1 first, so every case needing grid decarbonisation looked infeasible. Fixed by clamping the factor at 0. The paper is unaffected (Nakul's 0.000886 gives exactly 0); the feasibility-driver and Monte Carlo designs use θ_grid ≤ 0.75 and were never affected.
+
+| Study | Paper | Now | Commit |
+|---|---|---|---|
+| H₂ delay (Fig. 3) | 7 of 36 cells infeasible | 17 of 36; at 1.8, H₂ must start by 2030 (low ramp) or 2035 (mid/high); LCOP 483–486 | `1776ffa` |
+| Fuel availability | scarce coal feasible to 2035; abundant to 2045 | scarce coal: only H₂ 2030; abundant: to 2035; import bills higher | `1776ffa` |
+| Feasibility drivers | 41.0 % feasible (27.6 / 41.5 / 54.0 by target) | 34.3 % (17.0 / 34.7 / 51.2) at CCS 0.25 | `8ab9fc5` |
+| Sobol ranking at 1.8 | build budget first (0.48) | scrap 0.60, H₂ start 0.38, build 0.26, legacy 0.23, ramp 0.18, coal 0.13, grid 0.12, CCS 0.08, NG 0.04 | `17f4210` |
+| Sectoral synergy | small grid offsets needed | much larger (H₂ 2033 / scrap 4 %: 37 % vs 0 %); H₂ from 2036 with scrap ≤ 2 %: infeasible even with a clean grid | `96adcf4` |
+| Monte Carlo | 3,544 cells, 177,200 solves | 2,966 cells (490 / 1,000 / 1,476), 148,300 solves, all feasible | `2cc9e22` |
+| Regret | — | see below | — |
+
+Earlier statement corrected: the build budget is not what sets the Fig. 3 frontier, but across the full design it matters (third in Sobol; it binds in phase-out and scarce-fuel cells).
+
+**Monte Carlo draws cannot change feasibility.** The five drawn inputs (coal, NG and scrap prices, H₂ and CCS learning) enter only cost definitions, so every one of the 148,300 solves is feasible, as in the paper. `theta_tech` moves the 2050 end of the H₂ cost path (electrolyser 800 → 159 $/kW, renewables 835 → 695 $/kW); the 2025 start is fixed by design.
+
+### 8.1 CCS deployment ceiling as a ninth axis (`17f4210`)
+
+`phi_2050` = 0 / 0.05 / 0.10 / 0.25 of fossil-route CO₂ in 2050 (ramp from 2035). Sources for 0.25: IEA ISTR (25 % of steel direct CO₂, SDS) and NITI 2022 (≈ 26 % of emissions, economy-wide); for the low levels: NITI 2026 Net Zero Scenario rates CCUS "Low" in 2050. The paper's 0.50 has no feasibility-based source: the MoS Roadmap's 53 / 59 / 56 % (p. 221) are what net zero would *require*, reported from literature, not targets.
+
+| CCS ceiling | 0 | 0.05 | 0.10 | 0.25 |
+|---|---|---|---|---|
+| Feasible share (all targets) | 26.8 % | 28.1 % | 29.6 % | 34.3 % |
+| Fig. 3 infeasible cells (of 36) | 23 | 18 | 17 | 17 |
+
+At 1.8 the 0.25 slice reproduces the earlier 8,640-cell run cell for cell. CCS has the second-smallest Sobol index (0.07–0.09).
+
+**When CCS matters.** Target 1.8, mid ramp, audited scrap growth 5 %/yr:
+- H₂ from 2030: feasible even without CCS (fast enough ramp).
+- H₂ from 2035: needs a ceiling between 0.05 and 0.25.
+- H₂ from 2040: needs ≈ 0.50; from 2045: CCS at its physical maximum (≈ 0.60).
+- Low CCS survives delayed H₂ only with scrap growth of 8–10 %/yr (250–400 Mt in 2050, 2–3× the evidence).
+- With a slow H₂ ramp, CCS is needed even with H₂ from 2030.
+
+So the claim the model supports is conditional: **India's 2050 intensity targets do not need large-scale CCS if H₂ arrives by 2030–35 and scales at mid-to-high speed.** It does not test net zero: these pathways still emit ≈ 0.9–1.1 t/t (≈ 480–600 Mt) in 2050.
+
+### 8.2 λ index (screening diagnostic)
+
+λ_X = (cumulative CO₂ lever X could avoid or capture at its ceiling) / (required abatement against a fleet frozen at 2025 intensity, 2.53 t/t). Levers: H₂ (all output), scrap (only above the 2025 pool of 37 Mt, which is already in the baseline), CCS (ceiling × remaining fossil CO₂). Required abatement: 8.2 / 6.4 / 4.6 Gt at targets 1.6 / 1.8 / 2.0. Code: `tools/lambda_index.py`.
+
+| λ_H₂ + λ_scrap + λ_CCS | ≤ 0.6 | 0.6–0.8 | 0.8–0.9 | 0.9–1.0 | 1.0–1.2 | 1.2–1.7 | > 1.7 |
+|---|---|---|---|---|---|---|---|
+| Cells | 11,088 | 6,336 | 2,880 | 2,832 | 3,792 | 5,520 | 2,112 |
+| Feasible | 0.1 % | 6 % | 25 % | 44 % | 60 % | 74 % | 75 % |
+
+- Ranking power: AUC¹ 0.90 overall (0.94 / 0.90 / 0.83 by target).
+- **Used as a ranking (your choice (b)), with the statement that below λ ≈ 0.6 almost nothing is feasible.** No fixed threshold: the other measures (grid, NG growth, efficiency, waste heat) supply a roughly fixed amount (≈ 2.5 Gt without CCS), not a fixed share, and part of the CCS potential substitutes for them rather than adding to them.
+- Not sufficient: above 1, feasibility levels off at ~75 %; build budget, legacy retirement, fuel supply and timing decide the rest.
+- Policy reading: most of the required cut must be coverable by three capacities India has only at pilot scale (H₂-DRI, CCS) or must build up (scrap collection beyond today's pool).
+
+¹ The probability that a randomly chosen feasible cell has a higher λ than a randomly chosen infeasible one.
+
+### 8.3 Open calls added
+
+1. **Scrap growth in the study templates is 6 %/yr; the audited central value is 5 %** (`definitions.mod:154`). Results at 6 % lean optimistic (e.g. Fig. 3 at 1.8, mid ramp, H₂ 2035 is feasible at CCS 0.05 with 6 % but not with 5 %). Proposed: set templates to 5 %.
+2. **2050 demand.** The central S-curve gives 545 Mt, above the median of published projections (≈ 444 Mt: TERI 300, MoS/TERI 374, IEA ≈ 444, NITI 624, TERI-cited 500–760). Option: anchor the S-curve to 444 Mt in 2050 (≈ 500 Mt saturation, close to the 510 sensitivity: 13 infeasible Fig. 3 cells instead of 17).
+3. **CCS central level:** keep 0.25 (median of scenario sources, all ambitious) or use a lower central value; the axis now covers 0–0.25 either way.
+4. **Monte Carlo at low CCS** (0.05 slice, ~1 h) not yet run.
