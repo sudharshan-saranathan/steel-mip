@@ -25,3 +25,6 @@ __pycache__/
 # ---- OS cruft ----
 .DS_Store
 **/.DS_Store
+
+# Monte Carlo solves and derived tables: local only (regenerate with run_montecarlo.py)
+monte_carlo/**/data/*.xlsx
