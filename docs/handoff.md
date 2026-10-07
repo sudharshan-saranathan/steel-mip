@@ -1,0 +1,22 @@
+# Handoff
+
+- **Current task:** the paper figures are rebuilt in `notebooks/plots.ipynb`. It reads repo data and writes 300 dpi PNGs to `figs/`.
+  - Fig. 1 `current-route`, Fig. 3 `feasibility-grid`, Fig. 4 `feasibility-bias`, Fig. 5 `import-tradeoff` (log-log), Fig. 6 `uncertainty-risk`, Fig. 7 `cost-violin`, Fig. 8 `regret-ladder`.
+  - The factorial is now 110,592 runs: coal and NG have 4 levels each, the two intermediate levels being 1/3 and 2/3 blends of the bracketing trajectories. It also records cumulative imports and bills.
+  - The Monte Carlo stays on the bracketing coal/NG regimes; the violin builder is pinned to them.
+- **Next step:** commit and push. Everything since `e3075e5` is uncommitted (see `git status`): the four new axis `.mod` files are untracked, and `raw_matrix.csv` is now 40 MB.
+  - Fetch first. Another claude.ai session (`01GVt5c2…`) also pushes to `fix-wave-01`.
+- **Open decisions (the user's):**
+  - Keep or delete the alternates: `feasibility-bias-rank`, `import-dependence`, `import-tradeoff-linear` (the log version was chosen for Fig. 5).
+  - Regret bars: keep rounded or revert to square?
+  - Borders on the risk (d) box plots?
+- **Paper (`tex/steel-v3.tex`, untracked live draft):** the user edits the text; Claude only flags stale numbers.
+  - 66 `% CHECK…` comments mark stale numbers and errors. A few predate the 110k run: overall feasibility is now 0.35 / 6.62 / 31.3 %, there are 110,592 runs, and coal/NG have 4×4 levels.
+  - `\graphicspath{{../figs/}}` was added; the `\includegraphics` names still need changing to the new PNG names.
+  - Methods needs one sentence on the blended supply levels, plus the parameter-symbol column ($t_{H_2}$, $g_s$, …) in the factorial table.
+- **Flags:**
+  - Python: `~/miniconda3/bin/python`.
+  - The AMPL short-term lease lapses mid-run. For long sweeps, use the renew loop plus retry in the scratchpad (`renew_lease.sh`, `run_110k.sh`): start AMPL every 15 min, re-solve ERROR rows with `--resume`.
+  - `structural/axes/ng_high.mod` stays untracked on purpose (it's the rejected what-if); `mc-oldprices-local` is stale.
+  - Still open from earlier: the audit reviewer-proofing plan (blind citation check first). See `docs/audit/HANDOFF.md`.
+- Full history: `.remember/recent.md`, `.remember/archive.md`.

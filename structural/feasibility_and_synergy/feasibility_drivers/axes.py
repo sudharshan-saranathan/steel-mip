@@ -16,13 +16,19 @@ against, not a lever.
 
 # ---------------------------------------------------------------- levers ---
 # (label, axis-file stem). Availability regimes are time-indexed tables.
+# Four levels each: the two bracketing trajectories plus two year-by-year
+# linear blends of them (1/3, 2/3), giving evenly spaced 2050 ceilings.
 CCOAL = [
-    ("abundant", "ccoal_abundant"),   # imports grow ~6.5%/yr -> 293.6 Mt by 2050
-    ("scarce",   "ccoal_scarce"),     # ~0.8%/yr -> 91.1 Mt
+    ("abundant", "ccoal_abundant"),   # imports grow 6.4%/yr -> 293.6 Mt by 2050
+    ("midhigh",  "ccoal_midhigh"),    # 2/3 blend -> 230.0 Mt
+    ("midlow",   "ccoal_midlow"),     # 1/3 blend -> 166.5 Mt
+    ("scarce",   "ccoal_scarce"),     # imports frozen at FY26 -> 102.9 Mt
 ]
 
 NG = [
     ("abundant", "ng_policy"),        # steel gas cap -> 11.3 Mt by 2050 (3.5 % share)
+    ("midhigh",  "ng_midhigh"),       # 2/3 blend -> 8.8 Mt
+    ("midlow",   "ng_midlow"),        # 1/3 blend -> 6.2 Mt
     ("scarce",   "ng_bau"),           # -> 3.7 Mt
 ]
 

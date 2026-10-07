@@ -68,6 +68,10 @@ METRIC_COLUMNS = [
     ("share_h2",          "m_sh_h2"),
     ("share_scrap",       "m_sh_scrap"),
     ("ccs_2050",          "total_ccs[2050]"),
+    ("cum_ccoal_import",  "m_cum_ccoal_import"),
+    ("cum_ng_import",     "m_cum_ng_import"),
+    ("cum_ccoal_bill",    "m_cum_ccoal_bill"),
+    ("cum_ng_bill",       "m_cum_ng_bill"),
 ]
 COLUMNS = COORD_COLUMNS + STATUS_COLUMNS + [c for c, _ in METRIC_COLUMNS]
 
