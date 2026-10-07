@@ -4,8 +4,8 @@
   - Fig. 1 `current-route`, Fig. 3 `feasibility-grid`, Fig. 4 `feasibility-bias`, Fig. 5 `import-tradeoff` (log-log), Fig. 6 `uncertainty-risk`, Fig. 7 `cost-violin`, Fig. 8 `regret-ladder`.
   - The factorial is now 110,592 runs: coal and NG have 4 levels each, the two intermediate levels being 1/3 and 2/3 blends of the bracketing trajectories. It also records cumulative imports and bills.
   - The Monte Carlo stays on the bracketing coal/NG regimes; the violin builder is pinned to them.
-- **Next step:** commit and push. Everything since `e3075e5` is uncommitted (see `git status`): the four new axis `.mod` files are untracked, and `raw_matrix.csv` is now 40 MB.
-  - Fetch first. Another claude.ai session (`01GVt5c2…`) also pushes to `fix-wave-01`.
+- **Next step:** all of this is pushed (`bf5bc9d`). Next, the user updates the paper text and `\includegraphics` names (see below). Fetch before any new work: another claude.ai session (`01GVt5c2…`) also pushes to `fix-wave-01`.
+  - Root `figs/` is matched by an old repo-wide `figs/` ignore rule. The paper PNGs are tracked with `git add -f`, so add any new ones the same way.
 - **Open decisions (the user's):**
   - Keep or delete the alternates: `feasibility-bias-rank`, `import-dependence`, `import-tradeoff-linear` (the log version was chosen for Fig. 5).
   - Regret bars: keep rounded or revert to square?
