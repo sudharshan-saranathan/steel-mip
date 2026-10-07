@@ -211,3 +211,39 @@ So the claim the model supports is conditional: **India's 2050 intensity targets
 2. **2050 demand.** The central S-curve gives 545 Mt, above the median of published projections (≈ 444 Mt: TERI 300, MoS/TERI 374, IEA ≈ 444, NITI 624, TERI-cited 500–760). Option: anchor the S-curve to 444 Mt in 2050 (≈ 500 Mt saturation, close to the 510 sensitivity: 13 infeasible Fig. 3 cells instead of 17).
 3. **CCS central level:** keep 0.25 (median of scenario sources, all ambitious) or use a lower central value; the axis now covers 0–0.25 either way.
 4. **Monte Carlo at low CCS** (0.05 slice, ~1 h) not yet run.
+
+### 8.4 Re-anchored axis bounds (`8234f2f`, results `1f9ef4c`) — supersedes the feasibility numbers above
+
+Paper Sec. 3.1 says absolute feasibility shares depend on the axis bounds, so the bounds must follow real-world evidence. Two axes did not:
+
+| Axis | Old | New | Anchor |
+|---|---|---|---|
+| Scrap growth | 2 / 4 / 6 / 8 / 10 %/yr | **4 / 5 / 6 / 7 %** (99–200 Mt in 2050) | NITI 2026 scrap-use cases 125 / 187 Mt (5.0 / 6.7 %); 4 % pessimistic |
+| H₂ ramp (peak steel additions) | 0.5 / 1.0 / 1.5 Mt H₂/yr | **0.25 / 0.5 / 0.75** | high = whole NGHM national pace (0.71 Mt/yr); low ≈ 3× MoS steel path |
+| Scarce coking coal | imports frozen at 54.5 Mt | **frozen at 66.33 Mt (FY26)**; abundant floored at scarce | Ministry of Coal |
+| Template scrap growth | 6 % | **5 %** | audited central |
+
+Design: 27,648 cells (4 scrap levels).
+
+| Target | Feasible (new) | Old bounds | Paper |
+|---|---|---|---|
+| 1.6 | **0.3 %** (31 cells) | 13 % | 27.6 % |
+| 1.8 | **6.7 %** (620) | 30 % | 41.5 % |
+| 2.0 | **31.2 %** (2,875) | 46 % | 54.0 % |
+
+At 1.8, by CCS ceiling: 4.0 % (0) / 4.9 % (0.05) / 6.2 % (0.10) / 11.8 % (0.25).
+
+Sobol at 1.8: **H₂ start 0.65**, scrap 0.45, H₂ ramp 0.42, grid 0.30, coking coal 0.29, **CCS 0.24**, build budget 0.23, legacy 0.16, NG 0.10.
+
+- **H₂ timing dominates.** At 1.8: 21 % of cells feasible with H₂ from 2030, 5 % from 2035, ~0 % from 2040.
+- **CCS now matters.** With H₂ and scrap held to evidence, a 0.25 ceiling triples feasibility at 1.8 against no CCS. This reverses the §8.1 finding, which rested on inflated scrap and ramp levels.
+- **Target 1.6 is essentially out of reach** within real-world bounds.
+- **Build budget drops to seventh:** technology supply, not construction capacity, is the bottleneck.
+
+Fig. 3 (H₂ delay): 1.6 infeasible everywhere; 1.8 feasible only with H₂ from 2030 at mid/high ramp (491 / 488 $/t); 2.0 feasible everywhere (468–472 $/t).
+Fuel availability: only abundant coal + abundant NG with H₂ from 2030 is feasible.
+Synergy (required grid offset, %): H₂ 2030 needs 84 / 63 / 39 / 12 / 0 % at scrap 3 / 4 / 5 / 6 / 7 %; H₂ from 2039 is infeasible below 6 % scrap whatever the grid.
+
+λ index (new bounds): AUC 0.92 (0.99 / 0.95 / 0.82 by target). No cell at 1.6 reaches λ = 1; lowest feasible λ 0.77 / 0.64 / 0.49.
+
+**Not rerun under the new bounds (on your instruction):** Monte Carlo (`mc_solves.xlsx`, violin and uncertainty figures still from `2cc9e22`, old bounds) and regret (`735f0a5`, old bounds). Under the new bounds the Monte Carlo would cover 3,526 feasible cells (176,300 solves, ~2 h; the 0.25 slice alone ~65,000 solves, ~50 min); regret ~8 min.
