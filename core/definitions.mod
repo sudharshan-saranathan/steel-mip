@@ -198,7 +198,7 @@ param n9_grid_ef_start default 0.000880; # [audit ST-06] blended: 36 % grid (CEA
 param n9_grid_ef_end default
     n9_grid_ef_start * (1 - theta_grid);   # theta_grid=0 -> 2050 EF = 2025 EF (persists flat); theta_grid=1 -> 2050 EF = 0
 param n9_grid_ef{t in T} :=
-    n9_grid_ef_start + (n9_grid_ef_end - n9_grid_ef_start) * (t - 2025) /25;   # Grid emission factor from 2025 to 2050
+    max(0, n9_grid_ef_start + (n9_grid_ef_end - n9_grid_ef_start) * (t - 2025) /25);   # [audit] clamped: at theta_grid = 1 the 2050 value rounds to -0.0, and presolve then forces grid power to 0 (false infeasibility)   # Grid emission factor from 2025 to 2050
 
 # Carbon capture
 param n10_ccs_eta default 0.85;                        # Carbon capture efficiency                      
