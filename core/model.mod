@@ -18,6 +18,7 @@
 # =====================================================================
 
 reset;
+option presolve_eps 1e-9;   # [audit] absorbs ~1e-16 rounding in the 2025 starting-share equalities (init_f_bof = 0.411); no effect on results
 set T ordered := 2025..2050;
 
 include core/definitions.mod;   # params, incl. derived (defined) params
