@@ -26,5 +26,7 @@ __pycache__/
 .DS_Store
 **/.DS_Store
 
-# Monte Carlo solves and derived tables: local only (regenerate with run_montecarlo.py)
-monte_carlo/**/data/*.xlsx
+# Result tables in data/ folders: local only (regenerate from scripts)
+**/data/*.xlsx
+**/data/*.parquet
+**/data/*.csv
