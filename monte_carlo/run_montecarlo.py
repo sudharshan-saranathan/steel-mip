@@ -5,7 +5,7 @@ uncertainty/ and violin/ figure.
 Three batches, one per emission target (1.6/1.8/2.0). Each batch solves
 every structural cell feasible AT THAT TARGET (read from structural/
 feasibility_and_synergy/feasibility_drivers/data/feasibility_drivers.xlsx,
-sheet "raw_matrix") x the same 50 shared, balanced cost/tech draws (draw-seed
+sheet "raw_matrix") x the same 30 shared, balanced cost/tech draws (draw-seed
 20260824, grids over ccoal_price/ng_price/scrap_price/theta_tech/
 theta_ccs; discount_rate pinned at 0.06 by template_montecarlo.mod).
 
@@ -55,7 +55,7 @@ FEAS_XLSX = (ROOT / "structural" / "feasibility_and_synergy" /
 OUT = HERE / "data" / "mc_solves.xlsx"
 
 TARGETS = [1.6, 1.8, 2.0]
-N_DRAWS = 50   # [audit] balanced draws (was 50 random picks)
+N_DRAWS = 30   # [audit] balanced draws (was 50 random picks); see commit message for precision
 DRAW_SEED = 20260824
 CCS_LEVELS = None   # [audit] None = every ccs_phi level in the feasibility matrix
 BRACKETING = False  # [audit] True = coal/NG abundant and scarce only
