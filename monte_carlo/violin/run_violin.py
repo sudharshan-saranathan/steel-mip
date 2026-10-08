@@ -86,8 +86,9 @@ def load_full_structural():
     df = pd.read_excel(FEAS_XLSX, sheet_name="raw_matrix")
     df = df[df.ccs_phi == CCS_CENTRAL] if "ccs_phi" in df else df  # [audit] central CCS slice
     df = df[df.avg_emi.isin(AVG_EMIS) & df.ramp.isin(RAMPS)].copy()
-    # The Monte Carlo samples only the bracketing coal/NG regimes; match that population
-    df = df[df.ccoal.isin(["abundant", "scarce"]) & df.ng.isin(["abundant", "scarce"])]
+    # [audit] match the coal/NG levels the Monte Carlo sampled (four, or two with --bracketing)
+    mc = pd.read_excel(MC_SOLVES, sheet_name="ef2.0", usecols=["ccoal", "ng"])
+    df = df[df.ccoal.isin(mc.ccoal.unique()) & df.ng.isin(mc.ng.unique())]
     df["scrap_group"] = df.scrap_rate.map(scrap_group_of)
     return df
 

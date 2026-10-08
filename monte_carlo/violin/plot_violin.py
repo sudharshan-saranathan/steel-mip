@@ -6,8 +6,7 @@ emission-intensity (tCO2/t) distribution, plain fill; circle at the
 median = mean CCS capture fraction (cumulative captured / cumulative
 gross emitted). P(infeasible) of each cell is printed under its violin.
 
-Rows: 3 exact scrap_rate bands from our 5-level discrete axis --
-Low = {0.02, 0.04}, Mid = {0.06}, High = {0.08, 0.10}. avg_emi = 1.8,
+Rows: 3 scrap_rate bands -- Low = {0.04}, Mid = {0.05}, High = {0.06, 0.07}. avg_emi = 1.8,
 ramp = medium fixed throughout.
 
 Fully self-contained: reads data/violin.xlsx in this same folder (sheets
@@ -69,6 +68,9 @@ def main():
     cells = pd.read_excel(XLSX, sheet_name="cells")
     lcop_bins = pd.read_excel(XLSX, sheet_name="lcop_bins")
     emis_bins = pd.read_excel(XLSX, sheet_name="emis_bins")
+    # [audit] run_violin.py writes every (avg_emi, ramp); this figure is the 1.8 / medium case
+    sel = lambda df: df[(df.avg_emi == 1.8) & (df.ramp == "medium")]
+    cells, lcop_bins, emis_bins = sel(cells), sel(lcop_bins), sel(emis_bins)
 
     groups = cells[["scrap_group", "grange"]].drop_duplicates().values
     cost_min, cost_max = lcop_bins.lcop_bin_lo.min(), lcop_bins.lcop_bin_hi.max()
