@@ -25,3 +25,8 @@ __pycache__/
 # ---- OS cruft ----
 .DS_Store
 **/.DS_Store
+
+# Result tables in data/ folders: local only (regenerate from scripts)
+**/data/*.xlsx
+**/data/*.parquet
+**/data/*.csv
