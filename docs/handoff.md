@@ -1,27 +1,23 @@
 # Handoff
 
-- **Current task:** set up and launch the **overnight Monte Carlo**: all 14,107 feasible factorial runs × N shared draws (N still to decide, see below), at roughly 75 solves/s on 12 workers. Fetch first: session `01GVt5c2…` also pushes to `fix-wave-01`.
-- **Decide first (ask the user):** how many draws. The current 50 are random and uneven (coal $300 appears in 20 % of draws, not 33 %; θ_CCS=0 in 10 %, not 20 %), which shifts every cell the same way. I recommended a balanced design: replace `sample_draws` with Latin-hypercube-style draws in which every level appears equally, in multiples of 15. 45 draws = 635k solves (about 2.5–3 h), 60 = 846k (about 3–4 h), 75 = 1.06M (about 4–5 h). P50 is stable from about 30 draws; P90 and CVaR95 still move 3–5 USD/t.
+- **Current task:** the feasibility rerun on branch **`fix-wave-ccs`** is running detached. It covers the full 110,592-cell factorial, launched at about 17:21 IST on 2026-10-08, at about 38 cells/s, with an ETA around 18:10. The script is `scratchpad/run_feas.sh` (old session), which keeps the AMPL lease renewed and retries up to 5 times with `--resume`; the log is `scratchpad/feas_run.log`. It is needed because on this branch θ_CCS also drives steam use per tCO₂, and steam use affects Scope 1 emissions and therefore feasibility (`docs/audit/HANDOFF.md` §6d item 8).
 - **Next step:**
-  1. Change `monte_carlo/run_montecarlo.py`:
-     - Map the `midhigh`/`midlow` coal and NG levels (`CCOAL_FILE`/`NG_FILE` only know abundant/scarce; the files are listed in `axes.py`).
-     - Append each solve to a CSV and add `--resume`.
-     - Write `mc_solves.parquet` instead of the xlsx.
-  2. Update the readers (`violin/run_violin.py` and the four `uncertainty/*/run_*.py`), and remove the bracketing-regime filter in `run_violin.py`'s `load_full_structural`.
-  3. Smoke-test a few cells, check that `--resume` works, then launch with the lease-renew loop plus automatic `--resume` retries (`run_yearly.sh` pattern: start AMPL every 15 min).
-  4. Afterwards, regenerate every Monte Carlo-derived figure (`uncertainty-risk`, `cost-violin-*`, possibly `regret-ladder`) and flag any paper numbers that go stale.
-- **Open decisions (the user's):**
-  - Which violin figure goes in the paper: `cost-violin-ef1.8`/`ef2.0` (ramp rows) or `cost-violin-by-ef` (EF rows).
-  - Delete the old `cost-violin.png` and the accidental `cost-violin-ef1.6.png`? Cell 22 loops over every EF in `violin.xlsx`.
-  - Keep or delete the alternates (`feasibility-bias-rank`, `import-dependence`, `import-tradeoff-linear`); rounded regret bars; borders on the risk (d) boxes.
-- **Paper (`tex/steel-v3.tex`, untracked; the user edits the text, Claude only flags stale numbers):**
-  - Factorial table rewritten in chat (symbol, units, levels, description; 36,864 scenarios per target, 110,592 runs).
-  - B = 10 Mt/yr confirmed infeasible: the most favourable scenario is infeasible, so all others are too.
-  - Build-rate citation: Lok Sabha Unstarred Q. 1426 (29.07.2025). The record is +20.8 Mt in FY2024-25; the 2013–25 average is 8.9 Mt/yr.
-  - Still stale: violin caption at line 335, `% CHECK` at line 358, `\includegraphics` names.
+  1. Check that `structural/feasibility_and_synergy/feasibility_drivers/data/raw_matrix.csv` has 110,592 rows and that `yearly.parquet` was written. If the run died, rerun `run_feasibilitydrivers.py -j 12 --resume` after renewing the AMPL lease.
+  2. Compare the feasible shares against the old ones: 0.3 / 6.6 / 31.3 % at targets 1.6 / 1.8 / 2.0, or 14,107 feasible runs. The old `raw_matrix.csv` is in git (`fix-wave-01`); the old per-year data was saved as `data/yearly_fixwave01.csv`.
+  3. Then the Monte Carlo (and probably the regret analysis) needs rerunning on this branch's feasible set, which also lowers the H₂ RE capex end point (695 → 400) and the biochar price (520 → 300).
+- **Done on `fix-wave-01` (commit `f2f87fa`, not pushed):**
+  - Monte Carlo at CCS anchor 100 vs 75: all 315,660 solved; the draws are identical, so the comparison is paired.
+  - LCOP rose by +1.4 / +1.5 / +1.5 $/t at ef 1.6 / 1.8 / 2.0. New medians are 510.7 / 496.7 / 482.2. The sampling SE on the median is about ±4.
+  - Cumulative captured CO₂ fell by 2 / 8 / 14 % at ef 1.6 / 1.8 / 2.0. Shares and feasibility are essentially unchanged.
+  - Variance drivers of LCOP: scrap price 45 %, coal price 35 %, everything else 7 % or less; θ_tech (H₂ learning) contributes 1.7 %.
+  - The readers and notebook cells 20/22/24 were **not** rerun on the new run.
 - **Flags:**
-  - Feasible: 14,107 of 110,592 runs, or 11,537 of 36,864 unique combinations (the sets nest by EF).
-  - No nbconvert: render by `exec()`-ing the cells after registering JetBrains Mono from `~/.local/share/fonts`.
-  - `yearly.parquet`, `violin.xlsx` and `mc_solves.*` stay local. `structural/axes/ng_high.mod` stays untracked on purpose.
-  - Audit reviewer-proofing plan still open (`docs/audit/HANDOFF.md`).
+  - **`f2f87fa` committed `tex/`, `monte_carlo/data/*.parquet` and `yearly.parquet`**, which the earlier handoff said should stay local. Ask the user whether to amend that commit before pushing. The large CSVs were left untracked.
+  - Local `fix-wave-01` has diverged from `origin/fix-wave-01`: the remote has 4 commits not present locally (up to `691c17a`, from another session). Merge or rebase before pushing.
+  - Still open from before:
+    - Which violin figure goes in the paper.
+    - Whether to delete the alternate and old figures.
+    - Stale lines in `tex/steel-v3.tex` (around lines 160, 335 and 358).
+    - The CCS anchor of 100 is above the cited range of 45–92, so the paper needs a justification (the user writes it).
+    - Plot issues in `uncertainty-risk` panels (b) and (d).
 - Full history: `.remember/recent.md`, `.remember/archive.md`.
