@@ -212,7 +212,7 @@ param ng_cost_power{t in T} :=
 param ng_credit_power default 0.03;       # Selling cost per kWh of generated power
 param ng_cost_fineore default 65;         # Cost per ton of fineore
 param ng_cost_lime default 60;            # Cost per ton of lime
-param ng_cost_biochar default 520;        # [audit] biochar (Ibitoye et al. 2024, only admissible source; China). Was 60 (a raw-biomass price)
+param ng_cost_biochar default 300;        # [fix-wave-ccs] SCENARIO ASSUMPTION, not a sourced value: India bulk biochar, order of the ~$233/t production cost (unverified) plus margin. Was 520 (Ibitoye et al. 2024, China) and, before the audit, 60 (a raw-biomass price)
 param ng_capex_pell default 60;           # Pellet plant: up-front capex, 2025 USD per (tCS/yr) [audit ST-01; share of BF-BOF 1200]
 param ng_cost_lumpore default 80;         # [audit] IBM ex-mine 77. Was 70         # Cost per ton of lumpore
 param ng_cost_pcoal default 110;          # Cost per ton of PCI coal
