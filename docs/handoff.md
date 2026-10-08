@@ -1,22 +1,27 @@
 # Handoff
 
-- **Current task:** the paper figures are rebuilt in `notebooks/plots.ipynb`. It reads repo data and writes 300 dpi PNGs to `figs/`.
-  - Fig. 1 `current-route`, Fig. 3 `feasibility-grid`, Fig. 4 `feasibility-bias`, Fig. 5 `import-tradeoff` (log-log), Fig. 6 `uncertainty-risk`, Fig. 7 `cost-violin`, Fig. 8 `regret-ladder`.
-  - The factorial is now 110,592 runs: coal and NG have 4 levels each, the two intermediate levels being 1/3 and 2/3 blends of the bracketing trajectories. It also records cumulative imports and bills.
-  - The Monte Carlo stays on the bracketing coal/NG regimes; the violin builder is pinned to them.
-- **Next step:** all of this is pushed (`bf5bc9d`). Next, the user updates the paper text and `\includegraphics` names (see below). Fetch before any new work: another claude.ai session (`01GVt5c2…`) also pushes to `fix-wave-01`.
-  - Root `figs/` is matched by an old repo-wide `figs/` ignore rule. The paper PNGs are tracked with `git add -f`, so add any new ones the same way.
+- **Current task:** set up and launch the **overnight Monte Carlo**: all 14,107 feasible factorial runs × 50 shared draws (seed 20260824) = 705,350 solves, about 2.5–3 h at roughly 75/s on 12 workers.
+- **Next step:**
+  1. Commit and push the pending radar-figure changes (`notebooks/plots.ipynb`, `figs/feasibility-bias*.png`; fetch first, because session `01GVt5c2…` also pushes to `fix-wave-01`; PNGs need `git add -f`).
+  2. Change `monte_carlo/run_montecarlo.py`:
+     - Map the `midhigh`/`midlow` coal and NG levels (`CCOAL_FILE`/`NG_FILE` only know abundant/scarce; the files are listed in `axes.py`).
+     - Append each solve to a CSV and add `--resume`.
+     - Write `mc_solves.parquet` instead of the xlsx.
+  3. Update the readers (`violin/run_violin.py` and the four `uncertainty/*/run_*.py`), and remove the bracketing-regime filter in `run_violin.py`'s `load_full_structural`.
+  4. Smoke-test a few cells, check that `--resume` works, then launch with the lease-renew loop plus automatic `--resume` retries (`run_yearly.sh` pattern: start AMPL every 15 min).
+  5. Afterwards, regenerate every Monte Carlo-derived figure (`uncertainty-risk`, `cost-violin-*`, possibly `regret-ladder`) and flag any paper numbers that go stale.
 - **Open decisions (the user's):**
-  - Keep or delete the alternates: `feasibility-bias-rank`, `import-dependence`, `import-tradeoff-linear` (the log version was chosen for Fig. 5).
-  - Regret bars: keep rounded or revert to square?
-  - Borders on the risk (d) box plots?
-- **Paper (`tex/steel-v3.tex`, untracked live draft):** the user edits the text; Claude only flags stale numbers.
-  - 66 `% CHECK…` comments mark stale numbers and errors. A few predate the 110k run: overall feasibility is now 0.35 / 6.62 / 31.3 %, there are 110,592 runs, and coal/NG have 4×4 levels.
-  - `\graphicspath{{../figs/}}` was added; the `\includegraphics` names still need changing to the new PNG names.
-  - Methods needs one sentence on the blended supply levels, plus the parameter-symbol column ($t_{H_2}$, $g_s$, …) in the factorial table.
+  - Which violin figure goes in the paper: `cost-violin-ef1.8`/`ef2.0` (ramp rows) or `cost-violin-by-ef` (EF rows).
+  - Delete the old `cost-violin.png` and the accidental `cost-violin-ef1.6.png`? Cell 22 loops over every EF in `violin.xlsx`.
+  - Keep or delete the alternates (`feasibility-bias-rank`, `import-dependence`, `import-tradeoff-linear`); rounded regret bars; borders on the risk (d) boxes.
+- **Paper (`tex/steel-v3.tex`, untracked; the user edits the text, Claude only flags stale numbers):**
+  - Factorial table rewritten in chat (symbol, units, levels, description; 36,864 scenarios per target, 110,592 runs).
+  - B = 10 Mt/yr confirmed infeasible: the most favourable scenario is infeasible, so all others are too.
+  - Build-rate citation: Lok Sabha Unstarred Q. 1426 (29.07.2025). The record is +20.8 Mt in FY2024-25; the 2013–25 average is 8.9 Mt/yr.
+  - Still stale: violin caption at line 335, `% CHECK` at line 358, `\includegraphics` names.
 - **Flags:**
-  - Python: `~/miniconda3/bin/python`.
-  - The AMPL short-term lease lapses mid-run. For long sweeps, use the renew loop plus retry in the scratchpad (`renew_lease.sh`, `run_110k.sh`): start AMPL every 15 min, re-solve ERROR rows with `--resume`.
-  - `structural/axes/ng_high.mod` stays untracked on purpose (it's the rejected what-if); `mc-oldprices-local` is stale.
-  - Still open from earlier: the audit reviewer-proofing plan (blind citation check first). See `docs/audit/HANDOFF.md`.
+  - Feasible: 14,107 of 110,592 runs, or 11,537 of 36,864 unique combinations (the sets nest by EF).
+  - No nbconvert: render by `exec()`-ing the cells after registering JetBrains Mono from `~/.local/share/fonts`.
+  - `yearly.parquet`, `violin.xlsx` and `mc_solves.*` stay local. `structural/axes/ng_high.mod` stays untracked on purpose.
+  - Audit reviewer-proofing plan still open (`docs/audit/HANDOFF.md`).
 - Full history: `.remember/recent.md`, `.remember/archive.md`.
