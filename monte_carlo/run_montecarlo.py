@@ -44,6 +44,7 @@ import argparse
 import multiprocessing as mp
 import pathlib
 import random
+import shutil
 import sys
 import tempfile
 import time
@@ -52,7 +53,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
 FEAS_XLSX = (ROOT / "structural" / "feasibility_and_synergy" /
              "feasibility_drivers" / "data" / "feasibility_drivers.xlsx")
-OUT = HERE / "data" / "mc_solves.xlsx"
+OUT_DIR = HERE / "data"
+BATCH_SIZE = 40_000  # solves per parquet part file
+AMPL_TMP = ROOT / "scratchpad" / "ampl_tmp"  # disk-backed; /tmp is a RAM tmpfs
 
 TARGETS = [1.6, 1.8, 2.0]
 N_DRAWS = 30   # [audit] balanced draws (was 50 random picks); see commit message for precision
@@ -134,10 +137,9 @@ def solve_cell(cell, draw, solver="gurobi"):
     ampl = AMPL()
     ampl.cd(str(ROOT))
     ampl.set_option("solver_msg", 0)
-    try:
-        ampl.set_option("TMPDIR", tempfile.mkdtemp(prefix="amplmc_"))
-    except Exception:
-        pass
+    AMPL_TMP.mkdir(parents=True, exist_ok=True)
+    tmp = tempfile.mkdtemp(prefix="amplmc_", dir=AMPL_TMP)
+    ampl.set_option("TMPDIR", tmp)
 
     ampl.eval("include core/model.mod;")
     ampl.eval(f"include structural/axes/{CCOAL_FILE[cell['ccoal']]}.mod;")
@@ -176,6 +178,7 @@ def solve_cell(cell, draw, solver="gurobi"):
         for col, _ in METRIC_COLUMNS:
             row[col] = ""
     ampl.close()
+    shutil.rmtree(tmp, ignore_errors=True)  # drop this solve's .nl/.sol files
     return row
 
 
@@ -185,6 +188,13 @@ def _worker(args):
     return {"cell_id": ci, "draw_id": di, **row}
 
 
+def _flush(rows, avg_emi, part):
+    import pandas as pd
+    out = OUT_DIR / f"mc_solves_ef{avg_emi}_part{part:02d}.parquet"
+    pd.DataFrame(rows)[COLUMNS].to_parquet(out, index=False, compression="snappy")
+    print(f"written: {out.relative_to(ROOT)} ({len(rows):,} rows)", flush=True)
+
+
 def run_batch(avg_emi, draws, jobs):
     cells = feasible_cells(avg_emi)
     todo = [(ci, di, cell, draw) for ci, cell in enumerate(cells)
@@ -192,16 +202,20 @@ def run_batch(avg_emi, draws, jobs):
     print(f"EF={avg_emi}: {len(cells):,} feasible cells x {len(draws)} draws "
           f"= {len(todo):,} solves", flush=True)
 
-    rows = []
+    rows, part = [], 0
     t0 = time.time()
     with mp.Pool(jobs) as pool:
         for i, row in enumerate(pool.imap_unordered(_worker, todo, chunksize=8), 1):
             rows.append(row)
+            if len(rows) == BATCH_SIZE:  # part file every BATCH_SIZE solves; a crash keeps finished parts
+                _flush(rows, avg_emi, part)
+                rows, part = [], part + 1
             if i % 2000 == 0 or i == len(todo):
                 el = time.time() - t0
                 print(f"  {i:>7,}/{len(todo):,}  {i/el:6.1f}/s  "
                       f"ETA {(len(todo)-i)/max(i/el,1e-9)/60:6.1f} min", flush=True)
-    return rows
+    if rows:
+        _flush(rows, avg_emi, part)
 
 
 def main():
@@ -218,16 +232,10 @@ def main():
     BRACKETING = args.bracketing
 
     draws = sample_draws(args.draws)
-    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    import pandas as pd
-    with pd.ExcelWriter(OUT) as xw:
-        for ef in TARGETS:
-            rows = run_batch(ef, draws, args.jobs)
-            df = pd.DataFrame(rows)[COLUMNS]
-            df.to_excel(xw, sheet_name=f"ef{ef}", index=False)
-
-    print(f"\nwritten: {OUT.relative_to(ROOT)}")
+    for ef in TARGETS:
+        run_batch(ef, draws, args.jobs)
     return 0
 
 
