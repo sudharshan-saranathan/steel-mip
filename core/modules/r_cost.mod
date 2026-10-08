@@ -120,7 +120,7 @@ s.t. cost_ccs_def{t in T}:
       + fom_ccs[t]    * (ccs_mult_bf*ccs_cap_bf[t]   + ccs_mult_cdri*ccs_cap_cdri[t]   + ccs_mult_ngdri*ccs_cap_ngdri[t])
       + ng_cost_power[t] * power_ccs[t]
       + ccs_vopex_solvent * total_ccs[t]
-      + ccs_ts_cost * total_ccs[t]
+      + ccs_ts_cost * ccs_fac[t] * total_ccs[t]
       + (n5_cost_NG[t]/ng_gj_per_mmbtu) * ccs_steam_boiler[t]/ccs_boiler_eff;    #eq103
 
 # Total cost

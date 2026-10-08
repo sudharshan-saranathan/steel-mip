@@ -53,8 +53,8 @@ for {t in T: t = 2025 or t = 2030 or t = 2035 or t = 2040 or t = 2045 or t = 205
         ( ocapex_h2elec[t]*crf_h2elec + fopex_h2elec[t]
           + h2_kw_per_t*(ocapex_h2re[t]*crf_re + fopex_h2re) + h2_opex[t] ) / 1000,
         ocapex_ccs[t]*(crf_ccs + ccs_fom_pct)                       # all-in incl T&S (BF ref stream)
-          + ccs_kwh_bf*ng_cost_power[t] + ccs_steam_bf*ccs_ref_steam
-          + ccs_vopex_solvent + ccs_ts_cost;
+          + ccs_kwh_bf*ng_cost_power[t] + ccs_steam_bf_t[t]*ccs_ref_steam
+          + ccs_vopex_solvent + ccs_ts_cost*ccs_fac[t];
 }
        
 printf "\n%-20s %-20s\n", "Route", "Fraction";
@@ -214,7 +214,7 @@ for {t in T} {
            + other_opex*steel_bof[t]
            + carbon_tax*scope1_bf[t]
            + (ocapex_ccs[t]*crf_ccs + fom_ccs[t])*ccs_mult_bf*ccs_cap_bf[t]
-           + (ng_cost_power[t]*ccs_kwh_bf + ccs_steam_bf*ccs_ref_steam + ccs_vopex_solvent + ccs_ts_cost)*ccs_bf[t]
+           + (ng_cost_power[t]*ccs_kwh_bf + ccs_steam_bf_t[t]*ccs_ref_steam + ccs_vopex_solvent + ccs_ts_cost*ccs_fac[t])*ccs_bf[t]
            - wasteheat_bf_bof[t]*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex))
            / steel_bof[t]
         else 0,
@@ -226,7 +226,7 @@ for {t in T} {
            + other_opex*(steel_eaf[t]*f_cdri[t])
            + carbon_tax*scope1_cdri[t]
            + (ocapex_ccs[t]*crf_ccs + fom_ccs[t])*ccs_mult_cdri*ccs_cap_cdri[t]
-           + (ng_cost_power[t]*ccs_kwh_cdri + ccs_steam_cdri*ccs_ref_steam + ccs_vopex_solvent + ccs_ts_cost)*ccs_cdri[t]
+           + (ng_cost_power[t]*ccs_kwh_cdri + ccs_steam_cdri_t[t]*ccs_ref_steam + ccs_vopex_solvent + ccs_ts_cost*ccs_fac[t])*ccs_cdri[t]
            - wasteheat_eaf[t]*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex)*f_cdri[t] )
            / (steel_eaf[t]*f_cdri[t])
         else 0,
@@ -238,7 +238,7 @@ for {t in T} {
            + other_opex*(steel_eaf[t]*f_ngdri[t])
            + carbon_tax*scope1_ngdri[t]
            + (ocapex_ccs[t]*crf_ccs + fom_ccs[t])*ccs_mult_ngdri*ccs_cap_ngdri[t]
-           + (ng_cost_power[t]*ccs_kwh_ngdri + ccs_steam_ngdri*ccs_ref_steam + ccs_vopex_solvent + ccs_ts_cost)*ccs_ngdri[t]
+           + (ng_cost_power[t]*ccs_kwh_ngdri + ccs_steam_ngdri_t[t]*ccs_ref_steam + ccs_vopex_solvent + ccs_ts_cost*ccs_fac[t])*ccs_ngdri[t]
            - wasteheat_eaf[t]*277.78*n9_eta*n9_whr[t]*(ng_cost_power[t] - n9_whr_capex - n9_whr_opex)*f_ngdri[t] )
            / (steel_eaf[t]*f_ngdri[t])
         else 0,

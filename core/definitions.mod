@@ -167,7 +167,7 @@ param grid_price_end_fast default 0.063;   # [audit] keeps the original -21 % at
                                              # theta_grid=0 holds tariff flat at grid_price_start (no "slow" endpoint anymore)
 # theta_tech=0 means NO learning: electrolyser/RE capex hold flat at their
 # 2025 anchors through 2050 (slow endpoint = start value, mirrors theta_grid's
-# convention). theta_tech=1 -> ~$1.8/kg by 2050 (cheap band $1-2/kg).
+# convention). 2025 LCOH ~$4.7/kg; 2050 ~$4.7/kg at theta_tech=0 -> ~$2.4/kg at 1.
 # 2050 H2 cost is never specified directly -- it emerges from this build-up.
 # [audit H2] Slow end-points = no learning (explicit pessimistic bound; no source
 # projects zero learning). Fast end-points = pessimistic sourced values: IRENA
@@ -239,8 +239,9 @@ param n9_whr_capex default 0.03;          # [audit] $/kWh generated. Was 0.009  
 param n9_whr_opex default 0.003;          # OPEX of WHR system per kWh of power generated
 # CCS anchor price ($/tCO2), INCLUSIVE of capex, O&M, energy
 # (electricity + steam), solvent, and transport & storage. 
-param n10_ccs_cost_start default 75;  # [audit CCS] India all-in 2025: NITI 2022 45-59 (Rs 2,900-3,600 + T&S), MoS 2024 64 (41-92), Tata pilot + T&S 66-72; rounded up. Was 125
-param n10_ccs_cost_end default 75;   # CCS 2050 axis = theta_ccs
+param n10_ccs_cost_start default 100; # [audit CCS] central anchor. India all-in 2025 per t captured: NITI 2022 45-59, MoS 2024 64 (41-92), Tata pilot + T&S 66-72 (median ~67 -> 75 was the earlier choice); raised to 100 for per-t-avoided basis and no characterised storage, inside DST 2025 60-120. 75 and 125 = sensitivities. Was 125 -> 75 -> 100
+param n10_ccs_cost_end default 75;   # NOT used, and NOT coupled to theta_ccs; only ccs_capex_fall responds to it
+                                     # (2050 all-in ~$77/t at theta_ccs=0 -> ~$51/t at 1, with capex, storage and steam all learning)
 param carbon_tax default 0; 
 param labor_cost default 22;     # [audit ST-11] $/t capacity/yr (Tata/JSW FY25 reports bracket 13-45). Was 20              # Labor cost per tCS
 param maintenance_cost default 15;   # [audit ST-11] no longer used; maintenance = maint_pct x up-front capex
@@ -391,10 +392,23 @@ param ocapex_ccs_2025 :=
     max( n10_ccs_cost_start
          - ccs_ts_cost - ccs_vopex_solvent
          - ccs_kwh_bf*ccs_ref_elec - ccs_steam_bf*ccs_ref_steam, 10 )
-    / (crf_ccs + ccs_fom_pct);                    # overnight $ per (tCO2/yr), ~531 central
+    / (crf_ccs + ccs_fom_pct);                    # overnight $ per (tCO2/yr), ~349 at the $100 anchor
 
 param ccs_capex_fall := ccs_capex_fall_slow + theta_ccs*(ccs_capex_fall_fast - ccs_capex_fall_slow);
-param ocapex_ccs {t in T} := ocapex_ccs_2025 * (1 - ccs_capex_fall*(t - 2025)/25);
+# [fix-wave-ccs] ONE learning rate (theta_ccs -> ccs_capex_fall) drives capex, storage cost and
+# regeneration steam use alike (steam use bounded below by ccs_steam_floor). ccs_fac[t] is the common multiplier (1 in 2025, so the anchor
+# back-solve above is unchanged). Steam learns as GJ/tCO2 (steam is not priced), so boiler fuel
+# and Scope 1 respond: this is not a cost-only change.
+param ccs_fac{t in T} := 1 - ccs_capex_fall*(t - 2025)/25;
+param ocapex_ccs {t in T} := ocapex_ccs_2025 * ccs_fac[t];
+# Steam use learns under the same ccs_fac but cannot fall below ccs_steam_floor GJ/tCO2 (best-case
+# advanced solvent). SCENARIO ASSUMPTION, not a sourced value: results are conditional on steam use
+# reaching 1.5 by 2050 at full learning (1.83 has been reported for special solvents; today's Indian
+# units run 2.2-3.7). min() keeps any stream already below the floor unchanged.
+param ccs_steam_floor default 1.5;
+param ccs_steam_bf_t   {t in T} := min(ccs_steam_bf,    max(ccs_steam_floor, ccs_steam_bf   *ccs_fac[t]));
+param ccs_steam_cdri_t {t in T} := min(ccs_steam_cdri,  max(ccs_steam_floor, ccs_steam_cdri *ccs_fac[t]));
+param ccs_steam_ngdri_t{t in T} := min(ccs_steam_ngdri, max(ccs_steam_floor, ccs_steam_ngdri*ccs_fac[t]));
 param fom_ccs    {t in T} := ccs_fom_pct * ocapex_ccs[t];   # fixed O&M $/tCO2-cap/yr
 
 

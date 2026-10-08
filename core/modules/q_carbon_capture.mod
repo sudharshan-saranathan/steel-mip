@@ -71,5 +71,5 @@ s.t. power_capture{t in T}:
 
 # Solvent-regeneration STEAM balance
 s.t. ccs_steam_balance{t in T}:
-  ccs_steam_bf*ccs_bf[t] + ccs_steam_cdri*ccs_cdri[t] + ccs_steam_ngdri*ccs_ngdri[t]
+  ccs_steam_bf_t[t]*ccs_bf[t] + ccs_steam_cdri_t[t]*ccs_cdri[t] + ccs_steam_ngdri_t[t]*ccs_ngdri[t]
   = ccs_steam_whr[t] + ccs_steam_boiler[t];                             # eq88b
