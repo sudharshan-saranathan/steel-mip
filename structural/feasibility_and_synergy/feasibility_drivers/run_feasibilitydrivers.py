@@ -17,6 +17,11 @@ Output: data/feasibility_drivers.xlsx --
 
     python run_feasibilitydrivers.py -j 6             # full 34,560-cell sweep
     python run_feasibilitydrivers.py -j 6 --resume    # continue a partial run
+    python run_feasibilitydrivers.py -j 6 --yearly-only [--resume]
+        # re-solve the solved cells of raw_matrix.csv for data/yearly.parquet only
+
+Solved cells also write per-year capacity and output by route (long
+format, one row per cell x year) to data/yearly.csv -> data/yearly.parquet.
 """
 import argparse
 import csv
@@ -36,6 +41,8 @@ import axes as AX  # noqa: E402
 AXES_DIR = STRUCTURAL / "axes"
 OUT = HERE / "data" / "feasibility_drivers.xlsx"
 CSV_OUT = HERE / "data" / "raw_matrix.csv"
+YEARLY_CSV = HERE / "data" / "yearly.csv"
+YEARLY_OUT = HERE / "data" / "yearly.parquet"
 
 # Same 8 axes as the original panel_sobol -- order fixes the radar spoke
 # order (sorted by mean S_T descending, at plot time, not here).
@@ -74,6 +81,15 @@ METRIC_COLUMNS = [
     ("cum_ng_bill",       "m_cum_ng_bill"),
 ]
 COLUMNS = COORD_COLUMNS + STATUS_COLUMNS + [c for c, _ in METRIC_COLUMNS]
+
+# Per-year series (indexed over T) kept for solved cells: installed capacity
+# and steel output by route.
+YEARLY_SERIES = [
+    "cap_bof", "cap_cdri", "cap_ngdri", "cap_h2dri", "cap_scrap",
+    "steel_bof", "coaldri_output", "ngdri_output", "h2dri_output",
+    "steel_scrap_eaf",
+]
+YEARLY_COLUMNS = COORD_COLUMNS + ["year"] + YEARLY_SERIES
 
 def cells():
     names = list(AX.AXES)
@@ -150,6 +166,13 @@ def solve_cell(cell, solver="gurobi"):
             row[col] = ampl.get_value(expr)
         except Exception:
             row[col] = ""
+    yearly = []
+    if status == "solved":
+        coords = {c: row[c] for c in COORD_COLUMNS}
+        data = ampl.get_data(*YEARLY_SERIES).to_pandas()
+        for year, vals in data.iterrows():
+            yearly.append({**coords, "year": int(year), **vals.to_dict()})
+    row["_yearly"] = yearly
     ampl.close()
     return row
 
@@ -167,6 +190,7 @@ def _worker(cell):
             "legacy": cell["legacy"][0], "ccs_phi": cell["ccs_phi"],
             "avg_emi": cell["avg_emi"],
             "solve_result": f"ERROR: {type(exc).__name__}: {exc}"[:200],
+            "_yearly": [],
         })
         return row
 
@@ -198,9 +222,13 @@ def main():
     p.add_argument("-j", "--jobs", type=int, default=6)
     p.add_argument("--solver", default="gurobi")
     p.add_argument("--resume", action="store_true")
+    p.add_argument("--yearly-only", action="store_true",
+                   help="re-solve the solved cells of raw_matrix.csv; write only yearly data")
     args = p.parse_args()
 
     CSV_OUT.parent.mkdir(parents=True, exist_ok=True)
+    if args.yearly_only:
+        return yearly_only(args)
 
     todo = list(cells())
 
@@ -223,13 +251,16 @@ def main():
     t0 = time.time()
     n_solved = n_infeas = n_err = 0
 
-    with open(CSV_OUT, mode, newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=COLUMNS)
+    with open(CSV_OUT, mode, newline="") as fh, open(YEARLY_CSV, mode, newline="") as fy:
+        w = csv.DictWriter(fh, fieldnames=COLUMNS, extrasaction="ignore")
+        wy = csv.DictWriter(fy, fieldnames=YEARLY_COLUMNS)
         if mode == "w":
             w.writeheader()
+            wy.writeheader()
         with mp.Pool(args.jobs, initializer=_init, initargs=(args.solver,)) as pool:
             for i, row in enumerate(pool.imap_unordered(_worker, todo, chunksize=8), 1):
                 w.writerow(row)
+                wy.writerows(row["_yearly"])
                 sr = str(row["solve_result"])
                 if sr == "solved":
                     n_solved += 1
@@ -245,6 +276,7 @@ def main():
                           f"ETA {eta:6.1f} min  solved={n_solved:,} "
                           f"infeas={n_infeas:,} err={n_err:,}", flush=True)
                     fh.flush()
+                    fy.flush()
 
     el = time.time() - t0
     print(f"\n{len(todo):,} cells in {el/60:.1f} min ({len(todo)/el:.1f}/s)")
@@ -252,12 +284,64 @@ def main():
 
     if n_err == 0:
         import pandas as pd
+        write_yearly_parquet()
         raw = pd.read_csv(CSV_OUT)
         sobol = compute_sobol(raw)
         with pd.ExcelWriter(OUT) as xw:
             raw.to_excel(xw, sheet_name="raw_matrix", index=False)
             sobol.to_excel(xw, sheet_name="sobol_by_ef", index=False)
         print(f"written: {OUT.relative_to(ROOT)}")
+        return 0
+    return 1
+
+
+def _read_coords(path, solved_only=False):
+    with open(path) as fh:
+        return {(r["ccoal"], r["ng"], int(r["h2_start"]),
+                 float(r["scrap_rate"]), float(r["theta_grid_target"]),
+                 r["ramp"], r["build_cap"], r["legacy"],
+                 float(r["ccs_phi"]), float(r["avg_emi"]))
+                for r in csv.DictReader(fh)
+                if not solved_only or r["solve_result"] == "solved"}
+
+
+def write_yearly_parquet():
+    import pandas as pd
+    pd.read_csv(YEARLY_CSV).to_parquet(YEARLY_OUT, index=False)
+    print(f"written: {YEARLY_OUT.relative_to(ROOT)}")
+
+
+def yearly_only(args):
+    """Re-solve the cells raw_matrix.csv marks solved; append to yearly.csv."""
+    solved = _read_coords(CSV_OUT, solved_only=True)
+    todo = [c for c in cells() if coord_key(c) in solved]
+    resume = args.resume and YEARLY_CSV.exists()
+    if resume:
+        done = _read_coords(YEARLY_CSV)
+        todo = [c for c in todo if coord_key(c) not in done]
+    print(f"yearly-only: {len(solved):,} solved cells, {len(todo):,} to solve")
+
+    t0 = time.time()
+    n_bad = 0
+    with open(YEARLY_CSV, "a" if resume else "w", newline="") as fy:
+        wy = csv.DictWriter(fy, fieldnames=YEARLY_COLUMNS)
+        if not resume:
+            wy.writeheader()
+        with mp.Pool(args.jobs, initializer=_init, initargs=(args.solver,)) as pool:
+            for i, row in enumerate(pool.imap_unordered(_worker, todo, chunksize=8), 1):
+                wy.writerows(row["_yearly"])
+                if row["solve_result"] != "solved":
+                    n_bad += 1
+                if i % 500 == 0 or i == len(todo):
+                    rate = i / (time.time() - t0)
+                    print(f"  {i:>7,}/{len(todo):,}  {rate:6.1f} cell/s  "
+                          f"ETA {(len(todo) - i) / rate / 60:6.1f} min  "
+                          f"not solved={n_bad:,}", flush=True)
+                    fy.flush()
+
+    print(f"not solved this pass: {n_bad:,} (re-run with --resume)")
+    if n_bad == 0:
+        write_yearly_parquet()
         return 0
     return 1
 
