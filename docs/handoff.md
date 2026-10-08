@@ -1,6 +1,7 @@
 # Handoff
 
 - **Current task:** set up and launch the **overnight Monte Carlo**: all 14,107 feasible factorial runs × 50 shared draws (seed 20260824) = 705,350 solves, about 2.5–3 h at roughly 75/s on 12 workers.
+- **Decide first (ask the user):** how many draws. The current 50 are random and uneven (coal $300 appears in 20 % of draws, not 33 %; θ_CCS=0 in 10 %, not 20 %), which shifts every cell the same way. I recommended a balanced design: replace `sample_draws` with Latin-hypercube-style draws in which every level appears equally, in multiples of 15. 45 draws = 635k solves (about 2.5–3 h), 60 = 846k (about 3–4 h), 75 = 1.06M (about 4–5 h). P50 is stable from about 30 draws; P90 and CVaR95 still move 3–5 USD/t.
 - **Next step:**
   1. Commit and push the pending radar-figure changes (`notebooks/plots.ipynb`, `figs/feasibility-bias*.png`; fetch first, because session `01GVt5c2…` also pushes to `fix-wave-01`; PNGs need `git add -f`).
   2. Change `monte_carlo/run_montecarlo.py`:
