@@ -58,7 +58,7 @@ BATCH_SIZE = 40_000  # solves per parquet part file
 AMPL_TMP = ROOT / "scratchpad" / "ampl_tmp"  # disk-backed; /tmp is a RAM tmpfs
 
 TARGETS = [1.6, 1.8, 2.0]
-N_DRAWS = 30   # [audit] balanced draws (was 50 random picks); see commit message for precision
+N_DRAWS = 60   # [audit] balanced draws (was 50 random picks); see commit message for precision
 DRAW_SEED = 20260824
 CCS_LEVELS = None   # [audit] None = every ccs_phi level in the feasibility matrix
 BRACKETING = False  # [audit] True = coal/NG abundant and scarce only
