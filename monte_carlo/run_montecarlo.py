@@ -5,8 +5,8 @@ uncertainty/ and violin/ figure.
 Three batches, one per emission target (1.6/1.8/2.0). Each batch solves
 every structural cell feasible AT THAT TARGET (read from structural/
 feasibility_and_synergy/feasibility_drivers/data/feasibility_drivers.xlsx,
-sheet "raw_matrix") x the same 50 shared cost/tech draws (draw-seed
-20260824, uniform over ccoal_price/ng_price/scrap_price/theta_tech/
+sheet "raw_matrix") x the same 50 shared, balanced cost/tech draws (draw-seed
+20260824, grids over ccoal_price/ng_price/scrap_price/theta_tech/
 theta_ccs; discount_rate pinned at 0.06 by template_montecarlo.mod).
 
 The SAME draws are reused identically across all three batches -- a
@@ -55,21 +55,29 @@ FEAS_XLSX = (ROOT / "structural" / "feasibility_and_synergy" /
 OUT = HERE / "data" / "mc_solves.xlsx"
 
 TARGETS = [1.6, 1.8, 2.0]
-N_DRAWS = 50
+N_DRAWS = 50   # [audit] balanced draws (was 50 random picks)
 DRAW_SEED = 20260824
 CCS_LEVELS = None   # [audit] None = every ccs_phi level in the feasibility matrix
+BRACKETING = False  # [audit] True = coal/NG abundant and scarce only
 
+def _grid(lo, hi, step):
+    n = int(round((hi - lo) / step))
+    return [round(lo + i * step, 6) for i in range(n + 1)]
+
+
+# [audit] Sampling grids (user, 2026-10-08). Was 3 or 5 discrete levels per input.
 MC_LEVELS = {
-    "ccoal_price": [150, 200, 300],   # [audit] evidence-centred (was 100/250/400)
-    "ng_price": [8, 12, 18],          # [audit] was 5/15/25
-    "scrap_price": [300, 400, 500],   # [audit] was 250/350/450
-    "theta_tech": [0, 0.25, 0.5, 0.75, 1.0],
-    "theta_ccs": [0, 0.25, 0.5, 0.75, 1.0],
-    "discount_rate": [0.06],   # single level; kept to preserve RNG call order
+    "ccoal_price": _grid(150, 300, 10),   # $/t, 16 levels
+    "ng_price": _grid(5, 20, 1),          # $/MMBtu, 16 levels
+    "scrap_price": _grid(300, 500, 10),   # $/t, 21 levels
+    "theta_tech": _grid(0, 1, 0.1),       # 11 levels
+    "theta_ccs": _grid(0, 1, 0.1),        # 11 levels
 }
 
-CCOAL_FILE = {"abundant": "ccoal_abundant", "scarce": "ccoal_scarce"}
-NG_FILE = {"abundant": "ng_policy", "scarce": "ng_bau"}
+CCOAL_FILE = {"abundant": "ccoal_abundant", "midhigh": "ccoal_midhigh",
+              "midlow": "ccoal_midlow", "scarce": "ccoal_scarce"}
+NG_FILE = {"abundant": "ng_policy", "midhigh": "ng_midhigh",
+           "midlow": "ng_midlow", "scarce": "ng_bau"}
 RAMP_H2REF = {"low": 1_000_000, "medium": 2_000_000, "high": 3_000_000}  # [audit] re-anchored
 BUILD_CAP_VAL = {"tight": 20_000_000, "mid": 30_000_000}
 LEGACY_FLAG = {"run-life": 0, "mandated-phaseout": 1}
@@ -91,8 +99,22 @@ COLUMNS = ["cell_id", "draw_id"] + STRUCT_COLS + DRAW_COLS + \
 
 
 def sample_draws(n_draws=N_DRAWS, seed=DRAW_SEED):
+    """Balanced (Latin-hypercube style) draws over the discrete grids.
+
+    For each input, its levels are repeated as evenly as n_draws allows (counts
+    differ by at most one; the levels that get the extra copy are chosen at
+    random) and shuffled independently, so every level is equally represented
+    and inputs are paired at random. Seeded, so the draws are identical on
+    every run and shared by every cell and target.
+    """
     rng = random.Random(seed)
-    return [{k: rng.choice(v) for k, v in MC_LEVELS.items()} for _ in range(n_draws)]
+    cols = {}
+    for k, levels in MC_LEVELS.items():
+        q, r = divmod(n_draws, len(levels))
+        col = levels * q + rng.sample(levels, r)
+        rng.shuffle(col)
+        cols[k] = col
+    return [{k: cols[k][i] for k in MC_LEVELS} for i in range(n_draws)]
 
 
 def feasible_cells(avg_emi):
@@ -101,6 +123,8 @@ def feasible_cells(avg_emi):
     feas = df[(df.avg_emi == avg_emi) & (df.solve_result == "solved")]
     if CCS_LEVELS is not None:  # [audit] restrict the CCS-ceiling axis
         feas = feas[feas.ccs_phi.isin(CCS_LEVELS)]
+    if BRACKETING:  # [audit] only the abundant/scarce supply regimes
+        feas = feas[feas.ccoal.isin(["abundant", "scarce"]) & feas.ng.isin(["abundant", "scarce"])]
     return feas.to_dict("records")
 
 
@@ -183,13 +207,17 @@ def run_batch(avg_emi, draws, jobs):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("-j", "--jobs", type=int, default=6)
+    p.add_argument("--draws", type=int, default=N_DRAWS, help="balanced draws per cell")
+    p.add_argument("--bracketing", action="store_true",
+                   help="coal/NG abundant and scarce only (skip the intermediate levels)")
     p.add_argument("--ccs", type=float, nargs="+", default=None,
                    help="CCS-ceiling levels (phi_2050) to solve; default all")
     args = p.parse_args()
-    global CCS_LEVELS
+    global CCS_LEVELS, BRACKETING
     CCS_LEVELS = args.ccs
+    BRACKETING = args.bracketing
 
-    draws = sample_draws()
+    draws = sample_draws(args.draws)
     OUT.parent.mkdir(parents=True, exist_ok=True)
 
     import pandas as pd

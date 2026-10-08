@@ -56,13 +56,15 @@ AC_MEDIAN_PLACEHOLDER = {1.6: 25.701126, 1.8: 17.559270, 2.0: 10.413427}
 MC_COLS = ["ccoal_price", "scrap_price", "ng_price", "theta_tech", "theta_ccs"]
 GROUP = ["ccoal", "ng", "h2_start", "scrap_rate", "theta_grid_target",
          "ramp", "build_cap", "legacy"]
-RANGE = {"ccoal_price": 150, "ng_price": 10, "scrap_price": 200,   # [audit] evidence-centred levels
+RANGE = {"ccoal_price": 150, "ng_price": 15, "scrap_price": 200,   # [audit] sampled grid widths
          "theta_tech": 1, "theta_ccs": 1}
 NICE = {"ccoal_price": "Coal", "scrap_price": "Scrap",
         "ng_price": "NG", "theta_tech": r"H$_2$",
         "theta_ccs": "CCS"}
 GREEN, NAVY = "#4daf4a", "#313e61"
-COALC = {150: "#a8c9a6", 200: "#4daf4a", 300: "#313e61"}
+# [audit] coal is sampled on a 150-300 $/t grid; panels group it in three bins
+COAL_BINS = [(150, 190), (200, 240), (250, 300)]
+COALC = {b: c for b, c in zip(COAL_BINS, ["#a8c9a6", "#4daf4a", "#313e61"])}
 EF_COLORS = {1.6: "#264653", 1.8: "#377eb8", 2.0: "#e76f51"}
 
 SHARE_COLS = [("share_bof", "BF-BOF"), ("share_cdri", "Coal DRI-EAF"),
@@ -188,9 +190,10 @@ def panel_coal_delay(ax, d):
     other = [c for c in GROUP if c != "h2_start"]
     piv = d.pivot_table(index=other + MC_COLS, columns="h2_start",
                         values="lcop").reset_index()
-    piv["coal"] = piv["ccoal_price"]
+    piv["coal"] = piv["ccoal_price"].map(
+        lambda v: next(b for b in COAL_BINS if b[0] <= v <= b[1]))
 
-    lvls = [150, 200, 300]
+    lvls = COAL_BINS
     w = 0.26
     for li, lvl in enumerate(lvls):
         sub = piv[piv.coal == lvl]
@@ -212,7 +215,7 @@ def panel_coal_delay(ax, d):
     ax.set_ylabel(r"$\Delta$LCOP (USD/t)")
     ax.grid(axis="y", alpha=0.15)
     handles = [Patch(facecolor=COALC[l], edgecolor="black",
-                     label=f"Coal USD {l}/t") for l in lvls]
+                     label=f"Coal USD {l[0]}-{l[1]}/t") for l in lvls]
     ax.legend(handles=handles, fontsize=14, loc="upper left", frameon=True,
              framealpha=0.95, edgecolor="black", fancybox=False)
 
