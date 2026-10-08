@@ -1,6 +1,6 @@
 # Audit handoff — read this first
 
-Last updated: 2026-10-07, after the S-curve reruns (session 1). **Start with `docs/audit/REVIEW.md`.** Owner: Sudharshan Saranathan (IIT Madras).
+Last updated: 2026-10-08, end of session 1. **Start with §6d.** **Start with `docs/audit/REVIEW.md`.** Owner: Sudharshan Saranathan (IIT Madras).
 
 ## 1. The task
 
@@ -79,7 +79,41 @@ Everything is done; the user is reviewing `REVIEW.md`.
 - Done and committed on `fix-wave-01` (data + figures): H₂ delay and fuel availability (`1776ffa`), feasibility drivers (`8ab9fc5`, superseded by `17f4210`), synergy after the θ_grid = 1 fix (`3656c00`, `96adcf4`), Figs. 3/4/5 (`634308d`), Monte Carlo + downstream (`2cc9e22`), CCS ceiling as ninth axis and the λ index (`17f4210`). Regret: see §8 / next commit.
 - Cite results by commit hash. `raw_matrix.csv` holds the 27,648 cells of the re-anchored design (`1f9ef4c`); the earlier 34,560-cell run (old bounds) is in `17f4210`.
 - The container restarts without warning (files survive, processes do not). `run_feasibilitydrivers.py --resume` continues a partial run; `run_montecarlo.py` and `run_regret.py` cannot resume (MC ≈ 2 h, regret ≈ 8 min at -j 4).
-- Open calls: REVIEW.md §4 and §8.3 (template scrap 6 % vs 5 %, 2050 demand vs published median, CCS central level, MC at low CCS).
+- Open calls: see §6d.
+
+## 6d. Current state (2026-10-08) — start here
+
+**Model and design on `fix-wave-01`** (results: REVIEW.md §8.4)
+- Axes re-anchored to evidence (`8234f2f`): scrap growth 4 / 5 / 6 / 7 %/yr; H₂ ramp 0.25 / 0.5 / 0.75 Mt H₂/yr (`h2_ref_cap` 1/2/3 Mt); scarce coking coal frozen at FY26 imports (66.33 Mt); CCS ceiling `phi_2050` 0 / 0.05 / 0.10 / 0.25 from 2035; templates' scrap growth 5 %.
+- The user's other session (local machine, commits `bd6318b`…`6b69f43`) expanded coal and NG to four levels each (abundant / midhigh / midlow / scarce): factorial **110,592 cells**, in `raw_matrix.csv`. Feasible: 0.3 / 6.6 / 31.3 % at targets 1.6 / 1.8 / 2.0. It also added `figs/`, `notebooks/plots.ipynb`, per-year route output, and **untracked the Monte Carlo data** (`mc_solves.xlsx` and derived tables are local only).
+- Sobol at 1.8 (27,648-cell design): H₂ start 0.65, scrap 0.45, H₂ ramp 0.42, grid 0.30, coal 0.29, CCS 0.24, build 0.23, legacy 0.16, NG 0.10.
+- λ index (`tools/lambda_index.py`): λ_X = lever X's maximum cumulative abatement / required abatement A = Σ D(t)(2.53 − target); levers H₂, scrap above the 2025 pool, CCS (applied in that order). Used as a **ranking** (user's choice): AUC 0.92; below λ ≈ 0.6 almost nothing is feasible; target 1.6 never reaches λ = 1 (max 0.92). NG, grid and efficiency form the "other" basket (≈ 2.5 Gt, fixed in tonnes, not a share).
+- Prices re-centred (`53b9453`): central 200 $/t coal, 12 $/MMBtu gas, 400 $/t scrap. Regret rerun on all of this (`d194edb`): no-recourse regret 43 $/t (paper 82), with 5-yearly reviews 3.1 $/t (paper 2.1).
+
+**Monte Carlo: redesigned, NOT yet run** (`9b177a4`, `898ec3b`)
+- Balanced Latin-hypercube-style draws over grids (user's choice): coal 150–300 $/t step 10, gas 5–20 $/MMBtu step 1, scrap 300–500 $/t step 10, H₂ and CCS learning 0–1 step 0.1. **N = 30** draws per feasible cell, shared by all cells and targets (seed 20260824); every grid level used 1–3 times. Precision at N = 30 (from subsampling the old run): ~4 $/t in a cell's mean LCOP, ~7 $/t in its P10–P90 spread.
+- `run_montecarlo.py` options: `--draws N`, `--ccs 0.25` (CCS slice), `--bracketing` (coal/NG abundant & scarce only). Scope still to be chosen by the user:
+
+  | Scope | Solves | 4 cores here | user's 12 cores |
+  |---|---|---|---|
+  | bracketing, CCS 0.25 | 39,030 | ~30 min | ~9 min |
+  | bracketing, all CCS | 105,780 | ~1.3 h | ~27 min |
+  | four levels, CCS 0.25 | 157,830 | ~2 h | ~40 min |
+  | four levels, all CCS | 423,210 | ~5.3 h | ~1.8 h |
+
+- After it runs: downstream `monte_carlo/violin/run_violin.py`, `uncertainty/*/run_*.py`, then `plot_violin.py`, `plot_uncertainty.py` (coal now grouped in 150–190 / 200–240 / 250–300 bins). **`notebooks/plots.ipynb` still has the old coal levels (150/200/300) in its copy of the uncertainty plot code — update it.** Downstream filters read the CCS 0.25 slice (`CCS_CENTRAL`).
+- The regret study's world draws still use the 3-level prices (150/200/300 etc.); the user has not asked to move them to the grids.
+
+**Parameter sources:** `docs/audit/PARAMETER_SOURCES.md` — 239 inputs: 126 sourced (India), 6 global only, 22 derived, 50 stated assumptions, 35 dangling (17 BF-BOF process coefficients, 5 CCS DRI shares/multipliers, 4 H₂ ramp-shape, 3 prices, others). Loose ends found: `cap0_scrap` has no citation; +7.5 %/yr domestic coking coal uncited; `ng_cost_lime` 60 above every admissible value.
+
+**Open calls for the user**
+1. Monte Carlo scope (table above) and where to run it.
+2. 2050 demand: 545 Mt (S-curve to 680) vs ≈ 444 Mt median of published projections.
+3. Grid axis θ also cleans captive coal plants: state in the paper or split grid / CPP.
+4. CCS central level 0.25 or lower; discount rate 6 % vs 10 %.
+5. Synergy map x-axis 1–8 % scrap: shade outside 4–7 % or cut.
+6. REVIEW.md §8.1 (CCS "unimportant") is superseded by §8.4; rewrite for a clean read?
+7. Paper text: scrap levels bracket NITI *use* scenarios (no supply projection exists); λ framing as a ranking diagnostic; claims about CCS are conditional on early H₂.
 
 ## 7. Environment notes
 
@@ -93,4 +127,5 @@ Everything is done; the user is reviewing `REVIEW.md`.
 
 - Physicist; prefers concise, plain answers with jargon explained in footnotes. Wants to go slowly on structural questions and to understand each fix before it is made.
 - Asked explicitly whether numbers were made up: always show where a number comes from (file:line or source page).
-- Pushes go to `steel-mip` only, on the session branch; never to `main` unless asked. Don't open PRs unless asked.
+- Pushes go to `steel-mip` only (`fix-wave-01` for code and results, the session branch for docs); never to `main` unless asked. Don't open PRs unless asked. The user also pushes to `fix-wave-01` from a local session: pull before working.
+- Wants feasibility shares only from evidence-anchored bounds (paper Sec. 3.1), and prefers what is *feasible* over what is *needed*.
