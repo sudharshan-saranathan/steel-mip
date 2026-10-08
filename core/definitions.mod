@@ -167,7 +167,7 @@ param grid_price_end_fast default 0.063;   # [audit] keeps the original -21 % at
                                              # theta_grid=0 holds tariff flat at grid_price_start (no "slow" endpoint anymore)
 # theta_tech=0 means NO learning: electrolyser/RE capex hold flat at their
 # 2025 anchors through 2050 (slow endpoint = start value, mirrors theta_grid's
-# convention). 2025 LCOH ~$4.7/kg; 2050 ~$4.7/kg at theta_tech=0 -> ~$2.4/kg at 1.
+# convention). 2025 LCOH ~$4.7/kg; 2050 ~$4.7/kg at theta_tech=0 -> ~$1.8/kg at 1 (RE fast endpoint 400; see below).
 # 2050 H2 cost is never specified directly -- it emerges from this build-up.
 # [audit H2] Slow end-points = no learning (explicit pessimistic bound; no source
 # projects zero learning). Fast end-points = pessimistic sourced values: IRENA
@@ -177,7 +177,7 @@ param grid_price_end_fast default 0.063;   # [audit] keeps the original -21 % at
 param h2elec_capex_end_slow default 800;
 param h2elec_capex_end_fast default 159;
 param re_capex_end_slow   default 835;
-param re_capex_end_fast   default 695;
+param re_capex_end_fast   default 400;   # [fix-wave-ccs] SCENARIO ASSUMPTION, not a sourced value: solar-led 2050 mix (IEA NZE India 2050: solar 280, wind 1,040 $/kW), giving ~$1.83/kg at theta_tech=1 with electrolyser at 159 $/kW. Sourced 50/50 hybrid value was 695 (IEA WEO 2024), giving $2.39/kg
 param theta_ccs default 0;                 # capture-plant learning speed
 param ccs_capex_fall_slow default 0.27;    # [audit CCS] NITI 2022 / MoS 2024 outlook. Was 0.3165 (back-solved)
 param ccs_capex_fall_fast default 0.60;    # [audit CCS] Was 0.8435 (back-solved to $60/t, unreachable once energy + T&S ~ $55/t)
