@@ -26,7 +26,12 @@ __pycache__/
 .DS_Store
 **/.DS_Store
 
-# Result xlsx in data/ folders: local only (regenerate from scripts); parquet/csv go via LFS
+# Result tables in data/ folders: local only, except feasibility, regret and MC results (via LFS)
+/data/
 **/data/*.xlsx
-# per-batch MC parts; consolidated into mc_solves.parquet
-**/data/*_part*.parquet
+**/data/*.csv
+**/data/*.parquet
+!structural/feasibility_and_synergy/feasibility_drivers/data/raw_matrix.csv
+!structural/feasibility_and_synergy/feasibility_drivers/data/yearly.parquet
+!adaptive_panning/data/regret_ladder.csv
+!monte_carlo/data/mc_solves.parquet

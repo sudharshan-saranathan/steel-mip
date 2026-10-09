@@ -49,7 +49,7 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 CCS_CENTRAL = 0.25
-MC_SOLVES = ROOT / "data" / "mc_solves.parquet"
+MC_SOLVES = ROOT / "monte_carlo" / "data" / "mc_solves.parquet"
 FEAS_CSV = (ROOT / "structural" / "feasibility_and_synergy" /
             "feasibility_drivers" / "data" / "raw_matrix.csv")
 OUT = HERE / "data" / "violin.xlsx"
