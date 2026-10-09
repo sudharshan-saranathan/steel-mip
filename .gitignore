@@ -26,7 +26,7 @@ __pycache__/
 .DS_Store
 **/.DS_Store
 
-# Result tables in data/ folders: local only (regenerate from scripts)
+# Result xlsx in data/ folders: local only (regenerate from scripts); parquet/csv go via LFS
 **/data/*.xlsx
-**/data/*.parquet
-**/data/*.csv
+# per-batch MC parts; consolidated into mc_solves.parquet
+**/data/*_part*.parquet
