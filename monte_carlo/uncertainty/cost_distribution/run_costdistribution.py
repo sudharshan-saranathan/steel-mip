@@ -3,7 +3,7 @@
 emission targets -- the "cost distribution" violin-panel data.
 
 Pure filter + join, no solving: reads all three sheets of ../../data/
-mc_solves.xlsx (the single shared Monte Carlo solve behind every
+mc_results.parquet (the single shared Monte Carlo solve behind every
 uncertainty/ and violin/ study -- see ../../run_montecarlo.py). The
 matched-world population is exactly the EF=1.6-feasible cells (794 of
 them) -- since feasibility only gets easier as the target loosens, every
@@ -24,7 +24,7 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent.parent
 CCS_CENTRAL = 0.25
-MC_SOLVES = ROOT / "monte_carlo" / "data" / "mc_solves.xlsx"
+MC_SOLVES = ROOT / "monte_carlo" / "data" / "mc_results.parquet"
 OUT = HERE / "data" / "cost_distribution.xlsx"
 
 TARGETS = [1.6, 1.8, 2.0]
@@ -37,8 +37,8 @@ JOIN_KEY = STRUCT_COLS + ["draw_id"]
 
 def main():
     import pandas as pd
-    sheets = {ef: pd.read_excel(MC_SOLVES, sheet_name=f"ef{ef}")
-              for ef in TARGETS}
+    mc = pd.read_parquet(MC_SOLVES)
+    sheets = {ef: mc[mc.avg_emi == ef] for ef in TARGETS}
     sheets = {ef: df[df.solve_result == "solved"] for ef, df in sheets.items()}
     # [audit] figures use the central CCS ceiling; other levels are the CCS axis
     sheets = {ef: df[df.ccs_phi == CCS_CENTRAL] if "ccs_phi" in df else df

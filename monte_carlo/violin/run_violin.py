@@ -8,7 +8,7 @@ route mix per bin), RIGHT half = 2050 emission-intensity distribution
 computed per cell for annotation under each violin.
 
 Pure filter + bin, no solving: reads the EF sheets of ../data/
-mc_solves.xlsx (the single shared Monte Carlo solve -- see
+mc_results.parquet (the single shared Monte Carlo solve -- see
 ../run_montecarlo.py), one violin set per (avg_emi, ramp) in AVG_EMIS x
 RAMPS. Scrap-rate rows
 are the 3-band grouping of our 5-level discrete axis:
@@ -17,10 +17,9 @@ are the 3-band grouping of our 5-level discrete axis:
   High = {0.08, 0.10}
 
 P_infeasible needs the FULL structural cell population (including
-infeasible cells), which mc_solves.xlsx does not carry (it only solves
+infeasible cells), which mc_results.parquet does not carry (it only solves
 feasible cells) -- read separately from structural/feasibility_and_
-synergy/feasibility_drivers/data/feasibility_drivers.xlsx, sheet
-"raw_matrix", filtered to the same avg_emi & ramp.
+synergy/feasibility_drivers/data/feasibility_results.parquet, filtered to the same avg_emi & ramp.
 
 Binning: LCOP and emis2050 each get their own 24-bin grid spanned over
 the range of the whole population (all avg_emi and ramps, not per-cell,
@@ -49,9 +48,9 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 CCS_CENTRAL = 0.25
-MC_SOLVES = ROOT / "monte_carlo" / "data" / "mc_solves.parquet"
-FEAS_CSV = (ROOT / "structural" / "feasibility_and_synergy" /
-            "feasibility_drivers" / "data" / "raw_matrix.csv")
+MC_SOLVES = ROOT / "monte_carlo" / "data" / "mc_results.parquet"
+FEAS_RESULTS = (ROOT / "structural" / "feasibility_and_synergy" /
+                "feasibility_drivers" / "data" / "feasibility_results.parquet")
 OUT = HERE / "data" / "violin.xlsx"
 
 RAMPS = ["low", "medium", "high"]
@@ -84,7 +83,7 @@ def load_population(avg_emi):
 
 def load_full_structural():
     import pandas as pd
-    df = pd.read_csv(FEAS_CSV)
+    df = pd.read_parquet(FEAS_RESULTS)
     df = df[df.ccs_phi == CCS_CENTRAL] if "ccs_phi" in df else df  # [audit] central CCS slice
     df = df[df.avg_emi.isin(AVG_EMIS) & df.ramp.isin(RAMPS)].copy()
     # The Monte Carlo samples only the bracketing coal/NG regimes; match that population

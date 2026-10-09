@@ -4,8 +4,7 @@ uncertainty/ and violin/ figure.
 
 Three batches, one per emission target (1.6/1.8/2.0). Each batch solves
 every structural cell feasible AT THAT TARGET (read from structural/
-feasibility_and_synergy/feasibility_drivers/data/feasibility_drivers.xlsx,
-sheet "raw_matrix") x the same 30 shared, balanced cost/tech draws (draw-seed
+feasibility_and_synergy/feasibility_drivers/data/feasibility_results.parquet) x the same 30 shared, balanced cost/tech draws (draw-seed
 20260824, grids over ccoal_price/ng_price/scrap_price/theta_tech/
 theta_ccs; discount_rate pinned at 0.06 by template_montecarlo.mod).
 
@@ -31,8 +30,8 @@ draws = 177,200 solves. This one run is sufficient to populate:
 Every uncertainty/*/run_*.py and violin/run_violin.py is pure filtering
 on top of this one workbook -- no AMPL/Gurobi calls of their own.
 
-Output: data/mc_solves.xlsx, one sheet per target ("ef1.6", "ef1.8",
-"ef2.0") -- cell_id, draw_id, the 9 structural coordinates (incl. ccs_phi), avg_emi, the
+Output: data/mc_results.parquet (consolidated from per-batch part
+files), one row per solve, all targets (filter on avg_emi) -- cell_id, draw_id, the 9 structural coordinates (incl. ccs_phi), avg_emi, the
 5 cost/tech draw values, solve_result, lcop, the 5 route shares,
 emis2050 (the 2050 snapshot emission intensity, needed by violin's
 right-hand histogram), and cum_co2/cum_captured (cumulative 2025-2050
@@ -51,8 +50,9 @@ import time
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
-FEAS_XLSX = (ROOT / "structural" / "feasibility_and_synergy" /
-             "feasibility_drivers" / "data" / "feasibility_drivers.xlsx")
+FEAS_RESULTS = (ROOT / "structural" / "feasibility_and_synergy" /
+                "feasibility_drivers" / "data" / "feasibility_results.parquet")
+RESULTS = HERE / "data" / "mc_results.parquet"
 OUT_DIR = HERE / "data"
 BATCH_SIZE = 40_000  # solves per parquet part file
 AMPL_TMP = ROOT / "scratchpad" / "ampl_tmp"  # disk-backed; /tmp is a RAM tmpfs
@@ -122,7 +122,7 @@ def sample_draws(n_draws=N_DRAWS, seed=DRAW_SEED):
 
 def feasible_cells(avg_emi):
     import pandas as pd
-    df = pd.read_excel(FEAS_XLSX, sheet_name="raw_matrix")
+    df = pd.read_parquet(FEAS_RESULTS)
     feas = df[(df.avg_emi == avg_emi) & (df.solve_result == "solved")]
     if CCS_LEVELS is not None:  # [audit] restrict the CCS-ceiling axis
         feas = feas[feas.ccs_phi.isin(CCS_LEVELS)]
@@ -193,6 +193,7 @@ def _flush(rows, avg_emi, part):
     out = OUT_DIR / f"mc_solves_ef{avg_emi}_part{part:02d}.parquet"
     pd.DataFrame(rows)[COLUMNS].to_parquet(out, index=False, compression="snappy")
     print(f"written: {out.relative_to(ROOT)} ({len(rows):,} rows)", flush=True)
+    return out
 
 
 def run_batch(avg_emi, draws, jobs):
@@ -202,20 +203,21 @@ def run_batch(avg_emi, draws, jobs):
     print(f"EF={avg_emi}: {len(cells):,} feasible cells x {len(draws)} draws "
           f"= {len(todo):,} solves", flush=True)
 
-    rows, part = [], 0
+    rows, part, parts = [], 0, []
     t0 = time.time()
     with mp.Pool(jobs) as pool:
         for i, row in enumerate(pool.imap_unordered(_worker, todo, chunksize=8), 1):
             rows.append(row)
             if len(rows) == BATCH_SIZE:  # part file every BATCH_SIZE solves; a crash keeps finished parts
-                _flush(rows, avg_emi, part)
+                parts.append(_flush(rows, avg_emi, part))
                 rows, part = [], part + 1
             if i % 2000 == 0 or i == len(todo):
                 el = time.time() - t0
                 print(f"  {i:>7,}/{len(todo):,}  {i/el:6.1f}/s  "
                       f"ETA {(len(todo)-i)/max(i/el,1e-9)/60:6.1f} min", flush=True)
     if rows:
-        _flush(rows, avg_emi, part)
+        parts.append(_flush(rows, avg_emi, part))
+    return parts
 
 
 def main():
@@ -234,8 +236,10 @@ def main():
     draws = sample_draws(args.draws)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    for ef in TARGETS:
-        run_batch(ef, draws, args.jobs)
+    import pandas as pd
+    parts = [p for ef in TARGETS for p in run_batch(ef, draws, args.jobs)]
+    pd.concat(map(pd.read_parquet, parts), ignore_index=True).to_parquet(RESULTS, index=False)
+    print(f"written: {RESULTS.relative_to(ROOT)}", flush=True)
     return 0
 
 

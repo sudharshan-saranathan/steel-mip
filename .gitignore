@@ -26,12 +26,11 @@ __pycache__/
 .DS_Store
 **/.DS_Store
 
-# Result tables in data/ folders: local only, except feasibility, regret and MC results (via LFS)
+# Result tables in data/ folders: local only, except the three study results (parquet via LFS)
 /data/
 **/data/*.xlsx
 **/data/*.csv
 **/data/*.parquet
-!structural/feasibility_and_synergy/feasibility_drivers/data/raw_matrix.csv
-!structural/feasibility_and_synergy/feasibility_drivers/data/yearly.parquet
-!adaptive_panning/data/regret_ladder.csv
-!monte_carlo/data/mc_solves.parquet
+!structural/feasibility_and_synergy/feasibility_drivers/data/feasibility_results.parquet
+!adaptive_panning/data/regret_results.parquet
+!monte_carlo/data/mc_results.parquet

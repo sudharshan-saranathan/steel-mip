@@ -22,6 +22,9 @@ Output: data/feasibility_drivers.xlsx --
 
 Solved cells also write per-year capacity and output by route (long
 format, one row per cell x year) to data/yearly.csv -> data/yearly.parquet.
+
+Tracked result: data/feasibility_results.parquet -- raw_matrix.csv (the
+resumable working file) as parquet, one row per cell incl. infeasible.
 """
 import argparse
 import csv
@@ -43,6 +46,7 @@ OUT = HERE / "data" / "feasibility_drivers.xlsx"
 CSV_OUT = HERE / "data" / "raw_matrix.csv"
 YEARLY_CSV = HERE / "data" / "yearly.csv"
 YEARLY_OUT = HERE / "data" / "yearly.parquet"
+RESULTS = HERE / "data" / "feasibility_results.parquet"
 
 # Same 8 axes as the original panel_sobol -- order fixes the radar spoke
 # order (sorted by mean S_T descending, at plot time, not here).
@@ -286,6 +290,8 @@ def main():
         import pandas as pd
         write_yearly_parquet()
         raw = pd.read_csv(CSV_OUT)
+        raw.to_parquet(RESULTS, index=False)
+        print(f"written: {RESULTS.relative_to(ROOT)}")
         sobol = compute_sobol(raw)
         with pd.ExcelWriter(OUT) as xw:
             raw.to_excel(xw, sheet_name="raw_matrix", index=False)

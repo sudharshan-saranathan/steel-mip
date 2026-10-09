@@ -7,7 +7,7 @@ already plateaued (a cohort whose worlds are all resolved by a given
 checkpoint has nothing new to show at later checkpoints -- see
 run_regret.py's docstring on the 2030-34 cohort as the clearest case).
 
-Reads data/regret_ladder.csv (this folder) -- see run_regret.py.
+Reads data/regret_results.parquet (this folder) -- see run_regret.py.
 
     python plot_regret.py
 """
@@ -27,7 +27,7 @@ plt.rcParams.update({
 LABEL_SIZE = 16
 
 HERE = pathlib.Path(__file__).resolve().parent
-CSV = HERE / "data" / "regret_ladder.csv"
+RESULTS = HERE / "data" / "regret_results.parquet"
 
 STAGES = {"norec": 0, "settle_n1": 1, "settle_n2": 2, "settle_n3": 3, "settle_n4": 4}
 BINS = [(2030, 2034, "2030-34"), (2035, 2039, "2035-39"),
@@ -54,7 +54,7 @@ def bin_of(R):
 
 
 def load():
-    d = pd.read_csv(CSV)
+    d = pd.read_parquet(RESULTS)
     d = d[d.status == "solved"].copy()
     pf = d[d.kind == "pf"].set_index("wid")
     ev = d[d.kind.isin(STAGES)].copy()

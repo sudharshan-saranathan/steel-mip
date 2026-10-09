@@ -3,7 +3,7 @@
 uncertainty -- the "shares" panel data.
 
 Pure filter, no solving: reads the EF=1.8 sheet of ../../data/
-mc_solves.xlsx (the single shared Monte Carlo solve behind every
+mc_results.parquet (the single shared Monte Carlo solve behind every
 uncertainty/ and violin/ study -- see ../../run_montecarlo.py) and keeps
 just the columns this panel needs.
 
@@ -19,7 +19,7 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent.parent
 CCS_CENTRAL = 0.25
-MC_SOLVES = ROOT / "monte_carlo" / "data" / "mc_solves.xlsx"
+MC_SOLVES = ROOT / "monte_carlo" / "data" / "mc_results.parquet"
 OUT = HERE / "data" / "shares.xlsx"
 
 STRUCT_COLS = ["ccoal", "ng", "h2_start", "scrap_rate", "theta_grid_target",
@@ -31,7 +31,8 @@ COLUMNS = STRUCT_COLS + DRAW_COLS + ["lcop"] + SHARE_COLS
 
 def main():
     import pandas as pd
-    d = pd.read_excel(MC_SOLVES, sheet_name="ef1.8")
+    d = pd.read_parquet(MC_SOLVES)
+    d = d[d.avg_emi == 1.8]
     # [audit] figures use the central CCS ceiling; other levels are the CCS axis
     d = d[d.ccs_phi == CCS_CENTRAL] if "ccs_phi" in d else d
     d = d[d.solve_result == "solved"][COLUMNS]

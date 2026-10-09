@@ -59,7 +59,8 @@ identical on every rerun regardless of solve order or machine. Every
 solve uses a fresh AMPL() instance and Threads=1, matching the
 reproducibility discipline used everywhere else in this repository.
 
-Output: data/regret_ladder.csv -- one row per solve (run_id, kind,
+Output: data/regret_results.parquet (via the working file
+data/regret_ladder.csv) -- one row per solve (run_id, kind,
 n_reviews, wid, realized, belief, tstar, the 9 world-axis values, solve
 status/metrics, solve_s).
 
@@ -476,7 +477,10 @@ def main():
                           f"(rows ok={n_ok} err={n_err}, "
                           f"{el/max(n_worlds_done,1):.2f}s/world)", flush=True)
 
-    print(f"DONE. wrote {out}", flush=True)
+    import pandas as pd
+    results = out.with_name("regret_results.parquet")
+    pd.read_csv(out).to_parquet(results, index=False)
+    print(f"DONE. wrote {out} -> {results}", flush=True)
     return 1 if n_err else 0
 
 
