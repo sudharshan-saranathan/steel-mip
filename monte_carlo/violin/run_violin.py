@@ -49,9 +49,9 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 CCS_CENTRAL = 0.25
-MC_SOLVES = ROOT / "monte_carlo" / "data" / "mc_solves.xlsx"
-FEAS_XLSX = (ROOT / "structural" / "feasibility_and_synergy" /
-             "feasibility_drivers" / "data" / "feasibility_drivers.xlsx")
+MC_SOLVES = ROOT / "data" / "mc_solves.parquet"
+FEAS_CSV = (ROOT / "structural" / "feasibility_and_synergy" /
+            "feasibility_drivers" / "data" / "raw_matrix.csv")
 OUT = HERE / "data" / "violin.xlsx"
 
 RAMPS = ["low", "medium", "high"]
@@ -74,7 +74,8 @@ def scrap_group_of(rate):
 
 def load_population(avg_emi):
     import pandas as pd
-    d = pd.read_excel(MC_SOLVES, sheet_name=f"ef{avg_emi}")
+    d = pd.read_parquet(MC_SOLVES)
+    d = d[d.avg_emi == avg_emi]
     d = d[d.ccs_phi == CCS_CENTRAL] if "ccs_phi" in d else d  # [audit] central CCS slice
     d = d[(d.solve_result == "solved") & d.ramp.isin(RAMPS)].copy()
     d["scrap_group"] = d.scrap_rate.map(scrap_group_of)
@@ -83,7 +84,7 @@ def load_population(avg_emi):
 
 def load_full_structural():
     import pandas as pd
-    df = pd.read_excel(FEAS_XLSX, sheet_name="raw_matrix")
+    df = pd.read_csv(FEAS_CSV)
     df = df[df.ccs_phi == CCS_CENTRAL] if "ccs_phi" in df else df  # [audit] central CCS slice
     df = df[df.avg_emi.isin(AVG_EMIS) & df.ramp.isin(RAMPS)].copy()
     # The Monte Carlo samples only the bracketing coal/NG regimes; match that population

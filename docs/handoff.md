@@ -1,23 +1,26 @@
 # Handoff
 
-- **Current task:** the feasibility rerun on branch **`fix-wave-ccs`** is running detached. It covers the full 110,592-cell factorial, launched at about 17:21 IST on 2026-10-08, at about 38 cells/s, with an ETA around 18:10. The script is `scratchpad/run_feas.sh` (old session), which keeps the AMPL lease renewed and retries up to 5 times with `--resume`; the log is `scratchpad/feas_run.log`. It is needed because on this branch θ_CCS also drives steam use per tCO₂, and steam use affects Scope 1 emissions and therefore feasibility (`docs/audit/HANDOFF.md` §6d item 8).
-- **Next step:**
-  1. Check that `structural/feasibility_and_synergy/feasibility_drivers/data/raw_matrix.csv` has 110,592 rows and that `yearly.parquet` was written. If the run died, rerun `run_feasibilitydrivers.py -j 12 --resume` after renewing the AMPL lease.
-  2. Compare the feasible shares against the old ones: 0.3 / 6.6 / 31.3 % at targets 1.6 / 1.8 / 2.0, or 14,107 feasible runs. The old `raw_matrix.csv` is in git (`fix-wave-01`); the old per-year data was saved as `data/yearly_fixwave01.csv`.
-  3. Then the Monte Carlo (and probably the regret analysis) needs rerunning on this branch's feasible set, which also lowers the H₂ RE capex end point (695 → 400) and the biochar price (520 → 300).
-- **Done on `fix-wave-01` (commit `f2f87fa`, not pushed):**
-  - Monte Carlo at CCS anchor 100 vs 75: all 315,660 solved; the draws are identical, so the comparison is paired.
-  - LCOP rose by +1.4 / +1.5 / +1.5 $/t at ef 1.6 / 1.8 / 2.0. New medians are 510.7 / 496.7 / 482.2. The sampling SE on the median is about ±4.
-  - Cumulative captured CO₂ fell by 2 / 8 / 14 % at ef 1.6 / 1.8 / 2.0. Shares and feasibility are essentially unchanged.
-  - Variance drivers of LCOP: scrap price 45 %, coal price 35 %, everything else 7 % or less; θ_tech (H₂ learning) contributes 1.7 %.
-  - The readers and notebook cells 20/22/24 were **not** rerun on the new run.
+- **Current task:** the regret and violin figures on `fix-wave-ccs` have been redone from the E2E Monte Carlo run. The outputs are `figs/regret-ladder.png` and `figs/cost-violin.png`, PNG only. The last thread is complete apart from the items below.
+- **Next step:** sanity-check the Monte Carlo data (`./data/mc_solves.parquet`, 867,660 rows, 60 draws per cell) before the figures go into the paper:
+  - Solved rows are very uneven across ef targets: 1.6 has 7.9k, 1.8 has 152k and 2.0 has 705k.
+  - The median `cum_captured` is non-monotonic (0.93 / 0.48 / 0.53 ×1e9 at 1.6 / 1.8 / 2.0), and its units are unconfirmed.
+  - The run has 11,781 distinct `cell_id`s, while the feasibility rerun has 14,461 feasible cells. Check which feasible set the E2E run used.
+- **Data locations:**
+  - E2E results were pulled via LFS from `origin/fix-wave-ccs` (`87b1c53`) into `./data/` (gitignored), which holds `mc_solves.parquet` and `regret_ladder.csv`.
+  - The regret CSV was also copied to `adaptive_panning/data/`.
+  - The feasibility rerun is done: `raw_matrix.csv` has 110,592 rows, of which 14,461 solved.
 - **Flags:**
-  - **`f2f87fa` committed `tex/`, `monte_carlo/data/*.parquet` and `yearly.parquet`**, which the earlier handoff said should stay local. Ask the user whether to amend that commit before pushing. The large CSVs were left untracked.
-  - Local `fix-wave-01` has diverged from `origin/fix-wave-01`: the remote has 4 commits not present locally (up to `691c17a`, from another session). Merge or rebase before pushing.
+  - Local `fix-wave-ccs` (`0894cec`) is **behind** `origin/fix-wave-ccs` (`87b1c53`, which adds `.gitattributes`, the LFS pointers and 60 draws per cell). Pull before committing.
+  - `monte_carlo/violin/run_violin.py` and `plot_violin.py` are **uncommitted**:
+    - They read `./data/mc_solves.parquet` and `raw_matrix.csv` instead of the old xlsx files.
+    - The plot is filtered to ef 1.8 and medium ramp.
+    - The plot is written to `figs/` with no PDF.
+  - The largest marker in the violin CCS legend overlaps its "CCS: 20%" label. I offered to fix it; the user hasn't replied.
+  - The user wants figures as PNG only, with no PDFs. `adaptive_panning/plot_regret.py` still saves a PDF; I deleted that PDF by hand.
   - Still open from before:
-    - Which violin figure goes in the paper.
-    - Whether to delete the alternate and old figures.
+    - Whether to amend `f2f87fa` on `fix-wave-01` (it committed `tex/`, the Monte Carlo parquet and `yearly.parquet`). Local `fix-wave-01` has diverged from origin (`691c17a`).
+    - Which violin variant goes in the paper.
     - Stale lines in `tex/steel-v3.tex` (around lines 160, 335 and 358).
-    - The CCS anchor of 100 is above the cited range of 45–92, so the paper needs a justification (the user writes it).
+    - Justifying the CCS anchor of 100, which is above the cited range of 45–92 (the user writes this).
     - Plot issues in `uncertainty-risk` panels (b) and (d).
 - Full history: `.remember/recent.md`, `.remember/archive.md`.

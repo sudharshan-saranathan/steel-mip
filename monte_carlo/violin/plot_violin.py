@@ -66,9 +66,13 @@ def draw_bins(ax, xpos, bins, lo_col, hi_col, side, shares=None, halfw=0.40):
 
 
 def main():
+    sel = dict(avg_emi=1.8, ramp="medium")
     cells = pd.read_excel(XLSX, sheet_name="cells")
+    cells = cells[(cells.avg_emi == sel["avg_emi"]) & (cells.ramp == sel["ramp"])]
     lcop_bins = pd.read_excel(XLSX, sheet_name="lcop_bins")
+    lcop_bins = lcop_bins[(lcop_bins.avg_emi == sel["avg_emi"]) & (lcop_bins.ramp == sel["ramp"])]
     emis_bins = pd.read_excel(XLSX, sheet_name="emis_bins")
+    emis_bins = emis_bins[(emis_bins.avg_emi == sel["avg_emi"]) & (emis_bins.ramp == sel["ramp"])]
 
     groups = cells[["scrap_group", "grange"]].drop_duplicates().values
     cost_min, cost_max = lcop_bins.lcop_bin_lo.min(), lcop_bins.lcop_bin_hi.max()
@@ -135,13 +139,9 @@ def main():
                framealpha=0.95, edgecolor="black", fancybox=False, fontsize=12,
                bbox_to_anchor=(0.5, -0.05))
 
-    out = HERE / "fig_violin.png"
+    out = HERE.parents[1] / "figs" / "cost-violin.png"
     fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
     print(f"written: {out}")
-
-    out_pdf = HERE / "fig_violin.pdf"
-    fig.savefig(out_pdf, format="pdf", dpi=600, bbox_inches="tight", facecolor="white")
-    print(f"written: {out_pdf}")
 
 
 if __name__ == "__main__":
